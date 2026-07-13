@@ -1,4 +1,38 @@
-"""ChronoGym benchmark package.
+"""ChronoGym's public schema and deterministic Windrift primitives."""
 
-Public types will be re-exported here after the architect commits the contract.
-"""
+from .clock import WindowAdvance, advance_deliberation, latch_action
+from .types import (
+    NOOP_ACTION,
+    SCHEMA_VERSION,
+    Action,
+    Adapter,
+    AgentReply,
+    EpisodeScores,
+    GroundTruthState,
+    Observation,
+    Prediction,
+    ScenarioConfig,
+    WindComponent,
+)
+from .world import advance_ticks, build_observation, initial_state, step
+
+__all__ = [
+    "NOOP_ACTION",
+    "SCHEMA_VERSION",
+    "Action",
+    "Adapter",
+    "AgentReply",
+    "EpisodeScores",
+    "GroundTruthState",
+    "Observation",
+    "Prediction",
+    "ScenarioConfig",
+    "WindComponent",
+    "WindowAdvance",
+    "advance_deliberation",
+    "advance_ticks",
+    "build_observation",
+    "initial_state",
+    "latch_action",
+    "step",
+]

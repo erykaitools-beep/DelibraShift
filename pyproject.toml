@@ -12,6 +12,9 @@ license = { file = "LICENSE" }
 authors = [{ name = "ChronoGym contributors" }]
 dependencies = []
 
+[project.scripts]
+chronogym-demo = "chronogym.demo:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 

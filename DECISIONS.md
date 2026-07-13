@@ -144,3 +144,24 @@ wind spot checks, two full decision windows (noop-held, then engaged (3,12)),
 the cycle-0 prediction target, a worked fidelity example (nerr=0.2625), and
 the persistence floor (~0.0075). CI must match EXACTLY (binary64 ==), not
 approximately. Divergence = spec ambiguity = bug, resolved in DECISIONS.md.
+
+## COD-004 — Separate pure tick physics from the deliberation clock
+
+Date: 2026-07-13
+
+`world.step(config, state)` implements exactly one normative semi-implicit
+Euler tick using the action already held in `GroundTruthState`. `clock.py`
+composes exactly `deliberation_ticks` such steps, stops on terminal events,
+and latches the returned action without advancing time. This makes the RULE-A
+timeline explicit while keeping physics independently testable as a pure
+function.
+
+## COD-005 — Keep local baselines distinct from transport adapters
+
+Date: 2026-07-13
+
+M0 random and no-op implementations are typed local agents, not implementations
+of the model `Adapter` protocol. An Adapter is transport-only and returns raw
+text; calling a deterministic baseline an adapter would blur RULE E and force
+prompt parsing into a component that does not need it. The runner consumes the
+small internal `Agent.act(Observation) -> AgentReply` protocol.
