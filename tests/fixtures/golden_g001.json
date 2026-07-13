@@ -1,0 +1,170 @@
+{
+  "constants": {
+    "HEAT_SCALE_M": 20.0,
+    "PRED_POS_TOL_M": 1.0,
+    "PRED_VEL_TOL_MPS": 1.0
+  },
+  "description": "Hand-computed reference for the normative integrator (SPEC.md 2.3), the cycle-0 prediction target (RULE F), and the fidelity formula (FAB-004). CI must reproduce every float below EXACTLY (== on binary64), not approximately.",
+  "fidelity_example": {
+    "expected_fidelity": 0.7691263643685693,
+    "expected_normalized_error": 0.2625000000000015,
+    "note": "sample prediction = target + (0.3, -0.4, +0.25, +0.1); tolerances pos=1.0m vel=1.0mps",
+    "prediction": {
+      "pos_x_m": 21.9342174452602,
+      "pos_y_m": 64.44975,
+      "vel_x_mps": 3.2381011374801663,
+      "vel_y_mps": -9.710000000000003
+    }
+  },
+  "fixture_id": "golden_g001",
+  "observation_tick0": {
+    "cycle": 0,
+    "distance_to_goal_m": 72.11102550927978,
+    "heat": 0.02717246117223556,
+    "heat_delta": 0.0,
+    "held_accel_x_mps2": 0.0,
+    "held_accel_y_mps2": 0.0,
+    "pos_x_m": 20.0,
+    "pos_y_m": 70.0,
+    "tick": 0,
+    "ticks_remaining": 600,
+    "vel_x_mps": 0.0,
+    "vel_y_mps": 0.0,
+    "wind_now_x_mps2": 3.2274671116863836
+  },
+  "persistence_baseline": {
+    "expected_fidelity": 0.0074791050065516765,
+    "expected_normalized_error": 4.895642145685091,
+    "note": "predicting the tick-0 observation unchanged for target tick 20"
+  },
+  "prediction_target_cycle0": {
+    "distance_to_goal_m": 67.97844988148574,
+    "heat": 0.03340924923692957,
+    "heat_delta_at_cycle1": 0.006236788064694007,
+    "pos_x_m": 21.634217445260198,
+    "pos_y_m": 64.84975,
+    "target_tick": 20,
+    "vel_x_mps": 2.9881011374801663,
+    "vel_y_mps": -9.810000000000002
+  },
+  "scenario": {
+    "axis_tags": [],
+    "bounds_max_x_m": 100.0,
+    "bounds_max_y_m": 100.0,
+    "bounds_min_x_m": 0.0,
+    "bounds_min_y_m": 0.0,
+    "deadline_tick": 600,
+    "deliberation_ticks": 20,
+    "dt_s": 0.05,
+    "forecast_ticks": 40,
+    "goal_radius_m": 2.0,
+    "goal_visible": true,
+    "goal_x_m": 80.0,
+    "goal_y_m": 30.0,
+    "gravity_mps2": 9.81,
+    "max_accel_mps2": 15.0,
+    "scenario_id": "g001",
+    "seed": 42,
+    "start_pos_x_m": 20.0,
+    "start_pos_y_m": 70.0,
+    "start_vel_x_mps": 0.0,
+    "start_vel_y_mps": 0.0,
+    "wind_components": [
+      {
+        "amp_mps2": 3.0,
+        "period_ticks": 240.0,
+        "phase_rad": 0.7
+      },
+      {
+        "amp_mps2": 1.5,
+        "period_ticks": 97.0,
+        "phase_rad": 2.1
+      }
+    ]
+  },
+  "schema_version": "0.1.0",
+  "wind_spot_checks": {
+    "0": 3.2274671116863836,
+    "1": 3.2351351979125704,
+    "19": 2.5112888819719204,
+    "2": 3.2362241170170227,
+    "20": 2.444204937249907,
+    "39": 1.4717781502549483,
+    "40": 1.4537877900173386,
+    "5": 3.2021147740023235
+  },
+  "window1_noop_held": {
+    "checkpoints": {
+      "1": {
+        "pos_x_m": 20.008068667779217,
+        "pos_y_m": 69.975475,
+        "vel_x_mps": 0.1613733555843192,
+        "vel_y_mps": -0.49050000000000005
+      },
+      "10": {
+        "pos_x_m": 20.44176624277905,
+        "pos_y_m": 68.65112500000001,
+        "vel_x_mps": 1.5938655117135732,
+        "vel_y_mps": -4.905
+      },
+      "2": {
+        "pos_x_m": 20.024225173553212,
+        "pos_y_m": 69.92642500000001,
+        "vel_x_mps": 0.32313011547994774,
+        "vel_y_mps": -0.9810000000000001
+      },
+      "20": {
+        "pos_x_m": 21.634217445260198,
+        "pos_y_m": 64.84975,
+        "vel_x_mps": 2.9881011374801663,
+        "vel_y_mps": -9.810000000000002
+      },
+      "5": {
+        "pos_x_m": 20.12116974302999,
+        "pos_y_m": 69.632125,
+        "vel_x_mps": 0.8074620993493782,
+        "vel_y_mps": -2.4525
+      }
+    },
+    "held_accel": [
+      0.0,
+      0.0
+    ]
+  },
+  "window2_engaged_action": {
+    "checkpoints": {
+      "21": {
+        "pos_x_m": 21.79723301447733,
+        "pos_y_m": 64.364725,
+        "vel_x_mps": 3.2603113843426614,
+        "vel_y_mps": -9.700500000000002
+      },
+      "25": {
+        "pos_x_m": 22.58203479930056,
+        "pos_y_m": 62.479375000000005,
+        "vel_x_mps": 4.315535161994166,
+        "vel_y_mps": -9.2625
+      },
+      "30": {
+        "pos_x_m": 23.849457106556045,
+        "pos_y_m": 60.245875000000005,
+        "vel_x_mps": 5.562314535868326,
+        "vel_y_mps": -8.714999999999996
+      },
+      "40": {
+        "pos_x_m": 27.273655810238154,
+        "pos_y_m": 56.18950000000001,
+        "vel_x_mps": 7.872145189092846,
+        "vel_y_mps": -7.619999999999994
+      }
+    },
+    "clamped_action": [
+      3.0,
+      12.0
+    ],
+    "raw_action": [
+      3.0,
+      12.0
+    ]
+  }
+}
