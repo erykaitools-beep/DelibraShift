@@ -18,6 +18,23 @@ class PackError(ValueError):
 _MANIFEST_FIELDS = {"name", "version", "schema_version", "description", "scenarios"}
 _SCENARIO_FIELDS = {field.name for field in fields(ScenarioConfig)}
 _WIND_FIELDS = {field.name for field in fields(WindComponent)}
+_FLOAT_FIELDS = {
+    "dt_s",
+    "gravity_mps2",
+    "max_accel_mps2",
+    "start_pos_x_m",
+    "start_pos_y_m",
+    "start_vel_x_mps",
+    "start_vel_y_mps",
+    "goal_x_m",
+    "goal_y_m",
+    "goal_radius_m",
+    "bounds_min_x_m",
+    "bounds_min_y_m",
+    "bounds_max_x_m",
+    "bounds_max_y_m",
+}
+_INTEGER_FIELDS = {"seed", "deliberation_ticks", "deadline_tick", "forecast_ticks"}
 
 
 def _no_duplicate_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -57,6 +74,12 @@ def _require_exact_fields(payload: dict[str, Any], expected: set[str], label: st
         raise PackError(f"unknown {label} fields: {', '.join(unknown)}")
 
 
+def _as_float(value: object, label: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise PackError(f"{label} must be numeric")
+    return float(value)
+
+
 def _load_scenario(path: Path) -> ScenarioConfig:
     payload = _read_json(path)
     _require_exact_fields(payload, _SCENARIO_FIELDS, "scenario")
@@ -69,8 +92,15 @@ def _load_scenario(path: Path) -> ScenarioConfig:
             raise PackError(f"wind component {index} must be an object: {path}")
         _require_exact_fields(component, _WIND_FIELDS, "wind component")
         try:
-            components.append(WindComponent(**component))
-        except TypeError as error:
+            components.append(
+                WindComponent(
+                    **{
+                        name: _as_float(component[name], f"wind component {name}")
+                        for name in _WIND_FIELDS
+                    }
+                )
+            )
+        except (KeyError, TypeError) as error:
             raise PackError(f"invalid wind component {index}: {error}") from error
 
     axis_tags = payload.get("axis_tags", [])
@@ -78,6 +108,12 @@ def _load_scenario(path: Path) -> ScenarioConfig:
         raise PackError(f"axis_tags must be a list of strings: {path}")
     payload["wind_components"] = tuple(components)
     payload["axis_tags"] = tuple(axis_tags)
+    for name in _FLOAT_FIELDS & payload.keys():
+        payload[name] = _as_float(payload[name], name)
+    for name in _INTEGER_FIELDS & payload.keys():
+        value = payload[name]
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise PackError(f"{name} must be an integer")
     try:
         scenario = ScenarioConfig(**payload)
         validate_scenario(scenario)
@@ -101,6 +137,9 @@ def load_pack(path: str | Path) -> list[ScenarioConfig]:
             f"incompatible schema_version {manifest['schema_version']!r}; "
             f"expected {SCHEMA_VERSION!r} major.minor"
         )
+    for name in ("name", "version", "description"):
+        if not isinstance(manifest[name], str):
+            raise PackError(f"manifest {name} must be a string")
     scenario_files = manifest["scenarios"]
     if not isinstance(scenario_files, list) or any(
         not isinstance(name, str) for name in scenario_files
@@ -109,11 +148,15 @@ def load_pack(path: str | Path) -> list[ScenarioConfig]:
 
     scenarios: list[ScenarioConfig] = []
     seen_ids: set[str] = set()
+    scenario_root = (root / "scenarios").resolve()
     for filename in scenario_files:
         relative = Path(filename)
         if relative.is_absolute() or len(relative.parts) != 1 or relative.suffix != ".json":
             raise PackError(f"invalid scenario filename: {filename!r}")
-        scenario = _load_scenario(root / "scenarios" / relative)
+        scenario_path = (scenario_root / relative).resolve()
+        if scenario_path.parent != scenario_root:
+            raise PackError(f"scenario escapes pack directory: {filename!r}")
+        scenario = _load_scenario(scenario_path)
         if scenario.scenario_id in seen_ids:
             raise PackError(f"duplicate scenario_id: {scenario.scenario_id}")
         seen_ids.add(scenario.scenario_id)

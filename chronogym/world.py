@@ -19,8 +19,43 @@ from .types import (
 
 def validate_scenario(config: ScenarioConfig) -> None:
     """Reject scenarios that cannot satisfy the v0 contract."""
-    if not config.scenario_id:
+    if not isinstance(config.scenario_id, str) or not config.scenario_id:
         raise ValueError("scenario_id must not be empty")
+    integer_fields = {
+        "seed": config.seed,
+        "deliberation_ticks": config.deliberation_ticks,
+        "deadline_tick": config.deadline_tick,
+        "forecast_ticks": config.forecast_ticks,
+    }
+    for name, value in integer_fields.items():
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(f"{name} must be an integer")
+    if not isinstance(config.goal_visible, bool):
+        raise ValueError("goal_visible must be a boolean")
+    if not isinstance(config.axis_tags, tuple) or any(
+        not isinstance(tag, str) for tag in config.axis_tags
+    ):
+        raise ValueError("axis_tags must be a tuple of strings")
+
+    float_fields = {
+        "dt_s": config.dt_s,
+        "gravity_mps2": config.gravity_mps2,
+        "max_accel_mps2": config.max_accel_mps2,
+        "start_pos_x_m": config.start_pos_x_m,
+        "start_pos_y_m": config.start_pos_y_m,
+        "start_vel_x_mps": config.start_vel_x_mps,
+        "start_vel_y_mps": config.start_vel_y_mps,
+        "goal_x_m": config.goal_x_m,
+        "goal_y_m": config.goal_y_m,
+        "goal_radius_m": config.goal_radius_m,
+        "bounds_min_x_m": config.bounds_min_x_m,
+        "bounds_min_y_m": config.bounds_min_y_m,
+        "bounds_max_x_m": config.bounds_max_x_m,
+        "bounds_max_y_m": config.bounds_max_y_m,
+    }
+    for name, value in float_fields.items():
+        if not isinstance(value, float) or not math.isfinite(value):
+            raise ValueError(f"{name} must be a finite float")
     if not math.isfinite(config.dt_s) or config.dt_s <= 0.0:
         raise ValueError("dt_s must be finite and positive")
     if config.deliberation_ticks <= 0:
@@ -41,10 +76,17 @@ def validate_scenario(config: ScenarioConfig) -> None:
     ):
         raise ValueError("scenario bounds must have positive width and height")
     for component in config.wind_components:
-        if not math.isfinite(component.period_ticks) or component.period_ticks <= 0.0:
+        if not all(
+            isinstance(value, float) and math.isfinite(value)
+            for value in (
+                component.amp_mps2,
+                component.period_ticks,
+                component.phase_rad,
+            )
+        ):
+            raise ValueError("wind component values must be finite floats")
+        if component.period_ticks <= 0.0:
             raise ValueError("wind component periods must be finite and positive")
-        if not math.isfinite(component.amp_mps2) or not math.isfinite(component.phase_rad):
-            raise ValueError("wind component values must be finite")
 
 
 def initial_state(config: ScenarioConfig) -> GroundTruthState:

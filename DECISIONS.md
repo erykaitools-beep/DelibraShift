@@ -206,3 +206,14 @@ ordering, and whether injected greedy/no-op candidates enter the elite refit.
 These choices materially affect the ceiling and temporal exit gate. Selecting
 them in builder code without an architect decision would undermine RULE B and
 make the pre-registered kill criterion implementation-dependent.
+
+## COD-010 — Normalize external physics numbers and reject ambiguous types
+
+Date: 2026-07-13
+
+The pack loader converts valid JSON integer/float physics values to Python
+`float`, matching the binary64 contract, while seed and tick fields must be
+true integers (booleans rejected). Scenario validation also checks every
+physics value for type and finiteness. Resolved scenario paths must remain
+direct children of the pack's `scenarios` directory, including after symlink
+resolution.

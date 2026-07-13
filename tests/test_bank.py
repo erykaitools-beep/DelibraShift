@@ -71,3 +71,31 @@ def test_rejects_unknown_scenario_and_wind_fields(tmp_path) -> None:
     write_json(path, scenario)
     with pytest.raises(PackError, match="unknown wind component"):
         load_pack(root)
+
+
+def test_normalizes_numeric_physics_to_float_and_rejects_bad_seed(tmp_path) -> None:
+    root = make_pack(tmp_path)
+    path = root / "scenarios" / "demo.json"
+    scenario = json.loads(path.read_text(encoding="utf-8"))
+    scenario["gravity_mps2"] = 9
+    write_json(path, scenario)
+    assert load_pack(root)[0].gravity_mps2 == 9.0
+    assert isinstance(load_pack(root)[0].gravity_mps2, float)
+
+    scenario["seed"] = "42"
+    write_json(path, scenario)
+    with pytest.raises(PackError, match="seed must be an integer"):
+        load_pack(root)
+
+
+def test_rejects_scenario_symlink_escape(tmp_path) -> None:
+    root = make_pack(tmp_path)
+    outside = tmp_path / "outside.json"
+    outside.write_text(
+        (root / "scenarios" / "demo.json").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    (root / "scenarios" / "demo.json").unlink()
+    (root / "scenarios" / "demo.json").symlink_to(outside)
+    with pytest.raises(PackError, match="escapes pack directory"):
+        load_pack(root)
