@@ -23,29 +23,32 @@ Contract-change rule: only Fable edits `types.py`; every change bumps
 
 ## Milestones
 
-### M0 — contract + stub (NOW)
+### M0 — contract + stub (DONE 2026-07-13)
 - [x] Repo scaffold (Codex, `93b18c2`)
 - [x] `chronogym/types.py` v0.1 committed (Fable, `70df480`)
 - [x] SPEC.md v0.1 + PLAN.md + golden fixture `tests/fixtures/golden_g001.json` (Fable)
-- [ ] Codex: pure world transition per SPEC §2.3 + RULE-A window loop
-      (latched action, B ticks per cycle) + Observation builder (§2.5)
-- [ ] Codex: random + no-op agents; end-to-end demo run producing canonical
-      JSONL logs (§10)
-- [ ] Codex: golden-fixture test (exact float equality) + same-seed
-      byte-identity test
-- M0 exit: `pytest` green including fixture + identity tests; demo run
-  script prints an episode summary.
+- [x] Codex: pure world transition + RULE-A window loop + Observation
+      builder + random/no-op agents + canonical JSONL demo + fixture and
+      byte-identity tests (`b0ad499`)
+- [x] Adversarial review round 1 + empirical greedy red-team (Fable):
+      SPEC v0.2, contract 0.2.0, gravity retune, fixtures regenerated +
+      `golden_edges.json` (FAB-014..FAB-027)
 
-### M1 — one scored loop + one real adapter (EXIT-GATED)
-- Fable: author core pack v0 scenario JSONs (SPEC §9.2); freeze prompt
-  template content requirements review (REVIEW.md).
-- Codex: prediction-fidelity scorer (§4.1) ONLY; thin local pack loader
-  (§9.1, strict); NIM dracarys adapter (~20 lines, transport only, key via
-  env); harness prompt+parser (§7.2–7.3); baselines random/greedy/oracle
-  (§5.1–5.3) + stale-reactor & persistence diagnostics (§5.6).
+### M1 — one scored loop + one real adapter (EXIT-GATED; in progress)
+- [x] Codex: fidelity scorer draft, strict pack loader, draft prompt+parser,
+      NIM adapter, greedy v0.1, `chronogym-run` CLI (`1379c87`, `5ed12e1`,
+      `27ead02`) — pre-v0.2; migration list in REVIEW.md round 1.
+- Codex: migrate to contract 0.2.0 (REVIEW.md round 1 items 1–8: fixtures,
+  greedy §5.2, scoring shape, parser ladder §7.3, loader, prompt, logs).
+- Codex: oracle per §4.2.1 (now fully pinned — COD-009 unblocked) +
+  stale-reactor & lead-greedy & persistence diagnostics (§5.6).
+- Fable: author core pack v0 scenario JSONs (SPEC §9.2); golden ORACLE
+  fixture (scenario+seed+cycle → action, binary64 ==) BEFORE baseline
+  results are read; freeze prompt template (review in REVIEW.md).
 - Exit gates (ALL must pass, SPEC §6): (i) byte-identical same-seed runs;
-  (ii) stale-reactor budget sweep strictly decreasing; (iii) golden fixture
-  CI green; (iv) kill criterion passed & numbers logged in DECISIONS.md.
+  (ii) stale-reactor budget sweep decreasing with margin GATE_II_MARGIN;
+  (iii) BOTH golden fixtures CI green (g001 + edges); (iv) kill criterion
+  §5.4 with validity floors passed & numbers logged in DECISIONS.md.
 - If gate (iv) fails: apply SPEC §5.5 levers in order, re-run, log FAB entry.
   Nothing is published before gate (iv) passes.
 

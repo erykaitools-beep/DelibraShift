@@ -217,3 +217,217 @@ true integers (booleans rejected). Scenario validation also checks every
 physics value for type and finiteness. Resolved scenario paths must remain
 direct children of the pack's `scenarios` directory, including after symlink
 resolution.
+
+## FAB-014 — Abstention-proof prediction-fidelity accounting
+
+Date: 2026-07-13
+
+Review round 1 (two independent blockers): fidelity's denominator was
+agent-controlled — a model could omit predictions on hard cycles (no retry
+fired on prediction-only failure) or engineer early termination, cherry-
+picking its fidelity mean while parse_rate stayed 1.0. Fixes: prediction-parse
+failures get the SAME N=2 retry ladder; prediction_coverage = valid/requested
+is a mandatory companion metric; fidelity is publishable only as the
+(fidelity, coverage) pair and becomes None with an explicit reason below
+coverage 0.8 or 3 valid cycles; parse_rate split into action_parse_rate and
+prediction_parse_rate; a valid prediction from an action-failed cycle is
+kept. Constants in types.py. Persistence floor is now computed per-agent on
+the agent's OWN trajectory (a station-keeper has a high floor — raw fidelity
+was not cross-agent comparable).
+
+## FAB-015 — Temporal-axis cycle-inclusion rules
+
+Date: 2026-07-13
+
+Blocker: as written, parse-failed cycles entered the temporal sum with the
+engaged NOOP scored as the agent's choice — formatting moved a cognition
+score (RULE E violation). Now normative: temporal sums run over
+non-truncated, action-parsed cycles whose returned action actually engaged;
+parse-failed and never-engaged cycles are excluded from numerator AND
+denominator; masked-goal scenarios score None (goal-privileged oracles are
+unfair references for heat-only agents); the None-gate is on MEAN weight
+(>= 0.02), not the length-scaling sum.
+
+## FAB-016 — Novelty sentence re-anchored (supersedes FAB-001)
+
+Date: 2026-07-13
+
+Review found Real-Time Reasoning Gym (arXiv:2511.04898, 2025): token-
+denominated, hardware-agnostic deliberation cost in never-pausing worlds —
+the v0.1 wedge "nobody scores thinking-costs-time reproducibly" was FALSE.
+Nothing found, however, scores ANTICIPATION of one's own deliberation as a
+metric. New sentence anchors on the anticipation SCORE (engage-time vs
+observed-time counterfactual oracles) + 4-axis decomposition; the clock is
+declared standard machinery (delayed-MDP lineage back to RTA* 1990, RTMDP
+2019, SC2LE step_mul 2017) in a new SPEC 12 lineage paragraph. Gaia2/ARE
+added as closest large-scale competitor (wall-clock or zero thinking cost —
+not a fixed simulated budget). R-WoM row corrected (method, not benchmark;
+replaced by ByteSized32-SP). Complementarity: RTR-Gym measures verbosity
+management under variable cost; ChronoGym measures delay compensation under
+fixed cost.
+
+## FAB-017 — Oracle pinned as normative pseudocode (answers COD-009)
+
+Date: 2026-07-13
+
+The v0.1 oracle was not independently recomputable (initial distribution,
+rng call order, refit structure, tie-breaking, partial-window handling all
+unstated) — two conforming implementations could publish different temporal
+scores and even different kill decisions. SPEC 4.2.1 now pins: candidate
+ordering (NOOP, greedy, 256 uniform-disc samples; theta-then-r per window,
+candidate-outer/window-inner), J with d_min inclusive of the start state,
+tie-break by lower index, 3 elite-refit iterations (top-16, per-window
+per-axis mean + population std with 0.5 floor, elites carried unchanged,
+gauss draws candidate-outer/window-inner x-then-y, clamp per window), final
+action = clamped elite MEAN of window 0. A golden oracle fixture is a Fable
+deliverable at M1 before baseline results are read.
+
+## FAB-018 — Kill criterion made computable one way (supersedes FAB-007)
+
+Date: 2026-07-13
+
+D_outcome is now defined on PACK MEANS over the goal-visible non-probe
+subset; random baseline averaged over R=20 reps with pinned per-rep seeds;
+two validity floors added (oracle-random >= 0.2 on outcome;
+oracle_temporal - 0.5 >= 0.05) — an invalid pack triggers redesign levers,
+never a published number; greedy-temporal kill threshold is now RELATIVE to
+measured oracle headroom ((greedy-0.5) >= 0.5*(oracle-0.5)) because the
+temporal ceiling is scenario-dependent (an absolute 0.55 was near-vacuous on
+calm packs and over-eager on gusty ones).
+
+## FAB-019 — Gate (ii) honesty: margin, not strictness
+
+Date: 2026-07-13
+
+Derivation: stale-reactor temporal = 0.5*(1 - Sum(w^2)/Sum(w)). "< 0.5" is
+formula-guaranteed; "strictly decreasing in B" is NOT (weights saturate at
+the thrust cap; per-B cycle sets are disjoint) — it is an empirical scenario
+property, which is precisely what the gate tests. Gate (ii) therefore
+requires a drop of at least GATE_II_MARGIN = 0.01 per budget step; a 1e-12
+float decrease proves nothing. Margin failure triggers SPEC 5.5 lever 1
+(gustier wind), not a metric redesign.
+
+## FAB-020 — Feedback-use: decoy-goal ablation + heat-only band (supersedes FAB-009)
+
+Date: 2026-07-13
+
+Two review pathologies: (1) constant heat=0.5 ablation is detectable
+(physically impossible channel) and out-of-distribution — it measures
+"agent notices the ablation", and a consistency-reasoning agent actively
+confused by it would inflate the score; (2) the oracle-random band is
+goal-privileged, so a perfect heat-only searcher could never reach 1.0.
+Now: run B computes heat against a seeded FAKE goal (plausible, varying,
+uninformative; draw pinned in SPEC 4.3), and the band is the heat-only
+reference (masked greedy with true vs decoy heat). None below band 0.1;
+raw delta and band always published. Feedback-use moves to pack-level
+PackScores (an episode cannot carry a paired-run quantity) — types.py
+schema bump.
+
+## FAB-021 — Oracle multimodality: honest threat + mitigations
+
+Date: 2026-07-13
+
+Review showed w_k weighting AMPLIFIES multimodal cycles (two equally-good
+modes => large ||a*_eng - a*_obs||) rather than damping them; the v0.1
+threat entry was wrong. Mitigations now real: oracle action = elite MEAN
+(damps mode flips deterministically); per-cycle margin distribution
+published; a value-regret variant (J-difference under the true simulator)
+pre-registered as a SECONDARY metric at M1.5 — if it disagrees with the
+action-distance metric beyond cosmetics, the primary is revisited (FAB
+entry required). Note: value regret cannot REPLACE the primary outright —
+a stale reactor scores a constant 0.5 under pure regret ratio, which would
+break exit gate (ii)'s budget sweep.
+
+## FAB-022 — Probe scenarios: excluded from axes; forced-choice pinned
+
+Date: 2026-07-13
+
+Probe-tagged scenarios (probe:*) are excluded from all four axis aggregates
+and every kill-criterion quantity; they yield only probe metrics. During
+probe episodes the engaged action is NOOP throughout (RULE A logs stay
+well-defined). Forced-choice wire schema added to the contract
+(REPLY_KEY_CHOICE, CHOICE_VALUES, AgentReply.choice); decoy construction
+pinned exactly, perturbing the x-components ONLY — y-components have a
+gravity-only closed form from the Observation, so y-perturbed decoys were
+solvable with zero wind modeling. probe:format replies are scored against
+both the identity and T+B targets (instruction-following drift vs
+formatting), with JSON validity as the primary compliance signal.
+
+## FAB-023 — EXAMPLE_REPLY_JSON moved out-of-band (anti-parrot)
+
+Date: 2026-07-13
+
+Review measured the v0.1 in-prompt example scoring 0.919 fidelity on g001
+cycle 0 as a pure parrot (its action was byte-identical to the fixture's
+window-2 action). Example values are now normatively out-of-band (>= 10
+tolerances from every core-pack cycle-0 target, alien quadrant), and
+replies within 2 tolerances of the example are flagged example_echo.
+
+## FAB-024 — Retry compute confound: contained and measured
+
+Date: 2026-07-13
+
+Sim-free reprompt retries are unavoidable under RULE A but hand extra
+generation compute to models with worse JSON discipline (and are exploitable
+as free chain-of-thought by deliberate malforming). Containment: the retry
+notice REPLACES the failed attempt (no accumulation of the model's own prior
+text); per-cycle parse_retries is logged; the fraction of retried cycles is
+reported per agent; the RULE D matched-pair comparison includes a
+sensitivity slice excluding retried cycles.
+
+## FAB-025 — RULE-C red-team executed: v0.1 world FALSIFIED, retuned
+
+Date: 2026-07-13
+
+Empirical simulation (architect-run; the review workflow's red-team agent
+died on a session limit, so the check ran inline). v0.1 parameters (gravity
+9.81, thrust cap 15, PD greedy Kp=2/Kd=2.8): EVERY policy — noop, random,
+greedy, and an anticipating lead-greedy — crashed out of bounds on all six
+tuning scenarios; greedy scored BELOW random (saturated PD loses its
+damping => bang-bang overshoot). That is a broken baseline in an untunable
+world, not a discriminating benchmark. Retune: gravity 5.0; greedy replaced
+by saturation-aware arrival steering (V_CRUISE=8.0, K_ARR=0.35, K_V=1.2,
+gravity feedforward). Resulting gradient over 7 tuning scenarios (pack-mean
+outcome): noop 0.07 < random 0.03 (both floor) << greedy 0.36 (closes to
+3-15 m, crashes on 6/7, wins the easiest) << lead-greedy 0.92 (goal on
+7/7). Lead-greedy differs from greedy ONLY by propagating the observed
+state B ticks forward from Observation fields — the gap IS the skill under
+test. Kill-criterion proxy with lead-greedy as oracle lower bound:
+D_outcome ~ 0.63 >> 0.25. Fixtures regenerated under gravity 5.0;
+golden_edges.json added (clamp-above-cap, goal-mid-window truncation,
+deadline-mid-window) after review showed the g001 fixture never exercised
+those branches.
+
+## FAB-026 — Contract v0.2.0: boundary semantics + strictness sweep
+
+Date: 2026-07-13
+
+Pinned in one pass, each from a review finding: truncation defined as
+episode-end STRICTLY below the engage tick (ending exactly at T_k+B is a
+valid cycle; golden_edges.json pins both sides); d_min includes tick 0;
+tick-0 events are impossible by contract (ScenarioConfig.__post_init__
+rejects starts out of bounds/inside the goal disc, deadline < 1, forecast <
+B, non-positive dt); masked goals are JSON null with keys KEPT (prompt bytes
+stable; SPEC prose previously said "omitted" — prose/contract divergence
+resolved in favor of null); canonical_json now rejects non-str dict keys and
+normalizes -0.0; ScenarioConfig.from_json_dict pins tuple coercion for
+loaders; parser type-strictness pinned (JSON numbers only, no bool/str
+coercion, NaN/Infinity rejected, last-balanced-block string-aware
+extraction); harness owns transport retries/backoff/pacing (adapters may
+raise; ~20-line adapters stay honest); LLM reps use rep-derived seeds (same
+seed x3 on a seed-honoring endpoint would fake a zero-width range);
+normative per-cycle log record + run manifest field lists added to SPEC 10
+(raw completions retained for re-scoring). SCHEMA_VERSION 0.1.0 -> 0.2.0.
+
+## FAB-027 — HARD RULE 5 status: public-ready vs published
+
+Date: 2026-07-13
+
+Review flagged silent deviation: "public from day one" while the repo has no
+remote. Resolution on record: the repo is public-READY from day one (MIT,
+no secrets, reproducible seeds, clean history); pushing to a public GitHub
+requires the repository owner's account and is governed by the operator's
+standing no-auto-push policy, which the agents must not override. The
+architect treats "public from day one" as a constraint on CONTENT (nothing
+in-repo may depend on staying private) and M3 as the publication act.
+Results remain gated by SPEC 5.4 regardless.

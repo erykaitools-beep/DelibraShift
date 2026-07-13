@@ -1,22 +1,39 @@
-# ChronoGym SPEC v0.1
+# ChronoGym SPEC v0.2
 
 Owner: Fable (Chief Architect & Scientist). Normative unless marked
 *informative*. The executable contract is `chronogym/types.py` (schema
-version 0.1.0); where prose and `types.py` disagree, `types.py` wins and the
+version 0.2.0); where prose and `types.py` disagree, `types.py` wins and the
 disagreement is a bug to log in DECISIONS.md.
+
+v0.2 integrates adversarial review round 1 (five independent reviewers +
+an empirical greedy red-team; FAB-014..FAB-027). Major changes vs v0.1:
+novelty sentence re-anchored on the anticipation METRIC (FAB-016), gravity
+retuned 9.81→5.0 with a redesigned greedy baseline after the red-team
+falsified v0.1's parameters (FAB-025), oracle pinned as normative
+pseudocode (FAB-017, answers COD-009), abstention-proof fidelity
+accounting (FAB-014), exact kill-criterion computation (FAB-018), and a
+decoy-goal feedback ablation (FAB-020).
 
 ---
 
 ## 1. Novelty
 
-### 1.1 The one sentence (locked, FAB-001)
+### 1.1 The one sentence (locked, FAB-016; supersedes FAB-001)
 
-> **ChronoGym is the first open benchmark that scores whether an agent
-> anticipates its own deliberation — the world advances by a seed-fixed
-> *simulated* tick budget while the agent thinks — and that decomposes
+> **ChronoGym is the first open benchmark that scores temporal anticipation
+> as an explicit diagnostic axis — comparing each engaged action against
+> engage-time versus observed-time oracles under a seed-fixed *simulated*
+> deliberation budget in a never-pausing world — and that decomposes agent
 > performance into prediction-fidelity, temporal anticipation, feedback-use,
-> and outcome in a reproducible multi-factor world with a graded hot/cold
-> signal, under a matched-pair world-model ablation on the same base model.**
+> and outcome with graded hot/cold signals, under a matched-pair world-model
+> ablation on the same base model.**
+
+The deliberation-aware *clock* is deliberately standard machinery — a
+constant-delay MDP with latched actions, a lineage from real-time heuristic
+search through RTMDP and SC2LE's `step_mul` (§12). What no prior benchmark
+does is *measure whether the agent compensates for that delay* as an
+isolated, probe-controlled score. The mechanism is inherited; the
+measurement is new.
 
 ### 1.2 The three challenges
 
@@ -30,18 +47,20 @@ should receive different diagnosis vectors. Hot/cold is an observation field,
 never a reward. **Status: pass by construction.**
 
 **(b) Survives the greedy baseline.** Greedy (§5.2) is a competent reactive
-controller with gravity feedforward and damping — deliberately strong. It has
-no forecast use, no lead, no world model. The world is designed so that
-inertia + time-varying wind + a deadline punish acting on stale state
-(overshoot, drift past the goal, wasted seconds). This challenge is
-*empirically gated*: the kill criterion (§5.4) is pre-registered and evaluated
-at M1 before anything is published. **Status: conditional pass — gated at M1;
-redesign levers pre-registered (§5.5).**
+controller (arrival steering with gravity feedforward). It has no forecast
+use, no lead, no world model. Empirical red-team (FAB-025): on the seven
+tuning scenarios greedy closes to 3–15 m of the goal but crashes on 6/7
+(pack-mean outcome 0.36), while an anticipating variant of the *same
+controller* — identical control law, state propagated `B` ticks forward
+using only Observation fields — succeeds on 7/7 (0.92). The gap between
+those two IS the skill under test, and it is large. The kill criterion
+(§5.4) remains pre-registered and is re-evaluated on the real oracle at M1.
+**Status: provisionally pass (proxy numbers above); confirmed at gate iv.**
 
 **(c) Does not lean on wall-clock latency.** Every temporal quantity that is
 scored is denominated in sim ticks; the deliberation budget is a fixed,
 seed-determined scenario parameter (`deliberation_ticks`), identical on any
-hardware. Wall-clock is recorded in `EpisodeScores.wall_clock_ms_telemetry_only`
+hardware. Wall-clock is recorded in `wall_clock_ms_telemetry_only`
 and never enters a score. Two same-seed runs produce byte-identical logs on
 the same host (§10). **Status: pass by construction.**
 
@@ -55,13 +74,13 @@ If any challenge fails at its gate, we pivot and record it in DECISIONS.md
 ### 2.1 Geometry and factors
 
 A 2D plane with bounds `[0,100] × [0,100]` m, +x right, +y up. A single
-object (the craft the agent thrusts) starts at a scenario-defined position
-and velocity and must enter a goal disc (`goal_radius_m`, default 2 m) before
-`deadline_tick`.
+craft starts at a scenario-defined position and velocity and must enter a
+goal disc (`goal_radius_m`, default 2 m) before `deadline_tick`.
 
 Three interacting factors (HARD RULE 2 satisfied — ≥2 required):
 
-1. **Gravity** — constant acceleration `gravity_mps2` along −y.
+1. **Gravity** — constant acceleration `gravity_mps2` (default **5.0**,
+   FAB-025) along −y.
 2. **Time-varying lateral wind** — acceleration along x, a sum of sinusoids
    (`WindComponent`s), a pure function of the integer tick (`wind_x_at`).
 3. **Deadline** — episode fails at `deadline_tick`. It couples with 1 and 2
@@ -70,6 +89,12 @@ Three interacting factors (HARD RULE 2 satisfied — ≥2 required):
 The factors interact through shared velocity integration (inertia): thrust
 spent fighting gravity is unavailable against wind, and wind-induced drift
 compounds over exactly the time the deadline meters out.
+
+*Informative:* v0.1 used gravity 9.81 with thrust cap 15; the empirical
+red-team showed that leaves too little control authority — every policy
+including anticipating ones crashed out of bounds, compressing all baselines
+toward zero and invalidating the kill criterion's denominators. 5.0 restores
+a usable gradient (FAB-025).
 
 ### 2.2 The deliberation-aware clock (METHOD RULE A; FAB-002)
 
@@ -84,14 +109,16 @@ is *simulated*, not wall-clock:
 - The returned action engages at `T_{k+1} = T_k + B` and stays latched for
   the next window.
 - Adapter retries after parse failures do **not** advance the sim (the budget
-  is already fixed); they cost wall-clock only, which is telemetry.
+  is already fixed); they cost wall-clock only, which is telemetry. The retry
+  notice REPLACES the failed attempt in the model's context — retries never
+  accumulate the model's own prior text (FAB-024).
 
 Consequence: an agent that computes the perfect action *for the state it
 observed* is systematically acting in the past. Anticipating your own
 deliberation — leading the target by `B` ticks — is the central skill under
 test, and it is hardware-fair because `B` is a scenario constant.
 
-Budget variation across scenarios (e.g. B ∈ {10, 20, 40}) is how we probe
+Budget variation across scenarios (B ∈ {10, 20, 40}) is how we probe
 sensitivity to thinking cost; within a scenario B is constant (FAB-005).
 
 ### 2.3 Normative integrator (METHOD RULE B)
@@ -116,12 +143,21 @@ For each tick `n → n+1` (semi-implicit Euler, exactly this order):
 Physics is a pure function of `(state, held_action, tick, scenario)` — no
 RNG anywhere in the transition. All scenario randomness lives in the scenario
 file itself; all *scorer* randomness (oracle sampling, decoys) is derived from
-`ScenarioConfig.seed` via explicitly spec'd `random.Random` constructions
-(§4.2, §4.5). Wind components are summed left-to-right in file order.
+`ScenarioConfig.seed` via the exact `random.Random` constructions pinned in
+§4.2, §4.3, §4.5 and §5.1. Wind components are summed left-to-right in file
+order.
 
-If an episode ends mid-window, remaining ticks of that window are not
-simulated; the cycle in progress is marked `truncated` and excluded from
-prediction-fidelity aggregation (its target tick does not exist).
+**Truncation (normative, FAB-026):** a cycle is truncated **iff** the episode
+ends at a tick **strictly below** its engage tick `T_k + B`; ending exactly
+at `T_k + B` is a valid cycle. Truncated cycles are excluded from BOTH
+prediction-fidelity and temporal-anticipation aggregation (their target/
+engage state does not exist); the remaining ticks of a truncated window are
+not simulated. Boundary cases are pinned in `tests/fixtures/golden_edges.json`.
+
+Events are checked only after a transition (tick ≥ 1); scenario files whose
+start state would trigger an event at tick 0 are ILLEGAL — the contract
+(`ScenarioConfig.__post_init__`) rejects starts out of bounds or inside the
+goal disc, and requires `deadline_tick ≥ 1`.
 
 ### 2.4 Hot/cold gradient (HARD RULE 3)
 
@@ -131,20 +167,23 @@ decision point; 0.0 at cycle 0). Binary outcome exists (`goal`/`timeout`/
 `oob`) but never alone: the outcome score (§4.4) is itself graded via
 closest-approach distance.
 
-In **masked-goal scenarios** (`goal_visible=false`) the observation omits
-`goal_x_m`, `goal_y_m`, `distance_to_goal_m`; heat and heat_delta remain.
-Heat reveals proximity but not bearing — hot/cold search is then the only
-route to the goal. These scenarios are the feedback-use probe (§3.3).
+In **masked-goal scenarios** (`goal_visible=false`) the fields `goal_x_m`,
+`goal_y_m`, `distance_to_goal_m` are present with **null values — keys are
+never dropped** (FAB-026; rendered prompts include the null-valued keys, so
+prompt bytes are stable across masking). Heat and heat_delta remain. Heat
+reveals proximity but not bearing — hot/cold search is then the only route
+to the goal. These scenarios are the feedback-use probe (§3.3).
 
 ### 2.5 Observation completeness (METHOD RULE F)
 
 `Observation` contains everything needed to compute the prediction target
 exactly: current kinematic state, the latched (held) action, gravity, `dt_s`,
 `B`, and a **truthful wind forecast** `wind_forecast_x_mps2[i] =
-wind_x_at(components, tick+i)` with `forecast_ticks >= B` (FAB-003). The
-target (state at `T_k + B`) is therefore a pure deterministic function of
-observable fields — no hidden or stochastic factor. A noisy-forecast factor
-is future work (v1 pack), not v0.
+wind_x_at(components, tick+i)` with `forecast_ticks >= B` (FAB-003; the
+inequality is enforced by the contract, FAB-026). The target (state at
+`T_k + B`) is therefore a pure deterministic function of observable fields —
+no hidden or stochastic factor. A noisy-forecast factor is future work (v1
+pack), not v0.
 
 ---
 
@@ -152,10 +191,16 @@ is future work (v1 pack), not v0.
 
 | Axis | What breaks if it's weak | Isolating probe |
 |---|---|---|
-| **World-model / prediction** | Can't propagate physics forward | §4.1 fidelity vs pure-function target; plus `probe:format` identity-prediction control and `probe:forced_choice` variant (§4.5) to separate formatting from cognition |
+| **World-model / prediction** | Can't propagate physics forward | §4.1 fidelity vs pure-function target; plus `probe:format` control and `probe:forced_choice` variant (§4.5) to separate formatting from cognition |
 | **Temporal anticipation** | Acts for the observed (stale) state | §4.2 divergence-weighted lead margin vs engage-time oracle; budget sweep B∈{10,20,40} on same physics |
-| **Feedback-use** | Ignores hot/cold evidence | §4.3 masked-goal scenarios + paired heat-channel ablation runs |
+| **Feedback-use** | Ignores hot/cold evidence | §4.3 masked-goal scenarios + paired decoy-goal heat ablation |
 | **Outcome** (summary, not a cognitive axis) | — | §4.4 graded composite |
+
+**Probe-exclusion rule (normative, FAB-022):** scenarios tagged `probe:*`
+are excluded from ALL four axis aggregates and from every §5.4 kill-criterion
+quantity; they produce only their own probe metrics. Masked-goal scenarios
+(`goal_visible=false`) contribute to feedback-use and outcome but NOT to
+temporal anticipation (§4.2 last rule).
 
 Perception and replanning are *named* future axes (v1): v0 observations are
 noiseless and structured, so a perception probe would measure nothing yet;
@@ -166,41 +211,71 @@ the four v0 scores until a dedicated replanning metric is designed.
 
 ## 4. Scoring (exact metrics)
 
-All per-episode scores live in `[0,1]` or are `None` = "not measurable here".
-Constants and formulas `prediction_error`, `fidelity_from_error`,
-`action_similarity` are executable in `types.py`.
+All scores live in `[0,1]` or are `None` (= not measurable / not valid, with
+the reason recorded). Constants and formulas `prediction_error`,
+`fidelity_from_error`, `action_similarity` and the validity bounds
+(`FIDELITY_MIN_COVERAGE`, `FIDELITY_MIN_CYCLES`, `TEMPORAL_MIN_MEAN_W`,
+`FEEDBACK_MIN_BAND`, `GATE_II_MARGIN`) are executable in `types.py`.
 
-### 4.1 Prediction-fidelity (METHOD RULE F)
+### 4.1 Prediction-fidelity (METHOD RULE F; FAB-014)
 
-Per non-truncated, successfully parsed cycle `k`:
+**Valid cycle** := non-truncated AND action-parsed AND prediction-parsed.
+Per valid cycle `k`:
 
 ```
 nerr_k     = mean(|Δpos_x|/1.0m, |Δpos_y|/1.0m, |Δvel_x|/1.0m/s, |Δvel_y|/1.0m/s)
 fidelity_k = exp(-nerr_k)
 ```
 
-Episode `prediction_fidelity = mean_k fidelity_k` over valid cycles; `None`
-if no valid cycle. Graded state distance — never exact match. Reported
-alongside, always:
+Episode `prediction_fidelity = mean_k fidelity_k` over valid cycles.
 
-- `parse_rate` — parsed cycles / total cycles ("formatting, not cognition");
-- **persistence floor** — fidelity of predicting the observed state unchanged
-  (golden fixture pins it at ≈0.0075 for g001 cycle 0, i.e. the floor is far
-  from the ceiling: the measure has headroom);
-- format-compliance and forced-choice probe results (§4.5).
+**Abstention accounting (normative):** a reply whose action parses but whose
+requested prediction does not gets the SAME in-budget retry ladder as an
+action failure (§7.3). If the prediction still fails, the cycle is marked
+`prediction_parse_failed` and counts against coverage:
 
-### 4.2 Temporal anticipation (the deliberation wedge)
+```
+prediction_coverage = valid-prediction cycles / prediction-requested non-truncated cycles
+```
 
-Uses a deterministic sampling-MPC **oracle** (also the ceiling baseline §5.3).
-For each cycle `k` with engaged (clamped) agent action `a_k+1`:
+Fidelity is **publishable only as the pair (fidelity, coverage)**. If
+`coverage < FIDELITY_MIN_COVERAGE (0.8)` or valid cycles `<
+FIDELITY_MIN_CYCLES (3)`, fidelity is `None` with
+`fidelity_invalid_reason ∈ {"insufficient_coverage", "too_few_cycles"}` —
+visibly invalid, never "not measurable". A valid prediction from a cycle
+whose ACTION failed to parse is kept and scored (the cycle is still excluded
+from temporal, §4.2). Selective abstention and engineered early termination
+are thereby visible: `n_cycles` and `n_valid_prediction_cycles` are always
+published next to fidelity.
 
-- `a*_eng` = oracle's first action planned from the TRUE state at the engage
-  tick `T_{k+1}` (correct timeline: the action engages when it actually can).
-- `a*_obs` = oracle's first action planned from the observed state at `T_k`
-  pretending it engages immediately — the "no-lag illusion", i.e. what a
-  perfect *stale reactor* would do.
+Reported alongside, always:
+
+- `action_parse_rate` and `prediction_parse_rate` — separate ("formatting,
+  not cognition" has two channels, FAB-014);
+- **persistence floor** — fidelity of predicting the observed state
+  unchanged, computed on the agent's OWN trajectory over the same valid-cycle
+  set (`EpisodeScores.persistence_floor_fidelity`). This floor is per-agent:
+  a station-keeping policy has a high floor, so raw fidelity is never
+  compared across agents without it. *Informative:* on g001 cycle 0 the
+  floor is ≈0.047 — far from the ceiling, so the measure has headroom;
+- format-compliance and forced-choice probe results (§4.5);
+- `example_echo` count — replies within 2 tolerances of the prompt's example
+  values (anti-parroting control, FAB-023).
+
+### 4.2 Temporal anticipation (the deliberation wedge; FAB-015/017/021)
+
+Uses the deterministic sampling-MPC **oracle** of §4.2.1. For each **scored
+cycle** `k` — non-truncated, action-parsed, `goal_visible=true`, and whose
+returned action actually engaged — with engaged (clamped) agent action
+`a_k+1`:
+
+- `a*_eng` = oracle action planned from the TRUE state at the engage tick
+  `T_{k+1}` (variant 0): the correct timeline.
+- `a*_obs` = oracle action planned from the observed state at `T_k`
+  pretending it engages immediately (variant 1): the "no-lag illusion" —
+  what a perfect *stale reactor* would do.
 - `w_k = ||a*_eng - a*_obs|| / (2 * max_accel)` — how much anticipation
-  matters at this cycle (0 = not at all).
+  matters at this cycle.
 - `s(u,v) = action_similarity(u,v) = 1 - ||u-v|| / (2*max_accel)`.
 
 ```
@@ -208,43 +283,103 @@ temporal_raw   = Σ_k w_k * ( s(a_k+1, a*_eng) - s(a_k+1, a*_obs) ) / Σ_k w_k
 temporal_score = (temporal_raw + 1) / 2          # in [0,1], 0.5 = no lead
 ```
 
-If `Σ_k w_k < 0.05` the scenario doesn't discriminate: score `None`.
+**Cycle-inclusion rules (normative, FAB-015):** cycles with
+`parse_failed=true` are excluded from numerator AND denominator (formatting,
+not cognition — the engaged NOOP is not the agent's choice); truncated
+cycles and the final cycle whose returned action never engaged are excluded;
+masked-goal scenarios score `temporal = None` (the goal-privileged oracles
+are not a fair reference for a heat-only agent). If the MEAN weight over
+scored cycles `(Σw_k / K) < TEMPORAL_MIN_MEAN_W (0.02)`, or `K = 0`, the
+scenario doesn't discriminate: score `None`.
 
-Properties: a perfect stale reactor scores strictly below 0.5, and lower as
-`B` grows (this is exit gate (ii), §6); a perfect anticipator scores above
-0.5. Weighting by `w_k` means cycles where both oracles agree contribute
-nothing, isolating anticipation from generic competence.
+Properties (corrected, FAB-019): a perfect stale reactor scores
+`0.5·(1 − Σw²/Σw) < 0.5` — that bound IS formula-guaranteed. Its score
+*decreasing* in `B` is an empirical property of the scenario (weights can
+saturate at the thrust cap), which is exactly what exit gate (ii) tests,
+with margin `GATE_II_MARGIN`. A perfect anticipator scores
+`0.5 + Σw²/(2Σw) > 0.5`; this ceiling is scenario-dependent, which is why
+the kill criterion normalizes by the measured oracle ceiling (§5.4), not by
+an absolute threshold.
 
-Oracle determinism: `rng = random.Random(seed*1_000_003 + cycle*8191 + variant)`
-with `variant` 0 for `a*_eng`, 1 for `a*_obs`. Sampling MPC: plans
-piecewise-constant acceleration per window, horizon `H = min(6,
-ceil(ticks_remaining / B))` windows; 256 sampled candidates per iteration
-plus the greedy action and NOOP; 3 elite-refit iterations (top 16, Gaussian
-refit, σ floor 0.5 m/s²); objective `J = 5·success + exp(-d_min/HEAT_SCALE_M)
-+ 0.5·exp(-d_T/HEAT_SCALE_M) - 0.02·(t_goal/B)` where `d_min` = closest
-approach in rollout, `d_T` = terminal distance, `t_goal` = ticks to goal (0
-if not reached). First action of the best plan is the oracle action. All
-rollouts use the true simulator and true wind (privileged — that is the
-point of a ceiling).
+#### 4.2.1 The oracle, pinned (normative pseudocode; FAB-017, answers COD-009)
 
-### 4.3 Feedback-use
+`ORACLE(state s at tick t0, scenario, cycle, variant) -> Action`, with
+`rng = random.Random(seed*1_000_003 + cycle*8191 + variant)`:
+
+```
+B  = deliberation_ticks;  H = min(6, max(1, ceil((deadline_tick - t0) / B)))
+A plan is a length-H tuple of per-window actions (ax, ay).
+
+Iteration 0 candidates, in index order:
+  index 0:      all-windows NOOP plan
+  index 1:      all-windows greedy plan (the §5.2 arrival law evaluated at s)
+  index 2..257: sampled plans — for each candidate (outer loop), for each
+                window w = 0..H-1 (inner loop):
+                    theta = rng.uniform(0.0, TWO_PI)
+                    r     = max_accel * math.sqrt(rng.random())
+                    a[w]  = (r*math.cos(theta), r*math.sin(theta))
+
+Evaluate J(plan) by rolling out the TRUE simulator from s at t0, engaging
+plan[w] for ticks [t0+wB, t0+(w+1)B), stopping at events or after H windows:
+    J = 5*success + exp(-d_min/HEAT_SCALE_M) + 0.5*exp(-d_T/HEAT_SCALE_M)
+        - (0.02 * t_goal_rel / B if success else 0.0)
+    d_min over all rollout ticks INCLUDING the start state at t0;
+    d_T = distance at rollout end (or at the goal-hit tick);
+    t_goal_rel = ticks from t0 to goal.
+Rank candidates by J descending; ties broken by LOWER candidate index.
+
+Iterations 1..3 (elite refit):
+  elites = top 16 candidates of the previous ranking (stable order).
+  Per window w, per axis (x then y): mean = arithmetic mean of the 16 elite
+  actions; sigma = max(population std (ddof=0), 0.5).
+  New candidate set: indices 0..15 = the elites carried over UNCHANGED
+  (their J values are reused, not re-evaluated); indices 16..271 = fresh
+  samples — candidate outer loop, window inner loop, x then y:
+      ax = rng.gauss(mean_x[w], sigma_x[w]);  ay = rng.gauss(mean_y[w], sigma_y[w])
+  then clamp_accel per window. The NOOP/greedy seeds are NOT re-injected
+  after iteration 0 (they survive only via elitism). Re-rank.
+
+Final: oracle action = clamp_accel(arithmetic mean of the final top-16
+elites' window-0 actions)          # elite-mean smoothing, FAB-021
+```
+
+All rollouts use the true simulator and true wind (privileged — that is the
+point of a ceiling). A golden ORACLE fixture (scenario+seed+cycle → action,
+binary64 ==) is a Fable deliverable at M1, committed BEFORE baseline results
+are read.
+
+### 4.3 Feedback-use (FAB-020; supersedes FAB-009's constant ablation)
 
 Measured on the **masked-goal pack only** (heat is redundant when the goal is
 visible). Paired runs, same scenario and seed:
 
-- Run A: normal observations.
-- Run B: heat channel ablated — `heat := 0.5`, `heat_delta := 0.0` every cycle
-  (constant, uninformative).
+- **Run A:** normal observations.
+- **Run B — decoy-goal ablation:** heat and heat_delta are computed against a
+  FAKE goal position, drawn once per episode:
+  `rng = random.Random(seed*65_537)`; draws in order:
+  `fx = rng.uniform(bounds_min_x+10, bounds_max_x-10)`,
+  `fy = rng.uniform(bounds_min_y+10, bounds_max_y-10)`; redraw both (max 8
+  times) while `hypot(f-true_goal) < 25.0`; after 8 failures keep the last
+  draw. The signal stays physically plausible and varying — the agent cannot
+  detect the ablation from channel statistics — but is uninformative about
+  the true goal. (A constant ablation is detectable and out-of-distribution;
+  an agent confused by an impossible channel would inflate the score.)
 
 ```
 fb_raw       = mean over masked scenarios ( outcome_A - outcome_B )
-band         = mean ( outcome_oracle - outcome_random ) on the same scenarios
-feedback_use = clip( 0.5 + 0.5 * fb_raw / max(band, 0.05), 0, 1 )
+band         = mean over the same scenarios (
+                 outcome(masked greedy §5.2, true heat)
+               - outcome(masked greedy §5.2, decoy heat) )   # heat-only reference
+feedback_use = None                       if band < FEEDBACK_MIN_BAND (0.1)
+             = 0.5 + 0.5 * clip(fb_raw / band, -1, 1)   otherwise
 ```
 
 0.5 = no measurable use of feedback; >0.5 = performance depends on hot/cold
-evidence. For stochastic (LLM) agents, A and B use the same number of
-repetitions and results are reported with ranges (§11).
+evidence. The unnormalized `fb_raw` and `band` are always published next to
+the score (`PackScores`), so saturation is visible. Feedback-use is a
+PACK-level quantity (it needs paired runs and a shared band) — it lives in
+`PackScores`, not `EpisodeScores`. For stochastic (LLM) agents, A and B use
+the same number of repetitions and results are reported with ranges (§11).
 
 ### 4.4 Outcome (graded + binary, HARD RULE 3)
 
@@ -254,22 +389,41 @@ outcome = 0.5·success
         + 0.1·success·(1 - t_goal / deadline_tick)
 ```
 
-`success` ∈ {0,1}; `d_min` = minimum distance-to-goal over all simulated
-ticks; `t_goal` = tick of success. Failed episodes still earn up to 0.4
-(graded closeness); faster successes earn up to 0.1 extra.
+`success` ∈ {0,1}; `d_min` = minimum distance-to-goal over ticks
+**0..episode-end inclusive** (the initial state counts; FAB-026); `t_goal` =
+tick of success. Failed episodes still earn up to 0.4·exp(−2/20) ≈ 0.36
+(graded closeness); success is always ≥ 0.5 + 0.4·exp(−2/20)·… — verified:
+no "camping" pathology, failure cap 0.362 < success floor 0.862.
 
-### 4.5 Formatting controls (METHOD RULE F, second half)
+### 4.5 Formatting controls (METHOD RULE F, second half; FAB-022)
+
+Probe scenarios are excluded from all axis aggregates (§3). During ALL probe
+cycles the engaged action is `NOOP_ACTION` throughout the episode, so logs
+remain well-defined under RULE A.
 
 - **`probe:format` (identity prediction):** the harness asks the agent to
-  restate the *current observed* pos/vel in the standard reply JSON. Fidelity
-  on this probe measures pure format compliance; an agent with low fidelity
-  here has a formatting problem, and its §4.1 score is annotated accordingly.
+  restate the *current observed* pos/vel in the standard reply JSON. The
+  reply is scored against BOTH the identity target and the true T+B target,
+  and the log records which matched better — a T+B match is
+  instruction-following drift by a genuinely predictive model, not a
+  formatting failure. JSON parse validity (not identity fidelity) is the
+  primary compliance signal. Interpretation limits: restating in-prompt
+  numbers is easier than emitting computed ones, so probe success is an
+  upper bound on real-task format reliability.
 - **`probe:forced_choice`:** the harness shows two candidate next-states —
-  the true target and a decoy = target perturbed by `3·PRED_POS_TOL_M` in a
-  seeded random direction and `3·PRED_VEL_TOL_MPS` on velocity
-  (`rng = random.Random(seed*104_729 + cycle)`; A/B side assignment from the
-  same rng). Reply schema is `{"choice": "A"}` — no numeric formatting at
-  all. Accuracy isolates the world model from number emission.
+  the true target and a decoy. Decoy construction, pinned (FAB-022):
+  `rng = random.Random(seed*104_729 + cycle)`; draws in order:
+  `s1 = +1 if rng.random() < 0.5 else -1`, `s2 = +1 if rng.random() < 0.5
+  else -1`, `true_is_A = rng.random() < 0.5`. Decoy = true target with
+  `pos_x += s1 * 3*PRED_POS_TOL_M` and `vel_x += s2 * 3*PRED_VEL_TOL_MPS`
+  (**x-components only** — the y-components have a gravity-only closed form
+  computable from the Observation, so a y-perturbed decoy would be spottable
+  with zero wind modeling); if the decoy pos_x leaves bounds, flip `s1`.
+  Reply schema: `{"choice": "A"}` with values in `CHOICE_VALUES` — no
+  numeric formatting at all. Same N=2 retry policy; a still-unparseable
+  choice is attributed to formatting and excluded from the accuracy
+  denominator (counted in a `choice_parse_rate`). Accuracy isolates the
+  world model from number emission.
 - **Tolerant repair parser** (§7.3) so fidelity is never lost to trivia.
 
 ---
@@ -279,43 +433,72 @@ ticks; `t_goal` = tick of success. Failed episodes still earn up to 0.4
 All baselines run on every axis, every pack, every release.
 
 ### 5.1 Random (floor)
-Per cycle: acceleration uniform on the disc of radius `max_accel`
-(`rng = random.Random(seed*7919 + cycle)`; draw angle then radius
-`max_accel*sqrt(u)` — exactly this construction). Prediction: persistence
-(observed state unchanged) — doubles as the fidelity floor.
 
-### 5.2 Greedy-gradient (reactive, no world model — the one to beat)
-Goal visible:
+Per cycle: acceleration uniform on the disc of radius `max_accel` —
+`rng = random.Random(seed*7919 + rep*1_000_003 + cycle)` where `rep` is the
+repetition index (0-based); draws in order: `theta = rng.uniform(0.0,
+TWO_PI)`, then `r = max_accel * math.sqrt(rng.random())`; action =
+`(r*cos(theta), r*sin(theta))` — exactly this construction. Kill-criterion
+evaluation uses **R = 20 repetitions** (FAB-018); ordinary tables use rep 0.
+Prediction: persistence (observed state unchanged) — doubles as the fidelity
+floor.
+
+### 5.2 Greedy-gradient (reactive, no world model — the one to beat; FAB-025)
+
+Arrival steering on the *observed* (stale) state; no forecast, no lead, no
+wind term. Constants: `V_CRUISE = 8.0 m/s`, `K_ARR = 0.35 s⁻¹`,
+`K_V = 1.2 s⁻¹`. Goal visible:
 
 ```
-a = clamp_accel( Kp·(goal - pos) - Kd·vel + (0, gravity_mps2) ),  Kp=2.0 s⁻², Kd=2.8 s⁻¹
+d = hypot(goal_x - px, goal_y - py)
+v_des = min(V_CRUISE, K_ARR*d) * (goal - pos)/d      (zero vector if d < 1e-9)
+a = clamp_accel( K_V*(v_des_x - vx),  K_V*(v_des_y - vy) + gravity_mps2 )
 ```
 
-PD control with gravity feedforward on the *observed* (stale) state; no
-forecast, no lead, no wind term. Masked goal: deterministic hot/cold
-hill-climb — keep a unit heading `h` (init +x); each cycle, if
-`heat_delta < 0` rotate `h` by +72°; `a = clamp_accel(0.6·max_accel·h + (0,
-gravity))`. Prediction: persistence.
+Masked goal: deterministic hot/cold hill-climb — keep a unit heading `h`
+(init +x); each cycle, if `heat_delta < 0` rotate `h` by +72°; `a =
+clamp_accel(0.6·max_accel·h_x, 0.6·max_accel·h_y + gravity)`. Prediction:
+persistence.
 
-Greedy is deliberately strong (damping + feedforward): beating a strawman
-proves nothing.
+*Informative:* v0.1's PD law (`Kp=2.0, Kd=2.8`) saturated the thrust cap at
+long range, destroying its own damping — it scored BELOW random and was
+replaced (FAB-025). Saturation-aware arrival steering is the strongest
+defensible reactive controller: it closes to 3–15 m on all tuning scenarios
+and wins outright on the easiest.
 
 ### 5.3 Oracle (ceiling)
-The §4.2 sampling MPC planned from the true engage-time state. Its
-prediction is the true target (fidelity 1.0 by construction).
 
-### 5.4 Kill criterion (pre-registered; FAB-007)
+The §4.2.1 sampling MPC planned from the true engage-time state (variant 0
+timeline). Its prediction is the true target (fidelity 1.0 by construction).
 
-On the core pack, with `D_axis = (oracle − greedy) / (oracle − random)`:
+### 5.4 Kill criterion (pre-registered; FAB-018, supersedes FAB-007)
 
-> **If `D_outcome < 0.25`, or greedy's mean `temporal_score ≥ 0.55`, the
-> world does not discriminate world-model cognition from reactive control.
-> Do not publish; redesign v0 and log the redesign in DECISIONS.md.**
+Let **S** = the goal-visible, non-probe core scenarios
+(= {g001, g001_b10, g001_b40, g002, g003, g006, g010} in the v0 pack).
+All quantities are **pack means over S** of episode outcome scores; random
+uses the mean over its R=20 reps; temporal means are taken over the
+scenarios in S where the score is not None.
 
-Evaluated at M1 exit (gate iv) and re-evaluated whenever the core pack
-changes.
+```
+Validity floors (must hold or the PACK is invalid -> apply §5.5 levers,
+                 re-evaluate; nothing is published from an invalid pack):
+  V1: mean(outcome_oracle) - mean(outcome_random) >= 0.2
+  V2: temporal_oracle - 0.5 >= 0.05
+
+Kill conditions (either one -> do not publish; redesign and log FAB entry):
+  K1: D_outcome = (mean(outcome_oracle) - mean(outcome_greedy))
+                / (mean(outcome_oracle) - mean(outcome_random))  < 0.25
+  K2: (temporal_greedy - 0.5) >= 0.5 * (temporal_oracle - 0.5)
+```
+
+K2 is relative to the measured oracle headroom because the temporal ceiling
+is scenario-dependent (§4.2). Evaluated at M1 exit (gate iv) and re-evaluated
+whenever the core pack changes. *Informative proxy (FAB-025):* with
+lead-greedy as an oracle lower bound, D_outcome ≈ 0.63 on the tuning pack —
+comfortable headroom above 0.25.
 
 ### 5.5 Pre-registered redesign levers (in escalation order)
+
 1. Gustier wind: shorter periods (≈60–160 ticks), higher amplitude.
 2. Tighter deadline (≈40% less slack over oracle time-to-goal).
 3. Moving goal (goal position a slow pure function of tick).
@@ -324,12 +507,19 @@ changes.
    term — schema bump).
 
 ### 5.6 Diagnostic synthetic agents (not baselines, used by gates)
-- **Stale-reactor:** always outputs `a*_obs` (§4.2). Used by exit gate (ii):
-  on the same physics with B ∈ {10, 20, 40}, its `temporal_score` must be
-  strictly decreasing in B — proving the world punishes unanticipated
-  deliberation and is not secretly turn-based.
-- **Persistence-predictor:** §5.1's prediction rule, reported as the fidelity
-  floor.
+
+- **Stale-reactor:** always outputs `a*_obs` (§4.2, variant 1). Used by exit
+  gate (ii): on the same physics with B ∈ {10, 20, 40}, its `temporal_score`
+  must DROP by at least `GATE_II_MARGIN (0.01)` at each step B=10→20→40 —
+  proving the world punishes unanticipated deliberation and is not secretly
+  turn-based. (Strict-but-margin: a 1e-12 float decrease supports no claim;
+  FAB-019.)
+- **Lead-greedy (diagnostic):** §5.2's law evaluated on the observed state
+  propagated `B` ticks forward using only Observation fields. Not a
+  baseline; it is the cheap existence proof that anticipation pays
+  (FAB-025), and a useful sanity row in every results table.
+- **Persistence-predictor:** §5.1's prediction rule, reported as the
+  fidelity floor.
 
 ---
 
@@ -338,11 +528,13 @@ changes.
 i. **Reproducibility (RULE B):** two full same-seed runs of the random agent
    over the core pack produce byte-identical canonical log files (sha256
    compare). Ships as a test.
-ii. **Temporal invariant:** stale-reactor B-sweep (§5.6) strictly decreasing
-   on the g001 physics variants (g001_b10 / g001 / g001_b40).
-iii. **Golden fixture CI green** (§9): exact float equality, not approx.
-iv. **Kill criterion** (§5.4) evaluated and passed; numbers logged in
-   DECISIONS.md.
+ii. **Temporal invariant:** stale-reactor B-sweep (§5.6) decreasing with
+   margin `GATE_II_MARGIN` on the g001 physics variants
+   (g001_b10 / g001 / g001_b40).
+iii. **Golden fixtures CI green** (§9): `golden_g001.json` AND
+   `golden_edges.json`, exact float equality, not approx.
+iv. **Kill criterion** (§5.4) evaluated with its validity floors and passed;
+   numbers logged in DECISIONS.md.
 
 ---
 
@@ -353,7 +545,10 @@ iv. **Kill criterion** (§5.4) evaluated and passed; numbers logged in
 An adapter implements `types.Adapter`: `complete(prompt, *, max_tokens=512,
 temperature=0.0, seed=None) -> str`. It may hold a base URL, model name, API
 key from env. It must NOT build prompts, parse, retry-on-parse-failure, or
-see scenario state. Reference adapters: NIM (OpenAI-compatible HTTP,
+see scenario state. It MAY raise on transport errors: the **harness owns
+pacing (NIM 40 RPM), transport retries with backoff, and timeouts**;
+transport retries are recorded as telemetry (`transport_retries`) and never
+advance sim time (FAB-026). Reference adapters: NIM (OpenAI-compatible HTTP,
 dracarys) and Ollama (local llama3.1:8b) — each ≈20 lines. API keys via env
 only (never committed).
 
@@ -362,25 +557,44 @@ only (never committed).
 One frozen template per results-version, committed in-repo. Content
 requirements: physics summary with units; explicit timeline warning ("the
 world advances `B` ticks while you think; your action engages at tick
-`T+B`"); the full Observation as JSON; the reply schema with
-`EXAMPLE_REPLY_JSON`; instruction to output a single JSON object and nothing
-else. Prompt changes bump the results version — scores are never compared
-across prompt versions.
+`T+B`"); **an explicit sentence that during those `B` ticks the previously
+latched action — `held_accel_*` in the observation — keeps applying, and the
+prediction targets the state at engage time under that HELD action, not the
+action being returned** (FAB-026: a model predicting "after my new action"
+would be penalized by a prompt-wording confound, invisibly); the full
+Observation as JSON **including null-valued keys**; the reply schema with
+`EXAMPLE_REPLY_JSON` (whose values are normatively out-of-band, FAB-023);
+instruction to output a single JSON object and nothing else. Prompt changes
+bump the results version — scores are never compared across prompt versions.
 
-### 7.3 Reply parsing and repair (tolerant, never exact-match)
+### 7.3 Reply parsing and repair (tolerant, never exact-match; FAB-014/024/026)
 
 1. Strip markdown code fences.
-2. Extract the first balanced `{...}` block.
-3. `json.loads`; on failure apply repairs (single→double quotes, strip
+2. Extract the **last** balanced `{...}` block that contains the required
+   top-level key(s) for the cycle type, using string-aware brace scanning
+   (braces inside JSON strings don't count). Rationale: models may emit
+   prose or a self-corrected second object; the last complete candidate is
+   the model's final answer.
+3. `json.loads` with `parse_constant` set to reject bare `NaN`/`Infinity`
+   (strict JSON); on failure apply repairs (single→double quotes, strip
    trailing commas) and retry parse once.
-4. Validate: both `ACTION_FIELDS` present and finite → action OK, clamp at
-   engage; all four `PREDICTION_FIELDS` present and finite → prediction OK,
-   else prediction = null (action can succeed alone).
-5. On action-parse failure: up to **N=2** reprompt retries (with a short
-   error notice appended). Still failing → engage `NOOP_ACTION`,
-   prediction=null, `parse_failed=true` — attributed "formatting, not
-   cognition"; excluded from fidelity, included in `parse_rate`.
-6. Retries never advance sim time (RULE A); wall-clock is telemetry.
+4. Validate: values must be JSON **numbers** — booleans and quoted strings
+   are invalid (no `float()` coercion of strings; `True` is not a number
+   here). Any finite float is accepted; extreme-but-finite values (1e308)
+   saturate naturally in the error formulas — no ad-hoc range checks. Both
+   `ACTION_FIELDS` present and valid → action OK, clamp at engage; all four
+   `PREDICTION_FIELDS` present and valid → prediction OK.
+5. Retry ladder: on ACTION-parse failure OR (prediction requested AND
+   prediction-parse failure): up to **N=2** reprompt retries. The retry
+   prompt REPLACES the failed attempt (no accumulation of the model's own
+   prior text — retries must not become free chain-of-thought; FAB-024).
+6. After retries: action still failing → engage `NOOP_ACTION`,
+   `parse_failed=true` (cycle excluded from all cognition axes); prediction
+   still failing → `prediction_parse_failed=true` (counts against coverage,
+   §4.1). Retries never advance sim time (RULE A); wall-clock is telemetry.
+7. Per-cycle `parse_retries` is logged; every results table reports the
+   fraction of retried cycles per agent, and the RULE D comparison (§8)
+   includes a sensitivity slice excluding retried cycles (FAB-024).
 
 ---
 
@@ -404,7 +618,10 @@ arm. Maria's repo/services are read-only subjects (brief §7).
 
 Pre-registered hypothesis: the scaffold moves prediction-fidelity and
 temporal-anticipation more than outcome. A null/negative result is publishable
-as-is.
+as-is. Repetition seeding for LLM rows: `seed = rep_index` is passed to the
+adapter (a seed-honoring endpoint still yields distinct reps; a seed-ignoring
+one yields natural nondeterminism) — never the same seed for all reps
+(FAB-026).
 
 ---
 
@@ -423,7 +640,7 @@ packs/<pack_name>/scenarios/<scenario_id>.json
 {
   "name": "core_v0",
   "version": "0.1.0",
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "description": "...",
   "scenarios": ["g001.json", "g002.json"]
 }
@@ -431,8 +648,12 @@ packs/<pack_name>/scenarios/<scenario_id>.json
 
 Scenario file = `ScenarioConfig` fields verbatim (JSON object;
 `wind_components` = list of `{amp_mps2, period_ticks, phase_rad}`;
-`axis_tags` = list of strings). **Strict loader:** unknown fields are errors;
-`schema_version` major.minor must match `types.SCHEMA_VERSION`.
+`axis_tags` = list of strings). **Strict loader:** built on
+`ScenarioConfig.from_json_dict` (tuple coercion; unknown fields are errors);
+`schema_version` major.minor must match `types.SCHEMA_VERSION`; contract
+invariants (`__post_init__`: forecast ≥ B, start in bounds and outside the
+goal disc, positive dt, deadline ≥ 1) are enforced at load time — the loader
+may add checks but never fewer (FAB-026).
 Loader API (builder-owned): `chronogym.bank.load_pack(path) -> list[ScenarioConfig]`.
 Downloadable packs (M1.5): zip of the same layout + sha256 in a manifest.
 
@@ -440,14 +661,14 @@ Downloadable packs (M1.5): zip of the same layout + sha256 in a manifest.
 
 | id | intent |
 |---|---|
-| g001 | baseline (the golden-fixture scenario) |
+| g001 | baseline (the golden-fixture scenario; gravity 5.0) |
 | g001_b10 / g001_b40 | same physics, B=10 / B=40 (budget sweep, gate ii) |
 | g002 | high wind (amp 5+2.5, periods 160/61) |
 | g003 | tight deadline (380 ticks) |
 | g006 | far goal, adverse wind phase |
 | g007a / g007b | masked goal (feedback-use probe), two geometries |
-| g008 | `probe:format` (identity prediction) |
-| g009 | `probe:forced_choice` |
+| g008 | `probe:format` (identity prediction; excluded from axes) |
+| g009 | `probe:forced_choice` (excluded from axes) |
 | g010 | wind regime shift (replanning-tagged) |
 
 ---
@@ -455,11 +676,20 @@ Downloadable packs (M1.5): zip of the same layout + sha256 in a manifest.
 ## 10. Reproducibility gate (METHOD RULE B)
 
 - Physics: pure function — §2.3. No global RNG; every `random.Random` is
-  constructed with a spec'd seed expression at point of use.
-- Logs: one JSON object per line through `types.canonical_json` (sorted keys,
-  no whitespace, `allow_nan=False`, shortest-round-trip floats). A run
-  manifest records schema version, pack name+version, scenario ids, seeds,
-  agent name, prompt version.
+  constructed with a spec'd seed expression at point of use (§4.2.1, §4.3,
+  §4.5, §5.1).
+- Logs: one JSON object per line through `types.canonical_json` (sorted
+  str-only keys, no whitespace, `allow_nan=False`, −0.0 normalized,
+  shortest-round-trip floats).
+- **Normative log records (FAB-026):** the per-cycle record carries at least
+  `(episode_id, cycle, tick, engage_tick, observation, reply incl.
+  parse_retries and prediction_parse_failed, raw completion text, engaged
+  clamped action, truncated flag, wall_clock_ms)`; the run manifest carries
+  `(schema_version, pack name+version, scenario ids, agent name, prompt
+  version, host class)`. Raw completions are retained so parser fixes can
+  re-score old runs. The builder owns the concrete record types
+  (`runner.CycleRecord` satisfies this list); this field list is the
+  contract.
 - Test: same-seed double run → byte-identical logs (gate i). Cross-*platform*
   bit-identity is NOT claimed (libm variance); the claim is per-host
   determinism, documented in README. Results tables always state host class.
@@ -473,23 +703,27 @@ Downloadable packs (M1.5): zip of the same layout + sha256 in a manifest.
 
 ### 11.1 Experiments
 
-Agents: random, greedy, oracle (+ stale-reactor & persistence diagnostics),
-dracarys END2END, dracarys WM-SCAFFOLD, llama3.1:8b (2nd adapter, M1.5),
-MARIA (CONFOUNDED label). Pack: core_v0. Reps: 1 for deterministic agents,
-3 for LLM agents (report mean ± range; NIM 40 RPM budget: ≈30 calls/episode ×
-12 scenarios × 3 reps × 2 arms ≈ 2.2k calls ≈ a weekend of polite pacing).
+Agents: random, greedy, oracle (+ stale-reactor, lead-greedy & persistence
+diagnostics), dracarys END2END, dracarys WM-SCAFFOLD, llama3.1:8b (2nd
+adapter, M1.5), MARIA (CONFOUNDED label). Pack: core_v0. Reps: 1 for
+deterministic agents (random: 20 for the kill criterion, §5.1), 3 for LLM
+agents with rep-derived seeds (§8), reported mean ± range. NIM 40 RPM
+budget: ≈30 calls/episode × 12 scenarios × 3 reps × 2 arms ≈ 2.2k calls ≈ a
+weekend of polite pacing (harness-owned, §7.1).
 
-Deliverables: per-axis table (the diagnosis vector per agent), radar plot,
-budget-sweep curve (temporal vs B per agent), kill-criterion numbers,
-fidelity-vs-outcome scatter (do good predictors win?).
+Deliverables: per-axis table (the diagnosis vector per agent — with
+coverage, parse rates and Σw/weight distributions per row, §13), radar plot,
+budget-sweep curve (temporal vs B per agent), kill-criterion numbers with
+validity floors, fidelity-vs-outcome scatter (do good predictors win?).
 
 ### 11.2 Paper outline
 
 1. The deliberation gap: agents are scored as if the world waits.
-2. Related work (§12 table).
+2. Related work (§12 table + clock lineage).
 3. ChronoGym: contract, clock (RULE A), axes & probes, scoring.
 4. Reproducibility design (RULE B).
-5. Baselines + kill criterion results (RULE C).
+5. Baselines + kill criterion results (RULE C), incl. the v0.1→v0.2
+   red-team retune as a worked example of the gate doing its job.
 6. Matched-pair ablation (RULE D) + confounded full-system datapoint.
 7. Diagnosis case studies (per-axis failure narratives).
 8. Limitations & threats (§13).
@@ -498,37 +732,72 @@ fidelity-vs-outcome scatter (do good predictors win?).
 
 ---
 
-## 12. Related work and wedges (informative; citations to be verified R4)
+## 12. Related work and wedges (informative; verified round 1, FAB-016)
 
-| Benchmark | What it scores | What it lacks that ChronoGym adds |
+| Benchmark | What it scores | Wedge (what ChronoGym adds) |
 |---|---|---|
-| BALROG (Paglieri et al., 2024) | agentic gameplay outcomes (NetHack et al.) | turn-based; no deliberation cost; outcome-centric |
-| AutumnBench (2025) | world-model learning in grid worlds (masked-frame, planning) | world pauses while the agent thinks; no temporal-anticipation axis |
-| WorldPrediction (2025) | video/procedural world modeling & planning | passive prediction; no closed loop, no deliberation budget |
-| R-WoM (2025) | LLM world-model rollouts | no embodied clock; no matched ablation |
-| EnvSimBench | LLM-as-simulator fidelity | no acting agent; no time pressure |
-| APB / agentic planning suites | plan quality | wall-clock or turn-based; no sim-tick budget |
-| SIMMER | ? (verify) | ? (verify) |
+| Real-Time Reasoning Gym (Wen et al., Stanford SALT-NLP, 2025; arXiv:2511.04898) | LLM agents in never-pausing Freeway/Snake/Overcooked; environment steps every N generated tokens (hardware-agnostic token clock) | scores OUTCOME only under thinking cost — no anticipation metric, no prediction axis, no probes, no hot/cold, no matched-pair ablation; cost scales with verbosity, conflating token count with cognition, whereas ChronoGym's fixed B isolates delay *compensation* |
+| Gaia2 / ARE (Meta Superintelligence Labs, ICLR 2026; arXiv:2602.11964; platform arXiv:2509.17158) | 1,120 scenarios, asynchronous event-driven world with seeded simulated time flowing while the agent reasons; time-sensitive tasks | thinking cost is wall-clock ("generation time" mode; hardware-unfair) or zero ("instant" mode); no fixed simulated budget; no anticipation/prediction axes |
+| BALROG (Paglieri et al., ICLR 2025; arXiv:2411.13543) | agentic LLM/VLM gameplay outcomes (BabyAI, Crafter, TextWorld, Baba Is AI, MiniHack, NetHack) | agent-paced (world waits per step); no deliberation cost; outcome-centric |
+| AutumnBench / WorldTest (Warrier et al., Basis & MIT, 2025; arXiv:2510.19788) | world-model learning in 43 grid worlds, 129 tasks: masked-frame prediction, planning, change detection | agent-paced interaction (world pauses); no temporal-anticipation axis; 19/43 environments stochastic vs ChronoGym's byte-identical determinism |
+| WorldPrediction (Chen et al., Meta FAIR & HKUST, 2025; arXiv:2506.04363) | video-based world modeling + procedural planning via discriminative choice | passive/discriminative; no closed loop; no deliberation budget |
+| ByteSized32-SP ("Can LMs Serve as Text-Based World Simulators?", Wang et al., ACL 2024; arXiv:2406.06485) | LLM next-state simulation accuracy over text-game transitions | no acting agent, no clock; ChronoGym's fidelity axis is the closed-loop, deliberation-coupled version (R-WoM, arXiv:2510.11892, is a *method* in this space, cited in prose, not a benchmark) |
+| EnvSimBench (2026; arXiv:2605.07247) | LLM-as-environment-simulator fidelity (167 tool environments, LLM-free grading) | no acting agent; no time pressure |
+| APB (2026; arXiv:2606.04874) | 4,209 cases, 22 domains: holistic + feedback-conditioned step-wise planning + robustness | static plan grading; no execution clock at all; diagnostic axes are planning-internal, none temporal |
+| SIMMER (2026; arXiv:2606.14574) | latent failures in executable plans via symbolic kitchen world model | turn-based symbolic execution; no continuous dynamics; no deliberation cost |
 
-Wedge summary: (1) seed-fixed *simulated* deliberation budget with the world
-in motion (nobody scores "do you know that thinking costs time?"
-reproducibly); (2) always-multi-factor + graded hot/cold; (3) matched-pair
+**Clock lineage (deliberately standard machinery):** the fixed-delay
+latched-action clock is a constant action-delay MDP with action repeat —
+real-time heuristic search (Korf, AIJ 1990), metareasoning (Russell &
+Wefald 1991), delayed-feedback MDPs (Walsh et al., JAAMAS 2009), action-delay
+RL (Firoiu et al., arXiv:1810.07286), Real-Time RL / RTMDP (Ramstedt & Pal,
+NeurIPS 2019), concurrent control (Xiao et al., ICLR 2020; arXiv:2004.06089),
+and SC2LE's `step_mul` (Vinyals et al. 2017; arXiv:1708.04782) — the latter
+literally a seed-reproducible sim-tick budget in a moving world, scored on
+outcome only. VideoGameBench (arXiv:2505.18134) runs wall-clock real-time and
+its Lite variant pauses during inference, explicitly acknowledging the latency
+confound ChronoGym's simulated budget removes. ChronoGym's contribution is
+not this clock; it is SCORING anticipation of the delay as an isolated,
+probe-controlled diagnostic axis with counterfactual oracles.
+
+Wedge summary: (1) an explicit temporal-anticipation SCORE (engage-time vs
+observed-time counterfactual oracles) under a reproducible simulated budget —
+prior real-time evals either charge wall-clock (Gaia2 generation-time;
+VideoGameBench) or charge reproducible cost but score only outcome (RTR-Gym,
+SC2LE); (2) always-multi-factor + graded hot/cold; (3) matched-pair
 predict-then-act ablation on the same base model, with the full agent system
-as an explicitly confounded extra datapoint.
+as an explicitly confounded extra datapoint. Complementarity note: RTR-Gym
+charges *variable* thinking length (measuring "manage your verbosity");
+ChronoGym fixes B (measuring "compensate for known delay") — the two
+questions are orthogonal and both needed.
 
 ---
 
 ## 13. Threats to validity (informative)
 
-- **LLM nondeterminism** → ≥3 reps, temp 0, ranges reported; world/scoring
-  deterministic.
+- **LLM nondeterminism** → ≥3 reps with rep-derived seeds, temp 0, ranges
+  reported; world/scoring deterministic.
 - **Prompt sensitivity** → frozen versioned prompts; scores never compared
-  across prompt versions.
+  across prompt versions; held-action semantics stated explicitly (§7.2).
 - **Oracle suboptimality** → ceiling is a lower bound; report oracle margin
-  over greedy; oracle params fixed in spec.
-- **Oracle multimodality** (two equally good actions) → `w_k` weighting
-  dampens it; distribution of per-cycle margins reported, not just the mean;
-  future: top-K oracle action set.
+  over greedy; oracle params pinned in §4.2.1.
+- **Oracle multimodality** — HONEST framing (FAB-021): `w_k` weighting does
+  NOT mitigate it; two equally-good modes can inflate `w_k` and score a
+  mode-mismatched agent as anti-anticipating. Mitigations actually in place:
+  elite-MEAN smoothing (§4.2.1) damps mode flips; the per-cycle margin
+  distribution (not just the mean) is reported. Pre-registered: a
+  value-regret variant (score by J-difference of the agent action under the
+  true simulator) ships as a SECONDARY reported metric at M1.5; if it
+  disagrees with the action-distance metric beyond cosmetics, the architect
+  revisits the primary (logged as a FAB entry).
+- **On-policy weighting** — `w_k` is computed along each agent's own
+  trajectory, so per-agent temporal scores carry different difficulty
+  weightings; Σw and the weight distribution are published per row, and
+  cross-agent comparison is caveated accordingly.
+- **Selective abstention / engineered termination** → coverage + validity
+  rules (§4.1); n_cycles always published.
+- **Example anchoring** → out-of-band example values + example_echo flag
+  (FAB-023).
 - **Truthful forecast is generous** → v1 factor pack adds forecast noise
   (seed-determined), keeping RULE F by putting noisy values in the
   observation itself.

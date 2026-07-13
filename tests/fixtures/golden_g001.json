@@ -11,9 +11,9 @@
     "note": "sample prediction = target + (0.3, -0.4, +0.25, +0.1); tolerances pos=1.0m vel=1.0mps",
     "prediction": {
       "pos_x_m": 21.9342174452602,
-      "pos_y_m": 64.44975,
+      "pos_y_m": 66.975,
       "vel_x_mps": 3.2381011374801663,
-      "vel_y_mps": -9.710000000000003
+      "vel_y_mps": -4.9
     }
   },
   "fixture_id": "golden_g001",
@@ -33,19 +33,19 @@
     "wind_now_x_mps2": 3.2274671116863836
   },
   "persistence_baseline": {
-    "expected_fidelity": 0.0074791050065516765,
-    "expected_normalized_error": 4.895642145685091,
+    "expected_fidelity": 0.04680198578360569,
+    "expected_normalized_error": 3.061829645685091,
     "note": "predicting the tick-0 observation unchanged for target tick 20"
   },
   "prediction_target_cycle0": {
-    "distance_to_goal_m": 67.97844988148574,
-    "heat": 0.03340924923692957,
-    "heat_delta_at_cycle1": 0.006236788064694007,
+    "distance_to_goal_m": 69.30696356230858,
+    "heat": 0.03126211874560088,
+    "heat_delta_at_cycle1": 0.004089657573365317,
     "pos_x_m": 21.634217445260198,
-    "pos_y_m": 64.84975,
+    "pos_y_m": 67.375,
     "target_tick": 20,
     "vel_x_mps": 2.9881011374801663,
-    "vel_y_mps": -9.810000000000002
+    "vel_y_mps": -5.0
   },
   "scenario": {
     "axis_tags": [],
@@ -61,7 +61,7 @@
     "goal_visible": true,
     "goal_x_m": 80.0,
     "goal_y_m": 30.0,
-    "gravity_mps2": 9.81,
+    "gravity_mps2": 5.0,
     "max_accel_mps2": 15.0,
     "scenario_id": "g001",
     "seed": 42,
@@ -82,7 +82,7 @@
       }
     ]
   },
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "wind_spot_checks": {
     "0": 3.2274671116863836,
     "1": 3.2351351979125704,
@@ -97,33 +97,33 @@
     "checkpoints": {
       "1": {
         "pos_x_m": 20.008068667779217,
-        "pos_y_m": 69.975475,
+        "pos_y_m": 69.9875,
         "vel_x_mps": 0.1613733555843192,
-        "vel_y_mps": -0.49050000000000005
+        "vel_y_mps": -0.25
       },
       "10": {
         "pos_x_m": 20.44176624277905,
-        "pos_y_m": 68.65112500000001,
+        "pos_y_m": 69.3125,
         "vel_x_mps": 1.5938655117135732,
-        "vel_y_mps": -4.905
+        "vel_y_mps": -2.5
       },
       "2": {
         "pos_x_m": 20.024225173553212,
-        "pos_y_m": 69.92642500000001,
+        "pos_y_m": 69.96249999999999,
         "vel_x_mps": 0.32313011547994774,
-        "vel_y_mps": -0.9810000000000001
+        "vel_y_mps": -0.5
       },
       "20": {
         "pos_x_m": 21.634217445260198,
-        "pos_y_m": 64.84975,
+        "pos_y_m": 67.375,
         "vel_x_mps": 2.9881011374801663,
-        "vel_y_mps": -9.810000000000002
+        "vel_y_mps": -5.0
       },
       "5": {
         "pos_x_m": 20.12116974302999,
-        "pos_y_m": 69.632125,
+        "pos_y_m": 69.8125,
         "vel_x_mps": 0.8074620993493782,
-        "vel_y_mps": -2.4525
+        "vel_y_mps": -1.25
       }
     },
     "held_accel": [
@@ -135,27 +135,27 @@
     "checkpoints": {
       "21": {
         "pos_x_m": 21.79723301447733,
-        "pos_y_m": 64.364725,
+        "pos_y_m": 67.1425,
         "vel_x_mps": 3.2603113843426614,
-        "vel_y_mps": -9.700500000000002
+        "vel_y_mps": -4.65
       },
       "25": {
         "pos_x_m": 22.58203479930056,
-        "pos_y_m": 62.479375000000005,
+        "pos_y_m": 66.38749999999999,
         "vel_x_mps": 4.315535161994166,
-        "vel_y_mps": -9.2625
+        "vel_y_mps": -3.2500000000000004
       },
       "30": {
         "pos_x_m": 23.849457106556045,
-        "pos_y_m": 60.245875000000005,
+        "pos_y_m": 65.83749999999999,
         "vel_x_mps": 5.562314535868326,
-        "vel_y_mps": -8.714999999999996
+        "vel_y_mps": -1.5
       },
       "40": {
         "pos_x_m": 27.273655810238154,
-        "pos_y_m": 56.18950000000001,
+        "pos_y_m": 66.04999999999998,
         "vel_x_mps": 7.872145189092846,
-        "vel_y_mps": -7.619999999999994
+        "vel_y_mps": 2.0000000000000004
       }
     },
     "clamped_action": [

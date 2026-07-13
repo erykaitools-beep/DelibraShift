@@ -1,0 +1,131 @@
+{
+  "description": "Edge-case pins complementing golden_g001.json: (e001) goal event mid-window makes cycle 0 truncated and pins goal-event ordering; (e002) raw action above max_accel pins clamp_accel scaling; (e003) deadline mid-window pins timeout tick and cycle-1 truncation. CI must reproduce every float EXACTLY (binary64 ==).",
+  "e001_goal_mid_window": {
+    "cycle0_truncated": true,
+    "deadline_tick": 600,
+    "event_tick": 15,
+    "final_state": {
+      "pos_x_m": 78.83898679438147,
+      "pos_y_m": 30.999999999999996,
+      "vel_x_mps": 12.455217504016908,
+      "vel_y_mps": -13.75
+    },
+    "goal": {
+      "x_m": 80.0,
+      "y_m": 30.0
+    },
+    "held_window1": [
+      0.0,
+      0.0
+    ],
+    "note": "episode ends at tick < 20 => cycle 0 excluded from fidelity AND temporal",
+    "outcome": "goal",
+    "start": {
+      "pos_x_m": 70.0,
+      "pos_y_m": 40.0,
+      "vel_x_mps": 11.0,
+      "vel_y_mps": -10.0
+    }
+  },
+  "e002_clamped_action": {
+    "checkpoints": {
+      "21": {
+        "pos_x_m": 21.145381786335207,
+        "pos_y_m": 67.12927050983124,
+        "vel_x_mps": 2.6034027884955053,
+        "vel_y_mps": -4.914589803375032
+      },
+      "25": {
+        "pos_x_m": 22.03324384356457,
+        "pos_y_m": 66.18905764746873,
+        "vel_x_mps": 5.53261222402731,
+        "vel_y_mps": -4.5729490168751585
+      },
+      "30": {
+        "pos_x_m": 23.95292566198572,
+        "pos_y_m": 65.10987804071867,
+        "vel_x_mps": 9.09361543399162,
+        "vel_y_mps": -4.145898033750317
+      },
+      "40": {
+        "pos_x_m": 30.375493034755035,
+        "pos_y_m": 63.271807064562175,
+        "vel_x_mps": 15.836592588583764,
+        "vel_y_mps": -3.291796067500634
+      }
+    },
+    "clamped_action_window2": [
+      13.416407864998739,
+      6.708203932499369
+    ],
+    "deadline_tick": 600,
+    "goal": {
+      "x_m": 80.0,
+      "y_m": 30.0
+    },
+    "note": "||raw||=22.36>15 => scaled, direction kept",
+    "raw_action_window2": [
+      20.0,
+      10.0
+    ],
+    "start": {
+      "pos_x_m": 20.0,
+      "pos_y_m": 70.0,
+      "vel_x_mps": 0.0,
+      "vel_y_mps": 0.0
+    }
+  },
+  "e003_deadline_mid_window": {
+    "cycle1_truncated": true,
+    "deadline_tick": 30,
+    "engaged_action_window2": [
+      3.0,
+      8.0
+    ],
+    "event_tick": 30,
+    "final_state": {
+      "pos_x_m": 22.520669580548397,
+      "pos_y_m": 65.28749999999998,
+      "vel_x_mps": 3.885411501492251,
+      "vel_y_mps": -3.4999999999999982
+    },
+    "goal": {
+      "x_m": 80.0,
+      "y_m": 30.0
+    },
+    "held_window1": [
+      0.0,
+      0.0
+    ],
+    "note": "cycle 0 (target tick 20) is VALID (20 <= 30); cycle 1 (target 40) truncated",
+    "outcome": "timeout",
+    "start": {
+      "pos_x_m": 20.0,
+      "pos_y_m": 70.0,
+      "vel_x_mps": 0.0,
+      "vel_y_mps": 0.0
+    }
+  },
+  "fixture_id": "golden_edges",
+  "schema_version": "0.2.0",
+  "shared": {
+    "bounds": [
+      0.0,
+      0.0,
+      100.0,
+      100.0
+    ],
+    "deliberation_ticks": 20,
+    "dt_s": 0.05,
+    "goal_radius_m": 2.0,
+    "gravity_mps2": 5.0,
+    "max_accel_mps2": 15.0,
+    "wind_components": [
+      {
+        "amp_mps2": 2.0,
+        "period_ticks": 120.0,
+        "phase_rad": 1.3
+      }
+    ]
+  }
+}
