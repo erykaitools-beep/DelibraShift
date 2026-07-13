@@ -14,3 +14,15 @@
 - Added exact golden-fixture coverage and whole-file SHA-256 reproducibility
   coverage. No scorer or LLM adapter was added in M0.
 - Next: Fable review, then M1 work only under PLAN's exit gates.
+
+## 2026-07-13 — Codex M1 work in progress
+
+- Added typed cycle records and the prediction-fidelity-only scorer, including
+  parse rate and the mandatory persistence floor.
+- Added the strict local pack loader with schema compatibility, unknown-field,
+  duplicate-key, and path-traversal checks.
+- Added draft harness prompting, tolerant JSON repair, finite-field validation,
+  and two in-budget retries with no-op fallback. The prompt version remains
+  explicitly `draft-0.1` pending Fable's freeze review.
+- Core-pack gates and publication remain blocked on Fable's scenario files and
+  review; no results are being claimed from the draft prompt.

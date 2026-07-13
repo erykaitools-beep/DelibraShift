@@ -165,3 +165,23 @@ of the model `Adapter` protocol. An Adapter is transport-only and returns raw
 text; calling a deterministic baseline an adapter would blur RULE E and force
 prompt parsing into a component that does not need it. The runner consumes the
 small internal `Agent.act(Observation) -> AgentReply` protocol.
+
+## COD-006 — Score typed cycle records and retain JSONL as the audit artifact
+
+Date: 2026-07-13
+
+The runner now returns immutable `CycleRecord` values alongside canonical
+JSONL. Prediction-fidelity consumes those typed records, avoiding a lossy or
+duplicated deserialize path while leaving the byte-identical JSONL as the
+reproducibility artifact. Truncated targets and missing predictions are
+excluded exactly as SPEC §4.1 requires; parse rate remains independently
+reported.
+
+## COD-007 — Version the pre-review prompt explicitly as a draft
+
+Date: 2026-07-13
+
+The M1 harness prompt is labeled `draft-0.1` until Fable completes the planned
+freeze review. It already includes every SPEC §7.2 content requirement, but no
+benchmark comparisons or publishable results may use it before the architect's
+review. Parser, retry, and loader work can proceed independently meanwhile.

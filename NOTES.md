@@ -16,3 +16,8 @@ Implementation notes after Fable's contract and specification landed:
 M0 applies these proposals in `world.py`, `clock.py`, and `runner.py`. Baseline
 agents return typed `AgentReply` objects directly; they are deliberately kept
 separate from the transport-only `Adapter` protocol used by future model APIs.
+
+M1 note: `runner.CycleRecord` is the in-memory scorer boundary. Canonical JSONL
+remains the audit artifact, while scoring avoids reparsing its own freshly
+serialized logs. `harness.PROMPT_VERSION` stays a draft until Fable freezes the
+template; benchmark comparisons must not use this draft version.
