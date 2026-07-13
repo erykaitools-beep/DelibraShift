@@ -26,3 +26,10 @@
   explicitly `draft-0.1` pending Fable's freeze review.
 - Core-pack gates and publication remain blocked on Fable's scenario files and
   review; no results are being claimed from the draft prompt.
+- Added the registered greedy reactive baseline and a transport-only,
+  environment-configured OpenAI-compatible NIM adapter.
+- Added `chronogym-run` for an end-to-end prediction-scored loop over any valid
+  local pack, with optional canonical per-episode logs.
+- Oracle/stale-reactor remain pending because SPEC §4.2 does not yet pin the
+  initial MPC sampling distribution and exact elite-refit procedure; the
+  reproducibility-sensitive clarification is recorded in NOTES.md.

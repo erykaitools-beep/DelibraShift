@@ -1,5 +1,6 @@
 """ChronoGym's public schema and deterministic Windrift primitives."""
 
+from .adapters import NIMAdapter
 from .bank import PackError, load_pack
 from .clock import WindowAdvance, advance_deliberation, latch_action
 from .harness import HarnessAgent, parse_reply, render_prompt
@@ -21,6 +22,7 @@ from .world import advance_ticks, build_observation, initial_state, step
 
 __all__ = [
     "NOOP_ACTION",
+    "NIMAdapter",
     "SCHEMA_VERSION",
     "Action",
     "Adapter",

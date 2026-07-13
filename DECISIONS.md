@@ -185,3 +185,24 @@ The M1 harness prompt is labeled `draft-0.1` until Fable completes the planned
 freeze review. It already includes every SPEC §7.2 content requirement, but no
 benchmark comparisons or publishable results may use it before the architect's
 review. Parser, retry, and loader work can proceed independently meanwhile.
+
+## COD-008 — Keep NIM configuration external and transport-only
+
+Date: 2026-07-13
+
+The NIM adapter implements only the official OpenAI-compatible
+`/v1/chat/completions` transport. Model and endpoint are constructor/env
+configuration (`NIM_MODEL`, `NIM_BASE_URL`); credentials come only from
+`NVIDIA_API_KEY` and are never serialized. The adapter performs no prompting,
+repair, retry, or scenario access.
+
+## COD-009 — Defer the MPC oracle until its sampling procedure is fully pinned
+
+Date: 2026-07-13
+
+Oracle and stale-reactor code is deferred pending Fable clarification of the
+iteration-0 sampling distribution, exact Gaussian refit formula, action-cap
+ordering, and whether injected greedy/no-op candidates enter the elite refit.
+These choices materially affect the ceiling and temporal exit gate. Selecting
+them in builder code without an architect decision would undermine RULE B and
+make the pre-registered kill criterion implementation-dependent.

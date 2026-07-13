@@ -21,3 +21,12 @@ M1 note: `runner.CycleRecord` is the in-memory scorer boundary. Canonical JSONL
 remains the audit artifact, while scoring avoids reparsing its own freshly
 serialized logs. `harness.PROMPT_VERSION` stays a draft until Fable freezes the
 template; benchmark comparisons must not use this draft version.
+
+Oracle implementation is intentionally pending architect clarification. SPEC
+§4.2 fixes the seed, candidate count, elite count, iterations, sigma floor,
+horizon, and objective, but does not yet fix the iteration-0 sampling
+distribution or the exact Gaussian refit/cap procedure. Those choices can
+change the ceiling and temporal gate, so implementing one silently would break
+the reproducibility contract. Suggested resolution: specify initial means and
+sigmas per action dimension, sampling/clamping order, elite mean/std formula,
+and whether greedy/no-op candidates participate in refit.

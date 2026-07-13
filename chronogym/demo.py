@@ -5,8 +5,9 @@ from __future__ import annotations
 import argparse
 import sys
 
-from .agents import NoOpAgent, RandomAgent
+from .agents import GreedyAgent, NoOpAgent, RandomAgent
 from .runner import run_episode
+from .scoring import score_prediction_fidelity
 from .types import ScenarioConfig, WindComponent, canonical_json
 
 
@@ -23,13 +24,23 @@ def demo_scenario() -> ScenarioConfig:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--agent", choices=("random", "noop"), default="random")
+    parser.add_argument(
+        "--agent",
+        choices=("random", "greedy", "noop"),
+        default="random",
+    )
     parser.add_argument("--log", help="write canonical JSONL to this path")
     args = parser.parse_args(argv)
 
     config = demo_scenario()
-    agent = RandomAgent(config.seed) if args.agent == "random" else NoOpAgent()
+    if args.agent == "random":
+        agent = RandomAgent(config.seed)
+    elif args.agent == "greedy":
+        agent = GreedyAgent()
+    else:
+        agent = NoOpAgent()
     result = run_episode(config, agent)
+    fidelity = score_prediction_fidelity(result.records)
     if args.log:
         with open(args.log, "wb") as stream:
             stream.write(result.log_bytes)
@@ -41,6 +52,9 @@ def main(argv: list[str] | None = None) -> int:
                 "cycles": result.cycles,
                 "final_heat": result.final_state.heat,
                 "outcome": result.final_state.outcome,
+                "parse_rate": fidelity.parse_rate,
+                "persistence_floor": fidelity.persistence_floor,
+                "prediction_fidelity": fidelity.prediction_fidelity,
                 "tick": result.final_state.tick,
             }
         )

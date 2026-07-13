@@ -7,6 +7,9 @@ from pathlib import Path
 from chronogym.clock import advance_deliberation, latch_action
 from chronogym.types import (
     Action,
+    OUTCOME_GOAL,
+    OUTCOME_OOB,
+    OUTCOME_TIMEOUT,
     Prediction,
     ScenarioConfig,
     WindComponent,
@@ -127,3 +130,44 @@ def test_masked_goal_keeps_hot_cold_signal() -> None:
     assert observation.distance_to_goal_m is None
     assert 0.0 < observation.heat < 1.0
     assert observation.heat_delta == 0.0
+
+
+def test_terminal_event_order_is_goal_then_oob_then_timeout() -> None:
+    _, base = load_golden()
+    goal_and_oob = replace(
+        base,
+        dt_s=1.0,
+        deadline_tick=1,
+        bounds_max_x_m=1.0,
+        start_pos_x_m=0.9,
+        start_pos_y_m=0.5,
+        start_vel_x_mps=0.2,
+        start_vel_y_mps=0.0,
+        goal_x_m=1.1,
+        goal_y_m=-9.31,
+        goal_radius_m=0.01,
+        gravity_mps2=9.81,
+        wind_components=(),
+    )
+    assert step(goal_and_oob, initial_state(goal_and_oob)).outcome == OUTCOME_GOAL
+
+    oob_and_timeout = replace(goal_and_oob, goal_x_m=50.0, goal_y_m=50.0)
+    assert step(oob_and_timeout, initial_state(oob_and_timeout)).outcome == OUTCOME_OOB
+
+    timeout = replace(
+        oob_and_timeout,
+        bounds_max_x_m=100.0,
+        bounds_min_y_m=-100.0,
+        bounds_max_y_m=100.0,
+    )
+    assert step(timeout, initial_state(timeout)).outcome == OUTCOME_TIMEOUT
+
+
+def test_terminal_mid_window_marks_deliberation_target_truncated() -> None:
+    _, config = load_golden()
+    config = replace(config, deadline_tick=7)
+    window = advance_deliberation(config, initial_state(config))
+    assert window.state.tick == 7
+    assert window.state.outcome == OUTCOME_TIMEOUT
+    assert window.ticks_elapsed == 7
+    assert window.truncated
