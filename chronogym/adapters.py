@@ -77,3 +77,60 @@ class NIMAdapter:
             api_key=self.api_key,
             timeout_s=self.timeout_s,
         )
+
+
+class OllamaAdapter:
+    """Minimal local Ollama ``/api/chat`` transport."""
+
+    def __init__(
+        self,
+        model: str | None = None,
+        *,
+        base_url: str | None = None,
+        timeout_s: float = 120.0,
+    ) -> None:
+        self.model = model or os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+        configured_url = base_url or os.getenv(
+            "OLLAMA_BASE_URL",
+            "http://localhost:11434",
+        )
+        self.base_url = configured_url.rstrip("/")
+        self.timeout_s = timeout_s
+        self.name = f"ollama:{self.model}"
+
+    def complete(
+        self,
+        prompt: str,
+        *,
+        max_tokens: int = 512,
+        temperature: float = 0.0,
+        seed: int | None = None,
+    ) -> str:
+        options: dict[str, object] = {
+            "temperature": temperature,
+            "num_predict": max_tokens,
+        }
+        if seed is not None:
+            options["seed"] = seed
+        request = urllib.request.Request(
+            f"{self.base_url}/api/chat",
+            data=json.dumps(
+                {
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "stream": False,
+                    "options": options,
+                }
+            ).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=self.timeout_s) as response:
+            body = json.load(response)
+        try:
+            content = body["message"]["content"]
+        except (KeyError, TypeError) as error:
+            raise RuntimeError("Ollama response is missing assistant content") from error
+        if not isinstance(content, str):
+            raise RuntimeError("Ollama assistant content must be a string")
+        return content

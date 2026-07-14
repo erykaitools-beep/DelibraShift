@@ -6,7 +6,7 @@ import urllib.request
 
 import pytest
 
-from chronogym.adapters import NIMAdapter
+from chronogym.adapters import NIMAdapter, OllamaAdapter
 
 
 class Response(io.BytesIO):
@@ -68,3 +68,39 @@ def test_nim_adapter_rejects_malformed_transport_response(monkeypatch) -> None:
     )
     with pytest.raises(RuntimeError, match="assistant content"):
         NIMAdapter("model").complete("prompt")
+
+
+def test_ollama_adapter_uses_native_chat_shape(monkeypatch) -> None:
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["request"] = request
+        captured["timeout"] = timeout
+        return Response(b'{"message":{"role":"assistant","content":"ok"}}')
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    adapter = OllamaAdapter(
+        "llama3.1:8b",
+        base_url="http://ollama.example/",
+        timeout_s=9.0,
+    )
+    assert adapter.complete("rendered", max_tokens=17, temperature=0.2, seed=4) == "ok"
+    request = captured["request"]
+    assert request.full_url == "http://ollama.example/api/chat"
+    assert captured["timeout"] == 9.0
+    assert json.loads(request.data) == {
+        "model": "llama3.1:8b",
+        "messages": [{"role": "user", "content": "rendered"}],
+        "stream": False,
+        "options": {"temperature": 0.2, "num_predict": 17, "seed": 4},
+    }
+
+
+def test_ollama_adapter_rejects_malformed_response(monkeypatch) -> None:
+    monkeypatch.setattr(
+        urllib.request,
+        "urlopen",
+        lambda *args, **kwargs: Response(b'{"done":true}'),
+    )
+    with pytest.raises(RuntimeError, match="assistant content"):
+        OllamaAdapter().complete("prompt")

@@ -1,6 +1,7 @@
 """ChronoGym's public schema and deterministic Windrift primitives."""
 
-from .adapters import NIMAdapter
+from .adapters import NIMAdapter, OllamaAdapter
+from .archive import PackArchive, build_pack_archive, verify_pack_archive
 from .bank import PackError, load_pack, load_pack_metadata
 from .clock import WindowAdvance, advance_deliberation, latch_action
 from .harness import HarnessAgent, parse_choice_reply, parse_reply, render_prompt
@@ -19,6 +20,18 @@ from .oracle import (
     OracleAgent,
     StaleReactorAgent,
     oracle_action,
+)
+from .probes import (
+    CHOICE_PROBE_PROMPT_VERSION,
+    FORMAT_PROBE_PROMPT_VERSION,
+    ForcedChoiceCandidates,
+    ForcedChoiceScore,
+    FormatProbeScore,
+    forced_choice_candidates,
+    render_forced_choice_prompt,
+    render_format_probe_prompt,
+    score_forced_choice_probe,
+    score_format_probe,
 )
 from .scoring import (
     PredictionFidelityScore,
@@ -47,12 +60,18 @@ from .world import advance_ticks, build_observation, initial_state, step
 __all__ = [
     "NOOP_ACTION",
     "NIMAdapter",
+    "OllamaAdapter",
     "SCHEMA_VERSION",
     "Action",
     "Adapter",
     "AgentReply",
     "EpisodeScores",
     "GroundTruthState",
+    "CHOICE_PROBE_PROMPT_VERSION",
+    "FORMAT_PROBE_PROMPT_VERSION",
+    "ForcedChoiceCandidates",
+    "ForcedChoiceScore",
+    "FormatProbeScore",
     "KillCriterionGate",
     "MatchedStateGate",
     "Observation",
@@ -60,6 +79,7 @@ __all__ = [
     "LeadGreedyAgent",
     "StaleReactorAgent",
     "PackError",
+    "PackArchive",
     "PackScores",
     "Prediction",
     "PredictionFidelityScore",
@@ -71,7 +91,9 @@ __all__ = [
     "advance_deliberation",
     "advance_ticks",
     "build_observation",
+    "build_pack_archive",
     "decoy_goal",
+    "forced_choice_candidates",
     "load_pack",
     "load_pack_metadata",
     "initial_state",
@@ -82,12 +104,17 @@ __all__ = [
     "parse_choice_reply",
     "oracle_action",
     "render_prompt",
+    "render_forced_choice_prompt",
+    "render_format_probe_prompt",
     "reproducibility_gate",
     "score_prediction_fidelity",
     "score_temporal_anticipation",
     "score_outcome",
     "score_episode",
     "score_feedback_use",
+    "score_forced_choice_probe",
+    "score_format_probe",
     "step",
+    "verify_pack_archive",
     "HarnessAgent",
 ]

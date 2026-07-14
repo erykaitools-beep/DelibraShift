@@ -22,7 +22,14 @@ from .types import (
     AgentReply,
     Observation,
     Prediction,
+    ScenarioConfig,
     canonical_json,
+)
+from .probes import (
+    CHOICE_PROBE_PROMPT_VERSION,
+    FORMAT_PROBE_PROMPT_VERSION,
+    render_forced_choice_prompt,
+    render_format_probe_prompt,
 )
 
 PROMPT_VERSION = "1.0"
@@ -203,6 +210,7 @@ class HarnessAgent:
         repetition: int = 0,
         max_parse_retries: int = 2,
         prediction_requested: bool = True,
+        probe_config: ScenarioConfig | None = None,
     ) -> None:
         if max_parse_retries < 0:
             raise ValueError("max_parse_retries must be non-negative")
@@ -211,7 +219,20 @@ class HarnessAgent:
         self.adapter = adapter
         self.repetition = repetition
         self.max_parse_retries = max_parse_retries
-        self.prediction_requested = prediction_requested
+        self.probe_config = probe_config
+        tags = set(probe_config.axis_tags) if probe_config is not None else set()
+        self.probe_kind = None
+        if "probe:forced_choice" in tags:
+            self.probe_kind = "forced_choice"
+        elif "probe:format" in tags:
+            self.probe_kind = "format"
+        self.prediction_requested = (
+            False if self.probe_kind == "forced_choice" else prediction_requested
+        )
+        self.prompt_version = {
+            "forced_choice": CHOICE_PROBE_PROMPT_VERSION,
+            "format": FORMAT_PROBE_PROMPT_VERSION,
+        }.get(self.probe_kind, PROMPT_VERSION)
         self.name = adapter.name
         self.wall_clock_ms_telemetry_only = 0.0
         self.transport_retries = 0
@@ -220,18 +241,30 @@ class HarnessAgent:
         self.last_wall_clock_ms = 0.0
 
     def act(self, observation: Observation) -> AgentReply:
-        prompt = render_prompt(observation)
+        if self.probe_kind == "forced_choice":
+            assert self.probe_config is not None
+            prompt = render_forced_choice_prompt(self.probe_config, observation)
+        elif self.probe_kind == "format":
+            prompt = render_format_probe_prompt(observation)
+        else:
+            prompt = render_prompt(observation)
         started = time.perf_counter()
         raw_completions: list[str] = []
         try:
             for retry in range(self.max_parse_retries + 1):
                 retry_prompt = prompt
                 if retry:
-                    retry_prompt += (
-                        "\nThe prior reply had an invalid action or prediction. "
-                        "Replace it with only the required JSON object containing "
-                        "all finite numeric fields.\n"
-                    )
+                    if self.probe_kind == "forced_choice":
+                        retry_prompt += (
+                            '\nThe prior reply was invalid. Replace it with only '
+                            '{"choice": "A"} or {"choice": "B"}.\n'
+                        )
+                    else:
+                        retry_prompt += (
+                            "\nThe prior reply had an invalid action or prediction. "
+                            "Replace it with only the required JSON object containing "
+                            "all finite numeric fields.\n"
+                        )
                 raw = self.adapter.complete(
                     retry_prompt,
                     max_tokens=512,
@@ -241,11 +274,14 @@ class HarnessAgent:
                 raw_completions.append(raw)
                 self.last_raw_completion = raw
                 try:
-                    reply = parse_reply(
-                        raw,
-                        parse_retries=retry,
-                        prediction_requested=self.prediction_requested,
-                    )
+                    if self.probe_kind == "forced_choice":
+                        reply = parse_choice_reply(raw, parse_retries=retry)
+                    else:
+                        reply = parse_reply(
+                            raw,
+                            parse_retries=retry,
+                            prediction_requested=self.prediction_requested,
+                        )
                 except (ValueError, json.JSONDecodeError):
                     continue
                 if not reply.parse_failed and not reply.prediction_parse_failed:

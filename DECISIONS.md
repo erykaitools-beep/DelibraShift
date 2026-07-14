@@ -706,3 +706,23 @@ Final M1 table on core_v0 v0.1.1:
 
 All registered validity floors and kill conditions pass. M1 is complete;
 no benchmark result is being attributed to an LLM in this gate table.
+
+## COD-017 — Isolate M1.5 controls and make pack downloads reproducible
+
+Date: 2026-07-14
+
+The frozen standard prompt remains byte-unchanged at version 1.0. Format and
+forced-choice controls use independent draft versions and a `probe_config`
+path in `HarnessAgent`; this prevents probe iteration from changing ordinary
+result prompts. Forced-choice candidates are reconstructed from the complete
+Observation with FAB-022's exact RNG and x-only decoy, while scorers always
+publish parse rates and trial counts. Format cycles additionally log whether
+the reply was closer to the requested identity or the engage-time target.
+
+Downloadable packs use a deterministic stored ZIP with fixed timestamp,
+permissions, root name, and manifest order. A canonical sidecar records the
+archive SHA-256, every member SHA-256, schema/pack versions, and ordered
+scenario IDs. A verifier checks the archive hash, exact member set, and member
+hashes. This is the narrowest auditable interpretation of SPEC 9.1's “zip of
+the same layout + sha256 in a manifest”; the concrete sidecar shape remains a
+builder choice pending Fable review.

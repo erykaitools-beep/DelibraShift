@@ -92,3 +92,21 @@
   temporal `0.639339965447913`.
 - M1 is complete. The next planned milestone is M1.5 breadth; PLAN ownership
   remains with Fable.
+
+## 2026-07-14 — M1.5 builder pass
+
+- Added the transport-only native Ollama adapter (`/api/chat`, default
+  `llama3.1:8b`) alongside NIM.
+- Added separate draft format-control and forced-choice prompts, exact pinned
+  decoy generation, retry integration, per-cycle identity-vs-engage logging,
+  choice accuracy/parse rate, format parse/fidelity scores, and mandatory trial
+  counts. Probe actions remain forced to no-op.
+- Added deterministic downloadable pack ZIPs with a canonical SHA-256 sidecar,
+  per-member hashes, verifier, and `chronogym-pack` CLI.
+- Added the first deterministic baseline table to README. It is explicitly not
+  an LLM result table.
+- Builder implementation is complete; the two probe draft prompts and archive
+  manifest convention await Fable's M1.5 review/freeze.
+- Verification: 70 tests pass. The generated core_v0 v0.1.1 archive verifies
+  successfully with SHA-256
+  `06916079638966d3803ce3cda500b3542c1d703604b99453f3365fec5f93a1c8`.

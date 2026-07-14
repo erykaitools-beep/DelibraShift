@@ -47,6 +47,15 @@ the OpenAI-compatible chat-completions endpoint; prompt construction, parsing,
 and retries stay in the harness. The reviewed standard-cycle prompt is frozen
 as version `1.0`.
 
+The second transport targets Ollama's native `/api/chat` endpoint. It defaults
+to `llama3.1:8b` at `http://localhost:11434`; override these with
+`OLLAMA_MODEL` and `OLLAMA_BASE_URL`. Both adapters remain transport-only:
+`HarnessAgent` owns prompts, parsing, and retry accounting.
+
+Formatting-control and forced-choice probes have separate draft prompt
+versions, so development of those controls cannot mutate or silently unfreeze
+the standard `1.0` results prompt.
+
 Evaluate the executable pack gates (the sampling-MPC kill criterion is the
 CPU-heavy part):
 
@@ -61,6 +70,27 @@ canonical JSON. Exact golden fixtures remain the pytest-owned gate (iii).
 M1's four exit gates pass on `core_v0` v0.1.1. See
 [`DECISIONS.md`](DECISIONS.md) for the exact final table and
 [`STATUS.md`](STATUS.md) for current milestone progress.
+
+### Deterministic baseline reference
+
+Core visible non-probe subset S, core_v0 v0.1.1, Linux x86_64. Random outcome
+uses the registered 20 repetitions. These are simulator/baseline references,
+not LLM results.
+
+| agent | mean outcome | mean temporal anticipation |
+|---|---:|---:|
+| random (R=20) | 0.0885 | — |
+| greedy | 0.3358 | 0.4707 |
+| oracle | 0.9807 | 0.6393 |
+
+Build the downloadable pack ZIP and canonical SHA-256 sidecar manifest:
+
+```bash
+chronogym-pack packs/core_v0 --output-dir dist
+```
+
+The archive preserves the local pack layout, uses fixed ZIP metadata, and
+includes per-member hashes in addition to the archive hash.
 
 Reproducibility is a hard requirement: physics is a pure function of scenario,
 state, held action, and simulated time delta. Same-seed baseline runs produce

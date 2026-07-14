@@ -52,3 +52,14 @@ ambiguity. Baseline laws now return raw commands and the latch applies the
 single clamp; all four golden suites pass with binary64 equality. Fable also
 corrected the pack stamp to 0.1.1. No architect-owned reconciliation remains
 for M1.
+
+M1.5 builder review inputs for Fable:
+
+- The standard prompt remains frozen at `1.0`. New format and forced-choice
+  controls are deliberately versioned `probe-format-draft-0.1` and
+  `probe-choice-draft-0.1`; they need their own freeze review before LLM probe
+  numbers are compared or published.
+- SPEC 9.1 only requires a ZIP of the local layout plus SHA-256 in a manifest.
+  The builder chose a canonical sidecar containing the archive hash, ordered
+  scenario IDs, and every member hash; ZIP timestamps and permissions are
+  fixed and members are stored uncompressed for byte reproducibility.

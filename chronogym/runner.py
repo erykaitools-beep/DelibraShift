@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from io import BytesIO
 import platform
 from typing import BinaryIO
@@ -39,6 +39,7 @@ class CycleRecord:
     action_engaged: bool
     engaged_action: Action | None
     example_echo: bool
+    probe_match: str | None
     raw_completion_text: str | None
     raw_completions: tuple[str, ...]
     wall_clock_ms_telemetry_only: float
@@ -167,6 +168,7 @@ def run_episode(
             action_engaged=action_engaged,
             engaged_action=engaged_action,
             example_echo=_is_example_echo(reply),
+            probe_match=None,
             raw_completion_text=getattr(agent, "last_raw_completion", None),
             raw_completions=getattr(agent, "last_raw_completions", ()),
             wall_clock_ms_telemetry_only=getattr(
@@ -175,6 +177,10 @@ def run_episode(
                 0.0,
             ),
         )
+        if "probe:format" in config.axis_tags:
+            from .probes import format_probe_match
+
+            record = replace(record, probe_match=format_probe_match(record))
         records.append(record)
 
         _write_line(
@@ -202,6 +208,7 @@ def run_episode(
                     else asdict(record.engaged_action)
                 ),
                 "example_echo": record.example_echo,
+                "probe_match": record.probe_match,
                 "raw_completion_text": record.raw_completion_text,
                 "raw_completions": record.raw_completions,
                 "wall_clock_ms_telemetry_only": (
