@@ -678,3 +678,31 @@ didn't), and the builder's frozen prompt v1.0 is formally blessed against
 the 7.2 checklist (physics+units, engage-tick timeline, HELD-action
 semantics, null-keyed observation JSON, out-of-band example, single-object
 instruction — all present).
+
+## COD-016 — Close all four M1 exit gates after the single-clamp fix
+
+Date: 2026-07-14
+
+FAB-038 was implemented by returning raw commands from both §5.2 baseline
+laws and retaining `clock.latch_action` as the only clamp. Oracle interior
+clamps remain unchanged. The strict xfail was removed: `golden_g001`,
+`golden_edges`, `golden_oracle`, and `golden_masked` all pass exact binary64
+checks, including g007c's band term `0.2657880968210241` and pack band
+`0.3462846150280281`.
+
+Final M1 table on core_v0 v0.1.1:
+
+- Gate (i) PASS: both full-pack random logs SHA-256 to
+  `6a964c34e3168b034f8c8be8b592ab513f9b975aff098439cde743fb1aa289ea`.
+- Gate (ii) PASS: six admissible states; B=10/20/40 scores
+  `0.45499315138148017`, `0.4331712122380791`, `0.37486024858353895`.
+- Gate (iii) PASS: all four golden fixture families exact.
+- Gate (iv) PASS: oracle/random/greedy outcomes `0.980723744495277`,
+  `0.08851733989998208`, `0.335798232990836`; V1
+  `0.8922064045952949`; D_outcome `0.7228434005660153`; oracle/greedy
+  temporal `0.639339965447913` / `0.47066702870069027`; V2
+  `0.13933996544791305`. K2 remains clear (`-0.02933297129930973 <
+  0.06966998272395653`).
+
+All registered validity floors and kill conditions pass. M1 is complete;
+no benchmark result is being attributed to an LLM in this gate table.

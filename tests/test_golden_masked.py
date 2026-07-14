@@ -3,8 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from chronogym.agents import GreedyAgent
 from chronogym.bank import load_pack
 from chronogym.gates import decoy_goal, score_feedback_use
@@ -51,10 +49,6 @@ def test_masked_decoys_are_exact() -> None:
         )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Fable-owned g007c band term is 9e-16 above its normative recomputation",
-)
 def test_masked_feedback_band_is_binary64_exact() -> None:
     scenario_ids = ("g007a", "g007b", "g007c")
     scenarios = tuple(PACK[scenario_id] for scenario_id in scenario_ids)

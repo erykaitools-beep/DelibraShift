@@ -74,3 +74,21 @@
 - Test status: 60 passed, 1 strict expected failure. Gate (iii) is not claimed:
   the Fable-owned g007c band term is 9e-16 above direct recomputation from the
   normative outcome formula. The other golden checks pass exactly.
+
+## 2026-07-14 — M1 exit gates complete
+
+- Applied FAB-038 clamp ownership: baseline laws return raw commands and the
+  latch performs the only clamp. Oracle interior clamps remain fixture-pinned.
+- Removed the strict expected failure after `golden_masked` reproduced every
+  decoy, action, episode field, and band term exactly. All four golden fixture
+  families now pass binary64 equality.
+- Final test status: 62 passed, no skips or expected failures.
+- Final M1 gate table: (i) PASS with identical SHA-256
+  `6a964c34e3168b034f8c8be8b592ab513f9b975aff098439cde743fb1aa289ea`;
+  (ii) PASS at `0.45499315138148017 -> 0.4331712122380791 ->
+  0.37486024858353895`; (iii) PASS, all golden fixtures exact; (iv) PASS
+  with V1 `0.8922064045952949`, D_outcome `0.7228434005660153`, V2
+  `0.13933996544791305`, greedy temporal `0.47066702870069027`, and oracle
+  temporal `0.639339965447913`.
+- M1 is complete. The next planned milestone is M1.5 breadth; PLAN ownership
+  remains with Fable.

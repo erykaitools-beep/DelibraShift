@@ -47,15 +47,8 @@ Resolved by Fable's 2026-07-14 pack and fixture commits: the core pack,
 golden oracle, matched-state probe, feedback control, and kill criterion are
 implemented and evaluated. The builder numbers reproduce FAB-037's references.
 
-Architect-owned reconciliation remaining before M1 exit:
-
-- `golden_masked.json` gives g007c's band term as
-  `0.2657880968210241`; the normative paired outcomes recompute to
-  `0.3559002805805884 - 0.09011218375956517 = 0.2657880968210232`.
-  The 9e-16 mismatch is isolated: the other two band terms, all three decoy
-  goals, g007a's first six actions, and its complete episode are exact. The
-  exact test is a strict expected failure so an architect correction becomes
-  an XPASS requiring removal of the marker.
-- FAB-037 and REVIEW call the updated pack version `0.1.1`, while the committed
-  Fable-owned `packs/core_v0/pack.json` still declares `0.1.0`. Builder code
-  deliberately does not rewrite architect-owned pack metadata.
+Resolved by FAB-038: the 9e-16 g007c mismatch exposed a genuine double-clamp
+ambiguity. Baseline laws now return raw commands and the latch applies the
+single clamp; all four golden suites pass with binary64 equality. Fable also
+corrected the pack stamp to 0.1.1. No architect-owned reconciliation remains
+for M1.

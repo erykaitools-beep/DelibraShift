@@ -58,6 +58,10 @@ This reports full-pack byte reproducibility, the matched-state budget probe,
 the masked-searcher feedback band, and the registered kill criterion as
 canonical JSON. Exact golden fixtures remain the pytest-owned gate (iii).
 
+M1's four exit gates pass on `core_v0` v0.1.1. See
+[`DECISIONS.md`](DECISIONS.md) for the exact final table and
+[`STATUS.md`](STATUS.md) for current milestone progress.
+
 Reproducibility is a hard requirement: physics is a pure function of scenario,
 state, held action, and simulated time delta. Same-seed baseline runs produce
 byte-identical JSONL logs on the same host. Wall-clock latency is telemetry,

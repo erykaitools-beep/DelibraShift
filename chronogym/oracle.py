@@ -43,7 +43,6 @@ def _greedy_for_state(config: ScenarioConfig, state: GroundTruthState) -> Action
         goal_x_m=config.goal_x_m,
         goal_y_m=config.goal_y_m,
         gravity_mps2=config.gravity_mps2,
-        max_accel_mps2=config.max_accel_mps2,
     )
 
 
@@ -277,6 +276,5 @@ class LeadGreedyAgent:
             goal_x_m=observation.goal_x_m,
             goal_y_m=observation.goal_y_m,
             gravity_mps2=observation.gravity_mps2,
-            max_accel_mps2=observation.max_accel_mps2,
         )
         return AgentReply(action=action, prediction=predicted)

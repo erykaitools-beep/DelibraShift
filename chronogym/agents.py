@@ -6,7 +6,7 @@ import math
 import random
 from typing import Protocol
 
-from .types import Action, AgentReply, Observation, Prediction, TWO_PI, clamp_accel
+from .types import Action, AgentReply, Observation, Prediction, TWO_PI
 
 
 class Agent(Protocol):
@@ -38,9 +38,8 @@ def arrival_action(
     goal_x_m: float,
     goal_y_m: float,
     gravity_mps2: float,
-    max_accel_mps2: float,
 ) -> Action:
-    """SPEC 5.2 arrival steering, shared by greedy and oracle seed plans."""
+    """Return SPEC 5.2's raw arrival command; the latch owns the sole clamp."""
     delta_x = goal_x_m - pos_x_m
     delta_y = goal_y_m - pos_y_m
     distance = math.hypot(delta_x, delta_y)
@@ -53,8 +52,7 @@ def arrival_action(
         desired_y = desired_speed * delta_y / distance
     raw_x = 1.2 * (desired_x - vel_x_mps)
     raw_y = 1.2 * (desired_y - vel_y_mps) + gravity_mps2
-    accel_x, accel_y = clamp_accel(raw_x, raw_y, max_accel_mps2)
-    return Action(accel_x, accel_y)
+    return Action(raw_x, raw_y)
 
 
 class NoOpAgent:
@@ -149,12 +147,7 @@ class GreedyAgent:
             1.2 * (6.0 * heading[1] - observation.vel_y_mps)
             + observation.gravity_mps2
         )
-        accel_x, accel_y = clamp_accel(
-            raw_x,
-            raw_y,
-            observation.max_accel_mps2,
-        )
-        return Action(accel_x, accel_y)
+        return Action(raw_x, raw_y)
 
     def act(self, observation: Observation) -> AgentReply:
         if observation.cycle == 0:
@@ -169,7 +162,6 @@ class GreedyAgent:
                 goal_x_m=observation.goal_x_m,
                 goal_y_m=observation.goal_y_m,
                 gravity_mps2=observation.gravity_mps2,
-                max_accel_mps2=observation.max_accel_mps2,
             )
         else:
             action = self._masked_action(observation)

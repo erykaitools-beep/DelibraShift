@@ -3,10 +3,30 @@ from __future__ import annotations
 import math
 from dataclasses import replace
 
-from chronogym.agents import GreedyAgent, RandomAgent
+from chronogym.agents import GreedyAgent, RandomAgent, arrival_action
+from chronogym.clock import latch_action
 from chronogym.demo import demo_scenario
 from chronogym.runner import run_episode
 from chronogym.world import build_observation, initial_state
+
+
+def test_arrival_law_returns_raw_command_and_latch_clamps_exactly_once() -> None:
+    config = demo_scenario()
+    raw = arrival_action(
+        pos_x_m=20.0,
+        pos_y_m=70.0,
+        vel_x_mps=-20.0,
+        vel_y_mps=20.0,
+        goal_x_m=80.0,
+        goal_y_m=30.0,
+        gravity_mps2=config.gravity_mps2,
+    )
+    assert math.hypot(raw.accel_x_mps2, raw.accel_y_mps2) > config.max_accel_mps2
+    engaged = latch_action(config, initial_state(config), raw)
+    assert math.hypot(
+        engaged.held_accel_x_mps2,
+        engaged.held_accel_y_mps2,
+    ) <= config.max_accel_mps2 + 1e-12
 
 
 def test_visible_greedy_is_arrival_steering_with_gravity_feedforward() -> None:
