@@ -10,10 +10,11 @@
     "g006.json",
     "g007a.json",
     "g007b.json",
+    "g007c.json",
     "g008.json",
     "g009.json",
     "g010.json"
   ],
-  "schema_version": "0.2.0",
+  "schema_version": "0.2.1",
   "version": "0.1.0"
 }

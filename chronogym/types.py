@@ -50,6 +50,10 @@ Version history
   (FAB-014/FAB-020); scoring validity constants; ScenarioConfig validation
   in __post_init__ + from_json_dict coercion; canonical_json strictness
   (str keys only, -0.0 normalized).
+* 0.2.1 — verification round 2 (FAB-032..FAB-037): the FAB-023
+  anti-anchoring rule's metric pinned (mean normalized error via
+  prediction_error >= 10); PackScores.feedback_band_terms added (per-
+  scenario band vector published next to the pack-level band).
 """
 
 from __future__ import annotations
@@ -59,7 +63,7 @@ import math
 from dataclasses import dataclass
 from typing import Optional, Protocol, Sequence, Tuple
 
-SCHEMA_VERSION = "0.2.0"
+SCHEMA_VERSION = "0.2.1"
 
 # ---------------------------------------------------------------------------
 # Scoring constants (normative)
@@ -127,11 +131,12 @@ PREDICTION_FIELDS: Tuple[str, ...] = ("pos_x_m", "pos_y_m", "vel_x_mps", "vel_y_
 ACTION_FIELDS: Tuple[str, ...] = ("accel_x_mps2", "accel_y_mps2")
 CHOICE_VALUES: Tuple[str, ...] = ("A", "B")
 
-#: Example embedded in prompts.  NORMATIVE anti-anchoring rule (FAB-023):
-#: these values must stay out-of-band for every core-pack scenario — at
-#: least 10 tolerances away from every cycle-0 prediction target and in a
-#: state-space quadrant no core scenario starts in.  A reply within 2
-#: tolerances of this example is flagged ``example_echo`` in logs.
+#: Example embedded in prompts.  NORMATIVE anti-anchoring rule (FAB-023,
+#: metric pinned by FAB-037): for every core-pack scenario the example's
+#: prediction must score a mean normalized error >= 10 (per
+#: :func:`prediction_error`) against that scenario's cycle-0 prediction
+#: target, and lie in a state-space quadrant no core scenario starts in.
+#: A reply within 2 tolerances on EVERY field is flagged ``example_echo``.
 EXAMPLE_REPLY_JSON = (
     '{"prediction": {"pos_x_m": 7.5, "pos_y_m": 12.25, '
     '"vel_x_mps": -4.5, "vel_y_mps": 2.75}, '
@@ -391,6 +396,10 @@ class PackScores:
     feedback_use: Optional[float]
     feedback_raw: Optional[float]      # unnormalized mean outcome delta (run A - run B)
     feedback_band: Optional[float]     # heat-only reference band used to normalize
+    #: Per-masked-scenario band terms (same order as the pack's masked
+    #: scenarios).  Published so a band dominated by one geometry is visible
+    #: (FAB-037).
+    feedback_band_terms: Optional[Tuple[float, ...]] = None
 
 
 # ---------------------------------------------------------------------------

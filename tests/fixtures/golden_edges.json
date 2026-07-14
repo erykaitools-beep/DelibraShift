@@ -1,5 +1,5 @@
 {
-  "description": "Edge-case pins complementing golden_g001.json: (e001) goal event mid-window makes cycle 0 truncated and pins goal-event ordering; (e002) raw action above max_accel pins clamp_accel scaling; (e003) deadline mid-window pins timeout tick and cycle-1 truncation. CI must reproduce every float EXACTLY (binary64 ==).",
+  "description": "Edge-case pins complementing golden_g001.json: (e001) goal event mid-window makes cycle 0 truncated and pins goal-event ordering; (e002) raw action above max_accel pins clamp_accel scaling; (e003) deadline mid-window pins timeout tick and cycle-1 truncation. (e004) timeout exactly at the engage tick pins the fidelity-valid/temporal-excluded boundary of FAB-036. CI must reproduce every float EXACTLY (binary64 ==).",
   "e001_goal_mid_window": {
     "cycle0_truncated": true,
     "deadline_tick": 600,
@@ -106,8 +106,40 @@
       "vel_y_mps": 0.0
     }
   },
+  "e004_timeout_at_engage_tick": {
+    "cycle1_prediction_valid": true,
+    "cycle1_temporal_excluded": true,
+    "deadline_tick": 40,
+    "engaged_action_window2": [
+      2.0,
+      6.0
+    ],
+    "event_tick": 40,
+    "final_state": {
+      "pos_x_m": 24.381878905630707,
+      "pos_y_m": 62.899999999999984,
+      "vel_x_mps": 4.4201847235850265,
+      "vel_y_mps": -4.0000000000000036
+    },
+    "goal": {
+      "x_m": 80.0,
+      "y_m": 30.0
+    },
+    "held_window1": [
+      0.0,
+      0.0
+    ],
+    "note": "episode ends EXACTLY at cycle 1's engage tick (40): its target tick exists so the cycle is fidelity-VALID, but its returned action never engaged so it is temporal-EXCLUDED (FAB-036)",
+    "outcome": "timeout",
+    "start": {
+      "pos_x_m": 20.0,
+      "pos_y_m": 70.0,
+      "vel_x_mps": 0.0,
+      "vel_y_mps": 0.0
+    }
+  },
   "fixture_id": "golden_edges",
-  "schema_version": "0.2.0",
+  "schema_version": "0.2.1",
   "shared": {
     "bounds": [
       0.0,

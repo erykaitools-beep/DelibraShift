@@ -43,9 +43,14 @@ Contract-change rule: only Fable edits `types.py`; every change bumps
   fixture (`tests/fixtures/golden_oracle.json`, CRN); prompt draft-0.2
   FROZEN as "1.0" (REVIEW round 2); kill criterion + gate (ii) + feedback
   band pre-verified with reference implementation (FAB-028..031).
-- Codex: CRN seed one-liner + oracle-fixture CI test + masked tumbler
-  (§5.2) + matched-state probe gate (ii) + official gate runs (numbers →
-  COD entry in DECISIONS.md).
+- [x] Fable: verification round 2 → SPEC v0.2.2 + contract 0.2.1 + pack
+  v0.1.1 (12 scenarios, g007c) + golden_masked.json + edges e004
+  (FAB-032..037); prose-only reimplementation reproduced oracle fixture,
+  probe numbers and edges binary64-exact.
+- Codex: REVIEW round 2.1 items 1–6 (stale tests, CRN + H-pin, gradient
+  searcher, fixture CI tests incl. masked + e004, probe gate (ii),
+  pack/schema stamps) + official gate runs (numbers → COD entry in
+  DECISIONS.md).
 - Exit gates (ALL must pass, SPEC §6): (i) byte-identical same-seed runs;
   (ii) stale-reactor budget sweep decreasing with margin GATE_II_MARGIN;
   (iii) BOTH golden fixtures CI green (g001 + edges); (iv) kill criterion
@@ -76,4 +81,4 @@ Contract-change rule: only Fable edits `types.py`; every change bumps
 | Oracle too weak (ceiling collapses) | Fixed spec params; report oracle−greedy margin; raise samples if margin < 0.15 |
 | Float divergence across hosts | Per-host determinism claim only; host class in results |
 | NIM 40 RPM budget | ≈2.2k calls for full M2 grid — pace politely, cache raw completions in logs |
-| Scope creep | v0 = ONE world, FOUR scores, TEN scenarios. New ideas → NOTES.md, not code |
+| Scope creep | v0 = ONE world, FOUR scores, TWELVE scenarios (core_v0). New ideas → NOTES.md, not code |

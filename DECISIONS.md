@@ -529,3 +529,92 @@ Reference numbers on g001 physics: 0.4550 -> 0.4332 -> 0.3749. The on-policy
 sweep remains reported as informative only. Degenerate probe states (engage
 tick past episode end) are excluded by the tick + 40 < end rule - one such
 state saturated w to 1.0 and inverted the ordering in testing.
+
+## FAB-032 — Feedback axis: heading-luck artifact killed; gradient-estimating searcher (supersedes FAB-029)
+
+Date: 2026-07-14
+
+Round-2 verification falsified the tumbler band: rotating its arbitrary
+init-+x heading flipped band terms' SIGN (g007a: +0.748 with +x, -0.755 with
+-y — the decoy run reached the TRUE goal); the heading-averaged band was
+NEGATIVE on both masked scenarios. Root cause: reactive tumblers react to
+heat_delta that reflects the window driven by the action from TWO cycles ago
+(latch lag), so rotation decisions are mis-attributed; a compass-probe
+variant then failed differently (inertia contaminates per-window probes;
+its fixed probe loop dominated d_min, zeroing paired contrast). Fix exploits
+that masked observations still contain self pos/vel: the searcher estimates
+the heat gradient by least squares over its last 3 (ACTUAL displacement,
+heat_delta) pairs — self-correcting for inertia and lag. Bearing-robust:
+positive paired contrast with the goal E/N/W/S of start (+0.067/+0.090/
++0.566/+0.796), no initial-heading luck. Masked pack widened to THREE
+bearings (g007c added: left-up); band terms +0.679/+0.094/+0.266, band
+0.346, pinned in tests/fixtures/golden_masked.json. Exact LS pseudocode
+normative in SPEC 5.2.
+
+## FAB-033 — Oracle horizon pinned at the engage tick (amends FAB-030)
+
+Date: 2026-07-14
+
+CRN desynchronized whenever the variants' horizons differed: H computed from
+each variant's own t0 gives H_obs = H_eng + 1 for every cycle within 6B of
+the deadline (exactly the late 'desperate' cycles), the shared stream
+diverges from candidate #3, and w regains a noise floor there (measured
++0.006..+0.039 shift at t0=480..540; zero shift at same-H states). Now H =
+min(6, max(1, ceil((deadline - (T_k + B)) / B))) for BOTH variants, so draw
+counts always match. No golden_oracle.json row changes (all rows H=6 both
+ways; verified by regeneration diff = empty). variant is now explicitly
+computation-inert (timeline documentation only).
+
+## FAB-034 — Gate (ii) probe admissibility made intrinsic (amends FAB-031)
+
+Date: 2026-07-14
+
+The tick+40 exclusion hardcoded v0's B_max and did not actually guarantee
+event-free propagation (the probe leaves the reference trajectory for up to
+B_max ticks under a latched action). Now: sweep members MUST share seed;
+a reference state is admissible iff propagation under (state, held) reaches
+tick+B without a terminal event for EVERY B in the sweep; probe = first 6
+admissible states; fewer than 6 => pack INVALID for gate (ii) -> SPEC 5.5
+levers. Degenerate saturation (w = 1.0 from a past-the-end state observed in
+testing) is thereby impossible by construction. Reference numbers unchanged:
+0.4550 -> 0.4332 -> 0.3749.
+
+## FAB-035 — Gate (iii) covers ALL golden fixtures
+
+Date: 2026-07-14
+
+Round-2 audit demonstrated a live hole: the tree's oracle diverged from 4/6
+fixture rows while the whole test suite stayed green, because no gate
+required golden_oracle.json. Gate (iii) now names golden_g001 + golden_edges
++ golden_oracle + golden_masked, all binary64-exact. M1 cannot exit around a
+non-conformant oracle or masked searcher.
+
+## FAB-036 — Engage tick == episode end: fidelity-valid, temporal-excluded
+
+Date: 2026-07-14
+
+Every core-pack deadline is a multiple of B, so EVERY timeout episode ends
+exactly at an engage tick — and 'engaged' was undecidable there (verifier
+had to guess). Pinned: an action whose engage tick equals the episode-end
+tick never engaged (no window left to drive) => temporal-excluded; the SAME
+cycle's prediction target exists => fidelity-VALID. golden_edges.json case
+e004 (deadline 40, B=20) pins both flags plus the final state.
+
+## FAB-037 — v0.2.2 sweep: pack v0.1.1 + contract 0.2.1 + conventions
+
+Date: 2026-07-14
+
+Batch of round-2 audit fixes: (1) pack: g007c added (masked, third bearing),
+g008/g009 moved to B=10 (NOOP-forced probe episodes yield ~11 trials instead
+of ~5; accuracies always published with trial counts), g001_b10 forecast 20
+(constant 2xB ratio across the budget sweep - forecast informativeness no
+longer confounds the budget curve). (2) Float-operation convention extended
+to ALL SPEC formulas (naive left-to-right; numpy pairwise reductions are
+off-contract). (3) FAB-023 example rule metric pinned: mean normalized error
+via prediction_error >= 10 vs every core cycle-0 target (per-field reading
+was falsified by g006). (4) Decoy draw: 'once per SCENARIO' wording, masked
+scenarios require bounds extent >= 50 m per axis. (5) PackScores.
+feedback_band_terms added (contract 0.2.1) - per-geometry band visibility.
+(6) Scenario-count references normalized to 12. Kill-criterion numbers
+refreshed under H-pinned oracle: V1 0.892, D_outcome 0.723, V2 0.139,
+K2 clear (greedy 0.4732 / oracle 0.6388) - all unchanged at 3 decimals.

@@ -7,7 +7,7 @@
   "deadline_tick": 600,
   "deliberation_ticks": 10,
   "dt_s": 0.05,
-  "forecast_ticks": 40,
+  "forecast_ticks": 20,
   "goal_radius_m": 2.0,
   "goal_visible": true,
   "goal_x_m": 80.0,

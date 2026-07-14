@@ -1,4 +1,4 @@
-# ChronoGym SPEC v0.2.1
+# ChronoGym SPEC v0.2.2
 
 Owner: Fable (Chief Architect & Scientist). Normative unless marked
 *informative*. The executable contract is `chronogym/types.py` (schema
@@ -147,6 +147,14 @@ file itself; all *scorer* randomness (oracle sampling, decoys) is derived from
 §4.2, §4.3, §4.5 and §5.1. Wind components are summed left-to-right in file
 order.
 
+**Float-operation convention (normative, FAB-037):** every formula in this
+SPEC is evaluated exactly as written — naive left-to-right summation in the
+stated order, expressions parenthesized as printed. Library reductions with
+different rounding (numpy pairwise sums, `statistics.pstdev`, fused
+multiply-add) are off-contract even when mathematically equal: fixtures pin
+binary64 bits, and a last-bit difference inside the oracle's elite refit
+cascades through `rng.gauss` into a visibly different action.
+
 **Truncation (normative, FAB-026):** a cycle is truncated **iff** the episode
 ends at a tick **strictly below** its engage tick `T_k + B`; ending exactly
 at `T_k + B` is a valid cycle. Truncated cycles are excluded from BOTH
@@ -287,12 +295,18 @@ temporal_raw   = Σ_k w_k * ( s(a_k+1, a*_eng) - s(a_k+1, a*_obs) ) / Σ_k w_k
 temporal_score = (temporal_raw + 1) / 2          # in [0,1], 0.5 = no lead
 ```
 
-**Cycle-inclusion rules (normative, FAB-015):** cycles with
-`parse_failed=true` are excluded from numerator AND denominator (formatting,
-not cognition — the engaged NOOP is not the agent's choice); truncated
-cycles and the final cycle whose returned action never engaged are excluded;
-masked-goal scenarios score `temporal = None` (the goal-privileged oracles
-are not a fair reference for a heat-only agent). If the MEAN weight over
+**Cycle-inclusion rules (normative, FAB-015; boundary pinned by FAB-036):**
+cycles with `parse_failed=true` are excluded from numerator AND denominator
+(formatting, not cognition — the engaged NOOP is not the agent's choice);
+truncated cycles and the final cycle whose returned action never engaged are
+excluded. **An action whose engage tick EQUALS the episode-end tick never
+engaged** — there is no window left for it to drive — so its cycle is
+temporal-excluded even though the same cycle is fidelity-VALID (its target
+tick exists, §2.3). This boundary is live on every timeout episode of the
+core pack (deadlines are multiples of B) and is pinned by
+`golden_edges.json` case e004. Masked-goal scenarios score `temporal = None`
+(the goal-privileged oracles are not a fair reference for a heat-only
+agent). If the MEAN weight over
 scored cycles `(Σw_k / K) < TEMPORAL_MIN_MEAN_W (0.02)`, or `K = 0`, the
 scenario doesn't discriminate: score `None`.
 
@@ -317,7 +331,9 @@ was ≈0.1 — drowning the true B=10/20 divergence (≈0.03) and breaking the
 budget-sweep gate.
 
 ```
-B  = deliberation_ticks;  H = min(6, max(1, ceil((deadline_tick - t0) / B)))
+B = deliberation_ticks
+engage_tick = t0 for variant 0;  t0 + B for variant 1     # both = T_k + B
+H = min(6, max(1, ceil((deadline_tick - engage_tick) / B)))
 A plan is a length-H tuple of per-window actions (ax, ay).
 
 Iteration 0 candidates, in index order:
@@ -353,10 +369,21 @@ Final: oracle action = clamp_accel(arithmetic mean of the final top-16
 elites' window-0 actions)          # elite-mean smoothing, FAB-021
 ```
 
+**H is computed from the cycle's ENGAGE tick `T_k + B` for BOTH variants**
+(FAB-033): the two variants of a cycle then consume identical rng draw
+counts, so the CRN stream never desynchronizes — with per-variant H, every
+cycle within `6B` of the deadline had `H_obs = H_eng + 1`, the streams
+diverged from candidate #3 on, and late "desperate" cycles regained exactly
+the noise-inflated weights FAB-030/031 were built to remove. `variant` has
+NO effect on the computation beyond this engage-tick formula; it documents
+which timeline the caller's `(state, t0)` represents and is recorded in
+logs and fixtures (FAB-037).
+
 All rollouts use the true simulator and true wind (privileged — that is the
-point of a ceiling). A golden ORACLE fixture (scenario+seed+cycle → action,
-binary64 ==) is a Fable deliverable at M1, committed BEFORE baseline results
-are read.
+point of a ceiling). The golden ORACLE fixture
+(`tests/fixtures/golden_oracle.json`: explicit state + t0 + cycle + variant
+→ action, binary64 ==) is committed and is part of exit gate (iii)
+(FAB-035).
 
 ### 4.3 Feedback-use (FAB-020; supersedes FAB-009's constant ablation)
 
@@ -365,24 +392,34 @@ visible). Paired runs, same scenario and seed:
 
 - **Run A:** normal observations.
 - **Run B — decoy-goal ablation:** heat and heat_delta are computed against a
-  FAKE goal position, drawn once per episode:
-  `rng = random.Random(seed*65_537)`; draws in order:
+  FAKE goal position, drawn **once per scenario (shared across repetitions
+  and agents, by design — one decoy per pairing keeps A/B comparable;
+  FAB-037)**: `rng = random.Random(seed*65_537)`; draws in order:
   `fx = rng.uniform(bounds_min_x+10, bounds_max_x-10)`,
   `fy = rng.uniform(bounds_min_y+10, bounds_max_y-10)`; redraw both (max 8
   times) while `hypot(f-true_goal) < 25.0`; after 8 failures keep the last
-  draw. The signal stays physically plausible and varying — the agent cannot
-  detect the ablation from channel statistics — but is uninformative about
-  the true goal. (A constant ablation is detectable and out-of-distribution;
-  an agent confused by an impossible channel would inflate the score.)
+  draw. Authoring rule: `goal_visible=false` scenarios REQUIRE a bounds
+  extent ≥ 50 m on each axis, or the ≥ 25 m constraint can be unsatisfiable
+  and the margins can invert (FAB-037). The signal stays physically
+  plausible and varying — the agent cannot detect the ablation from channel
+  statistics — but is uninformative about the true goal. (A constant
+  ablation is detectable and out-of-distribution; an agent confused by an
+  impossible channel would inflate the score.)
 
 ```
 fb_raw       = mean over masked scenarios ( outcome_A - outcome_B )
 band         = mean over the same scenarios (
-                 outcome(masked greedy §5.2, true heat)
-               - outcome(masked greedy §5.2, decoy heat) )   # heat-only reference
+                 outcome(masked searcher §5.2, true heat)
+               - outcome(masked searcher §5.2, decoy heat) )  # heat-only reference
 feedback_use = None                       if band < FEEDBACK_MIN_BAND (0.1)
              = 0.5 + 0.5 * clip(fb_raw / band, -1, 1)   otherwise
 ```
+
+The per-scenario band terms are always published next to the pack-level
+band (`PackScores.feedback_band_terms`) so a band dominated by one geometry
+is visible (FAB-037). Core-pack reference values (gradient searcher,
+FAB-032): g007a +0.679, g007b +0.094, g007c +0.266 → band 0.346, pinned in
+`tests/fixtures/golden_masked.json`.
 
 0.5 = no measurable use of feedback; >0.5 = performance depends on hot/cold
 evidence. The unnormalized `fb_raw` and `band` are always published next to
@@ -433,7 +470,10 @@ remain well-defined under RULE A.
   numeric formatting at all. Same N=2 retry policy; a still-unparseable
   choice is attributed to formatting and excluded from the accuracy
   denominator (counted in a `choice_parse_rate`). Accuracy isolates the
-  world model from number emission.
+  world model from number emission. Probe accuracies are ALWAYS published
+  with their trial counts (a NOOP-forced probe episode has finitely many
+  cycles — n≈11 at B=10 — and LLM repetitions are aggregated before
+  reporting; FAB-037).
 - **Tolerant repair parser** (§7.3) so fidelity is never lost to trivia.
 
 ---
@@ -465,15 +505,42 @@ v_des = min(V_CRUISE, K_ARR*d) * (goal - pos)/d      (zero vector if d < 1e-9)
 a = clamp_accel( K_V*(v_des_x - vx),  K_V*(v_des_y - vy) + gravity_mps2 )
 ```
 
-Masked goal (v0.2.1, FAB-029): velocity-servo **run-and-tumble** — keep a
-unit heading `h` (init +x); each cycle, if `heat_delta < 0` rotate `h` by
-+137.5° (golden angle — uniform direction coverage; 72° visited only 5
-headings); `a = clamp_accel(K_V·(V_SEARCH·h_x − vx), K_V·(V_SEARCH·h_y −
-vy) + gravity)` with `V_SEARCH = 6.0 m/s`, `K_V = 1.2 s⁻¹`. The velocity
-servo bounds drift so the searcher survives long enough for the
-1-bit-per-window heat channel to matter; the v0.2 raw-thrust law died of
-drift so fast that decoy-heat runs sometimes beat true-heat runs by luck
-(feedback band ≈ 0, sign-flipping). Prediction: persistence.
+Masked goal (v0.2.2, FAB-032 — supersedes both the 72° law and the v0.2.1
+tumbler): the **gradient-estimating searcher**. Masked observations still
+contain self pos/vel, so the searcher estimates the heat gradient by least
+squares over its own last `GRAD_HIST = 3` windows of
+`(displacement, heat_delta)` — using ACTUAL displacements self-corrects
+both inertia contamination and the two-cycle latch lag that made reactive
+tumblers measure initial-heading luck instead of heat use (a tumbler's
+heading-averaged band was NEGATIVE; rotating its arbitrary init heading
+flipped the band's sign). Normative pseudocode, evaluated as written:
+
+```
+memory: prev_pos (None), hist (list of (dx, dy, delta), max length 3)
+at cycle k with observation (pos, vel, heat_delta):
+  if prev_pos is not None: hist.append((pos - prev_pos, heat_delta)); trim to 3
+  prev_pos = pos
+  if len(hist) < 2:
+      h = (1,0) if k == 0 else (0,1)                     # bootstrap probes
+  else:
+      n11 = Σ dx·dx ; n12 = Σ dx·dy ; n22 = Σ dy·dy      # left-to-right sums
+      b1  = Σ dx·δ  ; b2  = Σ dy·δ
+      det = n11·n22 − n12·n12 ; scale = (n11 + n22) / 2
+      if det > 1e-6·scale·scale:
+          g = ((n22·b1 − n12·b2)/det, (n11·b2 − n12·b1)/det)
+          h = g/‖g‖ if ‖g‖ > 1e-12 else fallback below
+      if h unset:                                         # collinear history
+          d = hist[-1] displacement; h = (−d_y, d_x)/‖d‖  # perpendicular probe
+          (h = (1,0) if ‖d‖ ≤ 1e-12)
+  a = clamp_accel(K_V·(V_SEARCH·h_x − vx), K_V·(V_SEARCH·h_y − vy) + gravity)
+```
+
+`V_SEARCH = 6.0 m/s`, `K_V = 1.2 s⁻¹`. Deterministic; heat-plus-own-
+kinematics only (no goal access). Bearing-robust by construction: verified
+positive paired-ablation contrast with the goal placed E/N/W/S of the start
+(+0.067/+0.090/+0.566/+0.796) — no initial-heading luck. First engaged
+actions and band terms pinned in `tests/fixtures/golden_masked.json`.
+Prediction: persistence.
 
 *Informative:* v0.1's PD law (`Kp=2.0, Kd=2.8`) saturated the thrust cap at
 long range, destroying its own damping — it scored BELOW random and was
@@ -543,6 +610,16 @@ comfortable headroom above 0.25.
   longest — is evidence in itself), but the gate is the probe.
   Pre-verified with the architect's reference implementation on g001
   physics: 0.4550 (B=10) → 0.4332 (B=20) → 0.3749 (B=40).
+  **Admissibility (normative, FAB-034 — replaces the tick+40 rule):** let
+  `B_max` = the largest budget in the sweep; sweep members MUST share
+  `seed`. A reference decision state is ADMISSIBLE iff for EVERY B in the
+  sweep, propagating `(state_k, held_k)` forward B ticks with the true
+  simulator reaches `tick_k + B` without a terminal event (so probe
+  propagation never meets an event, and w cannot saturate on a
+  past-the-end state). Probe states = the first 6 admissible states in
+  trajectory order; oracle calls use `cycle = k`. Fewer than 6 admissible
+  states ⇒ the pack is INVALID for gate (ii) — apply §5.5 levers and
+  re-author.
 - **Lead-greedy (diagnostic):** §5.2's law evaluated on the observed state
   propagated `B` ticks forward using only Observation fields. Not a
   baseline; it is the cheap existence proof that anticipation pays
@@ -562,7 +639,10 @@ ii. **Temporal invariant:** the matched-state probe (§5.6) decreasing with
    (g001_b10 / g001 / g001_b40). Reference numbers (architect's
    implementation): 0.4550 → 0.4332 → 0.3749.
 iii. **Golden fixtures CI green** (§9): `golden_g001.json` AND
-   `golden_edges.json`, exact float equality, not approx.
+   `golden_edges.json` AND `golden_oracle.json` AND `golden_masked.json`,
+   exact float equality, not approx. (Oracle and masked fixtures added by
+   FAB-035 — every temporal/feedback number flows through them, so M1 must
+   not exit around a non-conformant oracle or searcher.)
 iv. **Kill criterion** (§5.4) evaluated with its validity floors and passed;
    numbers logged in DECISIONS.md.
 
@@ -692,14 +772,14 @@ Downloadable packs (M1.5): zip of the same layout + sha256 in a manifest.
 | id | intent |
 |---|---|
 | g001 | baseline (the golden-fixture scenario; gravity 5.0) |
-| g001_b10 / g001_b40 | same physics, B=10 / B=40 (budget sweep, gate ii) |
+| g001_b10 / g001_b40 | same physics, B=10 / B=40 (budget sweep, gate ii); forecast held at 2×B across the sweep (FAB-037: constant ratio, not constant length, so forecast informativeness doesn't confound the budget curve) |
 | g002 | high wind (amp 5+2.5, periods 160/61) |
 | g003 | tight deadline (380 ticks) |
 | g006 | far goal, adverse wind phase |
-| g007a / g007b | masked goal (feedback-use probe), two geometries |
-| g008 | `probe:format` (identity prediction; excluded from axes) |
-| g009 | `probe:forced_choice` (excluded from axes) |
-| g010 | wind regime shift (replanning-tagged) |
+| g007a / g007b / g007c | masked goal (feedback-use probe), three bearings: right-down, down, left-up (FAB-037: three geometries so the band is not one-geometry luck) |
+| g008 | `probe:format` (identity prediction; excluded from axes; B=10 so the NOOP-forced episode yields ~11 trials instead of ~5, FAB-037) |
+| g009 | `probe:forced_choice` (excluded from axes; B=10, same reason — probe accuracy is published WITH its trial count, §4.5) |
+| g010 | wind regime shift via beat wind, periods 150/130 (replanning-tagged) |
 
 ---
 
@@ -738,7 +818,7 @@ diagnostics), dracarys END2END, dracarys WM-SCAFFOLD, llama3.1:8b (2nd
 adapter, M1.5), MARIA (CONFOUNDED label). Pack: core_v0. Reps: 1 for
 deterministic agents (random: 20 for the kill criterion, §5.1), 3 for LLM
 agents with rep-derived seeds (§8), reported mean ± range. NIM 40 RPM
-budget: ≈30 calls/episode × 12 scenarios × 3 reps × 2 arms ≈ 2.2k calls ≈ a
+budget: ≈30 calls/episode × 12 pack scenarios × 3 reps × 2 arms ≈ 2.2k calls ≈ a
 weekend of polite pacing (harness-owned, §7.1).
 
 Deliverables: per-axis table (the diagnosis vector per agent — with
@@ -824,6 +904,11 @@ questions are orthogonal and both needed.
   trajectory, so per-agent temporal scores carry different difficulty
   weightings; Σw and the weight distribution are published per row, and
   cross-agent comparison is caveated accordingly.
+- **Feedback-band composition** — the band is a mean over only three masked
+  geometries and its terms differ ~7× (g007a 0.679 vs g007b 0.094); the
+  per-scenario terms are always published (`feedback_band_terms`) and the
+  searcher's residual bootstrap asymmetry (first two probe windows head +x
+  then +y) is documented rather than hidden.
 - **Selective abstention / engineered termination** → coverage + validity
   rules (§4.1); n_cycles always published.
 - **Example anchoring** → out-of-band example values + example_echo flag

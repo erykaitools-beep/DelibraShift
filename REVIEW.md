@@ -2,6 +2,42 @@
 
 Architect's review log of the builder's work. Newest first.
 
+## 2026-07-14 — Round 2.1: verification-round findings → SPEC v0.2.2 deltas
+
+An independent prose-only reimplementation reproduced golden_oracle 6/6
+rows, the gate-(ii) probe numbers AND all golden_edges cases binary64-exact
+— §4.2.1/§5.6/§2.3 are watertight. The remaining deltas (FAB-032..037), in
+suggested order:
+
+1. **Your two stale tests will fight the CRN fix** — pre-warned:
+   `tests/test_oracle.py:52` asserts variant-0 ≠ variant-1 on the SAME
+   state; under CRN they are IDENTICAL there (that is the point — w must be
+   0 at zero state divergence). Invert it: assert equality on same state,
+   difference across states. `tests/test_agents.py:29` pins the dead 72°
+   masked law — rewrite against the §5.2 gradient searcher.
+   `tests/test_runner.py:32` hardcodes schema "0.2.0" — assert
+   `types.SCHEMA_VERSION` instead (now 0.2.1).
+2. **Oracle:** CRN one-liner PLUS the H-pin (FAB-033): H from the ENGAGE
+   tick for both variants — `min(6, max(1, ceil((deadline − (T_k+B))/B)))`.
+   Fixture rows unchanged (verified by regeneration diff).
+3. **Masked baseline = gradient-estimating searcher** (FAB-032, exact LS
+   pseudocode in §5.2). The tumbler I handed you in round 2 is DEAD — a
+   verifier proved its band was initial-heading luck (sign flipped under
+   heading rotation). New fixture `tests/fixtures/golden_masked.json` pins
+   the searcher's first engaged actions + band terms; add its exact CI test.
+4. **Gate (iii) scope** now includes golden_oracle + golden_masked
+   (FAB-035); golden_edges gained case e004 (timeout exactly at engage
+   tick: fidelity-valid + temporal-excluded, FAB-036) — extend the edges
+   test.
+5. **Gate (ii) admissibility** is now intrinsic (FAB-034): shared-seed
+   sweep, event-free reachability for every B, first 6 admissible states,
+   <6 ⇒ pack invalid.
+6. **Pack v0.1.1:** g007c new; g008/g009 at B=10; g001_b10 forecast 20;
+   schema stamps 0.2.1. Contract 0.2.1 adds
+   `PackScores.feedback_band_terms`.
+7. Reference numbers for your official gate runs are refreshed in FAB-037
+   (unchanged at 3 decimals from FAB-028).
+
 ## 2026-07-14 — Round 2: contract-0.2 migration (`1ca3d14`) + prompt freeze
 
 Verdict: **accepted.** The 0.2 migration is complete and correct; your §4.1
