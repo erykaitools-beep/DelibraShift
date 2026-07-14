@@ -1,4 +1,4 @@
-# ChronoGym SPEC v0.2
+# ChronoGym SPEC v0.2.1
 
 Owner: Fable (Chief Architect & Scientist). Normative unless marked
 *informative*. The executable contract is `chronogym/types.py` (schema
@@ -219,7 +219,11 @@ the reason recorded). Constants and formulas `prediction_error`,
 
 ### 4.1 Prediction-fidelity (METHOD RULE F; FAB-014)
 
-**Valid cycle** := non-truncated AND action-parsed AND prediction-parsed.
+**Valid prediction cycle** := non-truncated AND prediction-parsed. (Action
+parse status is irrelevant here — a valid prediction from an action-failed
+cycle is kept and scored, per FAB-014; action parsing gates the TEMPORAL
+axis, §4.2. This sentence was corrected in round 2 after the builder flagged
+it contradicting the paragraph below — the paragraph was always right.)
 Per valid cycle `k`:
 
 ```
@@ -304,7 +308,13 @@ an absolute threshold.
 #### 4.2.1 The oracle, pinned (normative pseudocode; FAB-017, answers COD-009)
 
 `ORACLE(state s at tick t0, scenario, cycle, variant) -> Action`, with
-`rng = random.Random(seed*1_000_003 + cycle*8191 + variant)`:
+`rng = random.Random(seed*1_000_003 + cycle*8191)` — **`variant` selects the
+timeline semantics (0 = engage-time, 1 = observed-time) and is deliberately
+NOT in the seed** (common random numbers, FAB-030): both variants draw the
+same candidate stream, so `w_k = ||a*_eng − a*_obs||` measures state
+divergence, not CEM sampling noise. With per-variant seeds the noise floor
+was ≈0.1 — drowning the true B=10/20 divergence (≈0.03) and breaking the
+budget-sweep gate.
 
 ```
 B  = deliberation_ticks;  H = min(6, max(1, ceil((deadline_tick - t0) / B)))
@@ -455,10 +465,15 @@ v_des = min(V_CRUISE, K_ARR*d) * (goal - pos)/d      (zero vector if d < 1e-9)
 a = clamp_accel( K_V*(v_des_x - vx),  K_V*(v_des_y - vy) + gravity_mps2 )
 ```
 
-Masked goal: deterministic hot/cold hill-climb — keep a unit heading `h`
-(init +x); each cycle, if `heat_delta < 0` rotate `h` by +72°; `a =
-clamp_accel(0.6·max_accel·h_x, 0.6·max_accel·h_y + gravity)`. Prediction:
-persistence.
+Masked goal (v0.2.1, FAB-029): velocity-servo **run-and-tumble** — keep a
+unit heading `h` (init +x); each cycle, if `heat_delta < 0` rotate `h` by
++137.5° (golden angle — uniform direction coverage; 72° visited only 5
+headings); `a = clamp_accel(K_V·(V_SEARCH·h_x − vx), K_V·(V_SEARCH·h_y −
+vy) + gravity)` with `V_SEARCH = 6.0 m/s`, `K_V = 1.2 s⁻¹`. The velocity
+servo bounds drift so the searcher survives long enough for the
+1-bit-per-window heat channel to matter; the v0.2 raw-thrust law died of
+drift so fast that decoy-heat runs sometimes beat true-heat runs by luck
+(feedback band ≈ 0, sign-flipping). Prediction: persistence.
 
 *Informative:* v0.1's PD law (`Kp=2.0, Kd=2.8`) saturated the thrust cap at
 long range, destroying its own damping — it scored BELOW random and was
@@ -509,11 +524,25 @@ comfortable headroom above 0.25.
 ### 5.6 Diagnostic synthetic agents (not baselines, used by gates)
 
 - **Stale-reactor:** always outputs `a*_obs` (§4.2, variant 1). Used by exit
-  gate (ii): on the same physics with B ∈ {10, 20, 40}, its `temporal_score`
-  must DROP by at least `GATE_II_MARGIN (0.01)` at each step B=10→20→40 —
-  proving the world punishes unanticipated deliberation and is not secretly
-  turn-based. (Strict-but-margin: a 1e-12 float decrease supports no claim;
-  FAB-019.)
+  gate (ii) via the **matched-state probe** (FAB-031, normative): the
+  reference trajectory is lead-greedy (below) on the B=20 member of the
+  sweep triplet; probe states are its first 6 decision states whose action
+  engaged and whose `tick + 40 < reference episode end`, taken as
+  `(state_k, held_k, tick_k, k)` with `held_k` = the action latched during
+  that window. For each B ∈ {10, 20, 40}: `engage_state = propagate(state_k,
+  held_k, tick_k, B)`; `w_k` per §4.2 with the B-variant scenario config;
+  probe score = `0.5·(1 − Σw² / Σw)` (the analytic stale-reactor temporal
+  score on those states). Gate: the score must DROP by at least
+  `GATE_II_MARGIN (0.01)` at each step B=10→20→40 — proving the world
+  punishes unanticipated deliberation and is not secretly turn-based.
+  *Why matched states:* the on-policy episode sweep is small-sample noise —
+  the reactor dies out-of-bounds after 2–4 scored cycles at large B, and
+  its measured direction flipped between v0.2.0 and v0.2.1 oracle seeds;
+  matched states isolate the budget effect exactly. The on-policy episode
+  sweep is still REPORTED as informative (its outcome ladder — B=10 lives
+  longest — is evidence in itself), but the gate is the probe.
+  Pre-verified with the architect's reference implementation on g001
+  physics: 0.4550 (B=10) → 0.4332 (B=20) → 0.3749 (B=40).
 - **Lead-greedy (diagnostic):** §5.2's law evaluated on the observed state
   propagated `B` ticks forward using only Observation fields. Not a
   baseline; it is the cheap existence proof that anticipation pays
@@ -528,9 +557,10 @@ comfortable headroom above 0.25.
 i. **Reproducibility (RULE B):** two full same-seed runs of the random agent
    over the core pack produce byte-identical canonical log files (sha256
    compare). Ships as a test.
-ii. **Temporal invariant:** stale-reactor B-sweep (§5.6) decreasing with
-   margin `GATE_II_MARGIN` on the g001 physics variants
-   (g001_b10 / g001 / g001_b40).
+ii. **Temporal invariant:** the matched-state probe (§5.6) decreasing with
+   margin `GATE_II_MARGIN` across the g001 physics variants
+   (g001_b10 / g001 / g001_b40). Reference numbers (architect's
+   implementation): 0.4550 → 0.4332 → 0.3749.
 iii. **Golden fixtures CI green** (§9): `golden_g001.json` AND
    `golden_edges.json`, exact float equality, not approx.
 iv. **Kill criterion** (§5.4) evaluated with its validity floors and passed;

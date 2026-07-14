@@ -1,0 +1,109 @@
+{
+  "description": "Golden oracle fixture (SPEC 4.2.1, FAB-017): given the scenario (see packs/core_v0), an explicit input state, t0, cycle and variant, a conforming oracle MUST return exactly these actions (binary64 ==). Divergence = spec ambiguity = bug -> DECISIONS.md.",
+  "fixture_id": "golden_oracle",
+  "rows": [
+    {
+      "cycle": 0,
+      "expected_action": {
+        "accel_x_mps2": 10.670898307157907,
+        "accel_y_mps2": -0.5661546789512548
+      },
+      "note": "observed-state oracle at episode start",
+      "scenario_id": "g001",
+      "state": {
+        "pos_x_m": 20.0,
+        "pos_y_m": 70.0,
+        "vel_x_mps": 0.0,
+        "vel_y_mps": 0.0
+      },
+      "t0_tick": 0,
+      "variant": 1
+    },
+    {
+      "cycle": 0,
+      "expected_action": {
+        "accel_x_mps2": 8.31855223612642,
+        "accel_y_mps2": 2.084681130941325
+      },
+      "note": "engage-state oracle after noop-held window (state pinned in golden_g001)",
+      "scenario_id": "g001",
+      "state": {
+        "pos_x_m": 21.634217445260198,
+        "pos_y_m": 67.375,
+        "vel_x_mps": 2.9881011374801663,
+        "vel_y_mps": -5.0
+      },
+      "t0_tick": 20,
+      "variant": 0
+    },
+    {
+      "cycle": 0,
+      "expected_action": {
+        "accel_x_mps2": 5.806749690866057,
+        "accel_y_mps2": -1.8123218243830006
+      },
+      "note": "high-wind scenario, observed-state variant",
+      "scenario_id": "g002",
+      "state": {
+        "pos_x_m": 20.0,
+        "pos_y_m": 70.0,
+        "vel_x_mps": 0.0,
+        "vel_y_mps": 0.0
+      },
+      "t0_tick": 0,
+      "variant": 1
+    },
+    {
+      "cycle": 0,
+      "expected_action": {
+        "accel_x_mps2": 9.711783360197076,
+        "accel_y_mps2": -3.0056404977756306
+      },
+      "note": "high-wind, engage-state variant",
+      "scenario_id": "g002",
+      "state": {
+        "pos_x_m": 22.54707328626058,
+        "pos_y_m": 67.375,
+        "vel_x_mps": 4.412756463116256,
+        "vel_y_mps": -5.0
+      },
+      "t0_tick": 20,
+      "variant": 0
+    },
+    {
+      "cycle": 3,
+      "expected_action": {
+        "accel_x_mps2": 7.807076635035941,
+        "accel_y_mps2": -1.8397538221071459
+      },
+      "note": "mid-episode state from a lead-greedy trajectory (state given explicitly)",
+      "scenario_id": "g001",
+      "state": {
+        "pos_x_m": 36.56617676039324,
+        "pos_y_m": 58.570100264677016,
+        "vel_x_mps": 7.7860688050430245,
+        "vel_y_mps": -4.291296689449542
+      },
+      "t0_tick": 60,
+      "variant": 1
+    },
+    {
+      "cycle": 0,
+      "expected_action": {
+        "accel_x_mps2": 8.198170598092034,
+        "accel_y_mps2": -1.594765360799331
+      },
+      "note": "B=40 horizon/budget variant",
+      "scenario_id": "g001_b40",
+      "state": {
+        "pos_x_m": 20.0,
+        "pos_y_m": 70.0,
+        "vel_x_mps": 0.0,
+        "vel_y_mps": 0.0
+      },
+      "t0_tick": 0,
+      "variant": 1
+    }
+  ],
+  "schema_version": "0.2.0"
+}

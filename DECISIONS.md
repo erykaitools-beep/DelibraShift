@@ -463,3 +463,69 @@ engaged clamped action, truncation, example-echo flag, and per-cycle wall-clock
 telemetry. Manifests carry schema, pack metadata, scenario ids, prompt version,
 agent, and host class. Typed baselines use null raw text and deterministic zero
 telemetry, preserving byte-identical logs.
+
+## FAB-028 — Core pack v0 authored; kill criterion pre-verified
+
+Date: 2026-07-14
+
+packs/core_v0 committed: 11 scenarios per SPEC 9.2 (baseline, budget sweep
+B=10/40, high wind, tight deadline, adverse phase, 2x masked-goal, format +
+forced-choice probes, beat-wind regime shift g010 — two close periods
+150/130 give an amplitude envelope that shifts within the episode without
+any schema change). Gate quantities pre-verified with the architect's
+reference implementation (design-risk retirement; OFFICIAL gate (iv) numbers
+must come from the builder's implementation): V1 = 0.892 (>= 0.2), K1
+D_outcome = 0.723 (>= 0.25), V2 = 0.139 (>= 0.05), K2 not triggered (greedy
+temporal 0.473 vs oracle 0.639; threshold 0.5+0.5*headroom = 0.569).
+Temporal metric orders agents correctly: greedy 0.47 < lead-greedy 0.55 <
+oracle 0.64. Feedback band on the masked pack = 0.451 (>= 0.1). Random
+floor outcome 0.089, oracle ceiling 0.981.
+
+## FAB-029 — Masked-greedy baseline redesigned: velocity-servo run-and-tumble
+
+Date: 2026-07-14
+
+The v0.2 masked law (raw thrust 0.6*amax along heading, rotate 72 deg on
+cold) produced feedback band ~0 and SIGN-FLIPPING paired deltas: the
+searcher died of unbounded drift so fast that decoy-heat runs sometimes
+scored higher than true-heat runs by trajectory luck (one decoy run even
+crossed the true goal). Replaced with a velocity-servo run-and-tumble
+(V_SEARCH=6, K_V=1.2, gravity feedforward, rotate +137.5 deg golden angle on
+cold - 72 deg visited only 5 headings). g007a/b geometries re-centered
+(start (35,55)->goal (65,45); start (50,70)->goal (45,35)). Resulting band
+terms: +0.748 / +0.154, band 0.451.
+
+## FAB-030 — Common random numbers in the oracle seed (amends FAB-017)
+
+Date: 2026-07-14
+
+`variant` is removed from the oracle rng seed: rng = Random(seed*1_000_003 +
+cycle*8191); variant selects timeline semantics only. Reason: with
+per-variant seeds the two CEM runs draw independent candidate streams, giving
+w = ||a_eng - a_obs|| a sampling-noise floor of ~0.1 that drowned the true
+B=10/20 divergence (~0.03) and broke the budget-sweep gate. CRN is the
+standard variance-reduction technique for difference estimators. Empirical
+cross-check: on all variant-0 fixture rows (where old seed == new seed) the
+builder's independent implementation of SPEC 4.2.1 matched the architect's
+reference EXACTLY on binary64 - the pseudocode is unambiguous; the builder's
+one-line CRN update then aligns variant-1 rows. tests/fixtures/
+golden_oracle.json committed (6 rows, CRN).
+
+## FAB-031 — Gate (ii) operationalized as a matched-state probe
+
+Date: 2026-07-14
+
+The on-policy episode sweep (run the stale reactor at B=10/20/40, compare
+episode temporal scores) is NOT a sound gate: the reactor survives only 2-4
+scored cycles at large B, single desperate end-of-life cycles dominate the
+weighted mean, and the measured direction FLIPPED (b40 > b20 under v0.2.0
+seeds; b10 < b20 < b40 under CRN) - pure small-sample noise. Gate (ii) is
+now a matched-state probe (SPEC 5.6): 6 pinned decision states from the
+lead-greedy reference trajectory on the B=20 member; for each B, propagate
+each state B ticks under its latched action, compute w per 4.2, score =
+analytic stale formula 0.5*(1 - sum(w^2)/sum(w)); require drops >= 0.01 per
+step. Same states across budgets = the budget effect in isolation.
+Reference numbers on g001 physics: 0.4550 -> 0.4332 -> 0.3749. The on-policy
+sweep remains reported as informative only. Degenerate probe states (engage
+tick past episode end) are excluded by the tick + 40 < end rule - one such
+state saturated w to 1.0 and inverted the ordering in testing.

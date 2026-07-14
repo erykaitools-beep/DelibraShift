@@ -1,0 +1,35 @@
+{
+  "axis_tags": [],
+  "bounds_max_x_m": 100.0,
+  "bounds_max_y_m": 100.0,
+  "bounds_min_x_m": 0.0,
+  "bounds_min_y_m": 0.0,
+  "deadline_tick": 600,
+  "deliberation_ticks": 20,
+  "dt_s": 0.05,
+  "forecast_ticks": 40,
+  "goal_radius_m": 2.0,
+  "goal_visible": true,
+  "goal_x_m": 85.0,
+  "goal_y_m": 25.0,
+  "gravity_mps2": 5.0,
+  "max_accel_mps2": 15.0,
+  "scenario_id": "g006",
+  "seed": 45,
+  "start_pos_x_m": 15.0,
+  "start_pos_y_m": 80.0,
+  "start_vel_x_mps": 0.0,
+  "start_vel_y_mps": 0.0,
+  "wind_components": [
+    {
+      "amp_mps2": 4.0,
+      "period_ticks": 200.0,
+      "phase_rad": 3.8
+    },
+    {
+      "amp_mps2": 2.0,
+      "period_ticks": 83.0,
+      "phase_rad": 5.5
+    }
+  ]
+}

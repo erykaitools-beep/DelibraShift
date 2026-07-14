@@ -1,0 +1,19 @@
+{
+  "description": "ChronoGym core pack v0: Windrift baseline + budget sweep + high wind + tight deadline + adverse phase + masked-goal feedback probes + format/forced-choice probes + beat-wind regime shift. Kill-criterion subset (SPEC 5.4): goal-visible non-probe scenarios.",
+  "name": "core_v0",
+  "scenarios": [
+    "g001.json",
+    "g001_b10.json",
+    "g001_b40.json",
+    "g002.json",
+    "g003.json",
+    "g006.json",
+    "g007a.json",
+    "g007b.json",
+    "g008.json",
+    "g009.json",
+    "g010.json"
+  ],
+  "schema_version": "0.2.0",
+  "version": "0.1.0"
+}

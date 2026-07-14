@@ -38,13 +38,14 @@ Contract-change rule: only Fable edits `types.py`; every change bumps
 - [x] Codex: fidelity scorer draft, strict pack loader, draft prompt+parser,
       NIM adapter, greedy v0.1, `chronogym-run` CLI (`1379c87`, `5ed12e1`,
       `27ead02`) — pre-v0.2; migration list in REVIEW.md round 1.
-- Codex: migrate to contract 0.2.0 (REVIEW.md round 1 items 1–8: fixtures,
-  greedy §5.2, scoring shape, parser ladder §7.3, loader, prompt, logs).
-- Codex: oracle per §4.2.1 (now fully pinned — COD-009 unblocked) +
-  stale-reactor & lead-greedy & persistence diagnostics (§5.6).
-- Fable: author core pack v0 scenario JSONs (SPEC §9.2); golden ORACLE
-  fixture (scenario+seed+cycle → action, binary64 ==) BEFORE baseline
-  results are read; freeze prompt template (review in REVIEW.md).
+- [x] Codex: migrate to contract 0.2.0 (`1ca3d14`); oracle per §4.2.1.
+- [x] Fable: core pack v0 (`packs/core_v0`, 11 scenarios); golden ORACLE
+  fixture (`tests/fixtures/golden_oracle.json`, CRN); prompt draft-0.2
+  FROZEN as "1.0" (REVIEW round 2); kill criterion + gate (ii) + feedback
+  band pre-verified with reference implementation (FAB-028..031).
+- Codex: CRN seed one-liner + oracle-fixture CI test + masked tumbler
+  (§5.2) + matched-state probe gate (ii) + official gate runs (numbers →
+  COD entry in DECISIONS.md).
 - Exit gates (ALL must pass, SPEC §6): (i) byte-identical same-seed runs;
   (ii) stale-reactor budget sweep decreasing with margin GATE_II_MARGIN;
   (iii) BOTH golden fixtures CI green (g001 + edges); (iv) kill criterion
