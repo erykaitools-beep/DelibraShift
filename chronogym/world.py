@@ -182,6 +182,7 @@ def build_observation(
     episode_id: str,
     cycle: int,
     previous_heat: float | None = None,
+    heat_goal_m: tuple[float, float] | None = None,
 ) -> Observation:
     """Expose the complete, prediction-safe state visible at a cycle start."""
     if cycle < 0:
@@ -191,6 +192,14 @@ def build_observation(
         for offset in range(config.forecast_ticks)
     )
     visible_distance = state.distance_to_goal_m if config.goal_visible else None
+    observed_heat = state.heat
+    if heat_goal_m is not None:
+        observed_heat = heat_from_distance(
+            math.hypot(
+                state.pos_x_m - heat_goal_m[0],
+                state.pos_y_m - heat_goal_m[1],
+            )
+        )
     return Observation(
         schema_version=SCHEMA_VERSION,
         scenario_id=config.scenario_id,
@@ -214,8 +223,8 @@ def build_observation(
         goal_x_m=config.goal_x_m if config.goal_visible else None,
         goal_y_m=config.goal_y_m if config.goal_visible else None,
         goal_radius_m=config.goal_radius_m,
-        heat=state.heat,
-        heat_delta=0.0 if previous_heat is None else state.heat - previous_heat,
+        heat=observed_heat,
+        heat_delta=0.0 if previous_heat is None else observed_heat - previous_heat,
         distance_to_goal_m=visible_distance,
         bounds_min_x_m=config.bounds_min_x_m,
         bounds_min_y_m=config.bounds_min_y_m,

@@ -52,3 +52,25 @@
 - Test status: 54 passed; same-seed byte identity and both physics fixtures
   pass. Core-pack gates, stale budget sweep, kill criterion, and oracle numeric
   publication remain pending Fable's core pack and golden oracle fixture.
+
+## 2026-07-14 — Codex contract 0.2.1 verification pass
+
+- Migrated the oracle to common random numbers and the engage-tick horizon
+  pin. All six `golden_oracle` rows reproduce with exact binary64 equality.
+- Replaced the masked tumbler with SPEC 5.2's three-window least-squares
+  gradient searcher and implemented deterministic decoy-goal paired runs.
+  The g007a first six actions, complete true-heat episode, and all three decoy
+  goals reproduce exactly.
+- Froze the already-reviewed standard prompt as version `1.0` without changing
+  its template, and migrated log assertions to schema `0.2.1`.
+- Added executable full-pack reproducibility, matched-state, feedback-band,
+  and kill-criterion gates plus the `chronogym-gates` command.
+- Official builder run: gate (i) passed (SHA-256
+  `6a964c34e3168b034f8c8be8b592ab513f9b975aff098439cde743fb1aa289ea`);
+  gate (ii) passed at `0.4549931514 -> 0.4331712122 -> 0.3748602486`;
+  gate (iv) passed with V1 `0.8921990872`, D_outcome `0.7228411275`, V2
+  `0.1387795005`, greedy temporal `0.4732096352`, and oracle temporal
+  `0.6387795005`.
+- Test status: 60 passed, 1 strict expected failure. Gate (iii) is not claimed:
+  the Fable-owned g007c band term is 9e-16 above direct recomputation from the
+  normative outcome formula. The other golden checks pass exactly.

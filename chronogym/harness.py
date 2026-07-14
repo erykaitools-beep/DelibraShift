@@ -25,7 +25,7 @@ from .types import (
     canonical_json,
 )
 
-PROMPT_VERSION = "draft-0.2"
+PROMPT_VERSION = "1.0"
 MAX_PARSE_RETRIES = 2
 
 

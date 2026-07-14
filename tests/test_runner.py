@@ -7,7 +7,7 @@ from dataclasses import replace
 from chronogym.agents import GreedyAgent, NoOpAgent, RandomAgent
 from chronogym.demo import demo_scenario
 from chronogym.runner import run_episode
-from chronogym.types import NOOP_ACTION
+from chronogym.types import NOOP_ACTION, SCHEMA_VERSION
 
 
 def test_same_seed_random_runs_have_byte_identical_whole_logs(tmp_path) -> None:
@@ -29,7 +29,7 @@ def test_episode_log_is_canonical_jsonl_with_graded_final_state() -> None:
     records = [json.loads(line) for line in lines]
 
     assert records[0]["type"] == "manifest"
-    assert records[0]["schema_version"] == "0.2.0"
+    assert records[0]["schema_version"] == SCHEMA_VERSION
     assert records[0]["scenario_ids"] == ["demo_g001"]
     assert records[0]["host_class"]
     assert records[-1]["type"] == "summary"

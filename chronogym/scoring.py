@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from statistics import fmean
 from typing import Iterable
 
 from .oracle import oracle_action, state_from_observation
@@ -42,6 +41,11 @@ class TemporalAnticipationScore:
     temporal_anticipation: float | None
     mean_divergence_weight: float
     n_scored_cycles: int
+
+
+def _mean(values: list[float]) -> float:
+    """SPEC-wide naive left-to-right arithmetic mean."""
+    return sum(values) / len(values)
 
 
 def score_outcome(config: ScenarioConfig, result: EpisodeResult) -> float:
@@ -101,7 +105,7 @@ def score_prediction_fidelity(
         else 0.0
     )
     invalid_reason = None
-    fidelity = fmean(fidelities) if fidelities else None
+    fidelity = _mean(fidelities) if fidelities else None
     if not requested:
         invalid_reason = "not_requested"
         fidelity = None
@@ -117,7 +121,7 @@ def score_prediction_fidelity(
         prediction_coverage=coverage,
         fidelity_invalid_reason=invalid_reason,
         persistence_floor_fidelity=(
-            fmean(persistence_fidelities) if persistence_fidelities else None
+            _mean(persistence_fidelities) if persistence_fidelities else None
         ),
         action_parse_rate=action_parsed / total if total else 0.0,
         prediction_parse_rate=(

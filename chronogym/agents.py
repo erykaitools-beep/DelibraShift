@@ -96,11 +96,70 @@ class GreedyAgent:
     name = "greedy"
 
     def __init__(self) -> None:
-        self._masked_heading_rad = 0.0
+        self._masked_previous_position: tuple[float, float] | None = None
+        self._masked_history: list[tuple[float, float, float]] = []
+
+    def _masked_action(self, observation: Observation) -> Action:
+        position = (observation.pos_x_m, observation.pos_y_m)
+        if self._masked_previous_position is not None:
+            previous_x, previous_y = self._masked_previous_position
+            self._masked_history.append(
+                (
+                    position[0] - previous_x,
+                    position[1] - previous_y,
+                    observation.heat_delta,
+                )
+            )
+            self._masked_history = self._masked_history[-3:]
+        self._masked_previous_position = position
+
+        heading: tuple[float, float] | None = None
+        if len(self._masked_history) < 2:
+            heading = (1.0, 0.0) if observation.cycle == 0 else (0.0, 1.0)
+        else:
+            n11 = sum(dx * dx for dx, _, _ in self._masked_history)
+            n12 = sum(dx * dy for dx, dy, _ in self._masked_history)
+            n22 = sum(dy * dy for _, dy, _ in self._masked_history)
+            b1 = sum(dx * delta for dx, _, delta in self._masked_history)
+            b2 = sum(dy * delta for _, dy, delta in self._masked_history)
+            determinant = n11 * n22 - n12 * n12
+            scale = (n11 + n22) / 2.0
+            if determinant > 1e-6 * scale * scale:
+                gradient_x = (n22 * b1 - n12 * b2) / determinant
+                gradient_y = (n11 * b2 - n12 * b1) / determinant
+                gradient_norm = math.hypot(gradient_x, gradient_y)
+                if gradient_norm > 1e-12:
+                    heading = (
+                        gradient_x / gradient_norm,
+                        gradient_y / gradient_norm,
+                    )
+            if heading is None:
+                displacement_x, displacement_y, _ = self._masked_history[-1]
+                displacement_norm = math.hypot(displacement_x, displacement_y)
+                if displacement_norm > 1e-12:
+                    heading = (
+                        -displacement_y / displacement_norm,
+                        displacement_x / displacement_norm,
+                    )
+                else:
+                    heading = (1.0, 0.0)
+
+        raw_x = 1.2 * (6.0 * heading[0] - observation.vel_x_mps)
+        raw_y = (
+            1.2 * (6.0 * heading[1] - observation.vel_y_mps)
+            + observation.gravity_mps2
+        )
+        accel_x, accel_y = clamp_accel(
+            raw_x,
+            raw_y,
+            observation.max_accel_mps2,
+        )
+        return Action(accel_x, accel_y)
 
     def act(self, observation: Observation) -> AgentReply:
         if observation.cycle == 0:
-            self._masked_heading_rad = 0.0
+            self._masked_previous_position = None
+            self._masked_history = []
         if observation.goal_x_m is not None and observation.goal_y_m is not None:
             action = arrival_action(
                 pos_x_m=observation.pos_x_m,
@@ -113,20 +172,7 @@ class GreedyAgent:
                 max_accel_mps2=observation.max_accel_mps2,
             )
         else:
-            if observation.heat_delta < 0.0:
-                self._masked_heading_rad += TWO_PI / 5.0
-            thrust = 0.6 * observation.max_accel_mps2
-            raw_x = thrust * math.cos(self._masked_heading_rad)
-            raw_y = (
-                thrust * math.sin(self._masked_heading_rad)
-                + observation.gravity_mps2
-            )
-            accel_x, accel_y = clamp_accel(
-                raw_x,
-                raw_y,
-                observation.max_accel_mps2,
-            )
-            action = Action(accel_x, accel_y)
+            action = self._masked_action(observation)
         return AgentReply(
             action=action,
             prediction=persistence_prediction(observation),

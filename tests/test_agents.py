@@ -26,7 +26,7 @@ def test_visible_greedy_is_arrival_steering_with_gravity_feedforward() -> None:
     assert reply.prediction.pos_x_m == observation.pos_x_m
 
 
-def test_masked_greedy_rotates_72_degrees_only_after_cooling() -> None:
+def test_masked_greedy_bootstraps_two_orthogonal_probes() -> None:
     config = replace(demo_scenario(), goal_visible=False)
     observation = build_observation(
         config,
@@ -36,11 +36,19 @@ def test_masked_greedy_rotates_72_degrees_only_after_cooling() -> None:
     )
     agent = GreedyAgent()
     first = agent.act(observation).action
-    warmer = agent.act(replace(observation, cycle=1, heat_delta=0.01)).action
-    cooler = agent.act(replace(observation, cycle=2, heat_delta=-0.01)).action
-    assert warmer == first
-    assert cooler != first
-    assert cooler.accel_y_mps2 > first.accel_y_mps2
+    second = agent.act(
+        replace(
+            observation,
+            cycle=1,
+            pos_x_m=observation.pos_x_m + 1.0,
+            vel_x_mps=1.0,
+            heat_delta=0.01,
+        )
+    ).action
+    assert first.accel_x_mps2 == 7.199999999999999
+    assert first.accel_y_mps2 == config.gravity_mps2
+    assert second.accel_x_mps2 < 0.0
+    assert second.accel_y_mps2 > first.accel_y_mps2
 
 
 def test_greedy_baseline_is_byte_reproducible() -> None:

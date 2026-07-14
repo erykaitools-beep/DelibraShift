@@ -88,6 +88,7 @@ def run_episode(
     pack_version: str | None = None,
     host_class: str | None = None,
     scenario_ids: tuple[str, ...] | None = None,
+    heat_goal_m: tuple[float, float] | None = None,
 ) -> EpisodeResult:
     """Run one episode; simulated time advances only by fixed B-tick windows."""
     owned_stream = BytesIO() if stream is None else None
@@ -124,6 +125,7 @@ def run_episode(
             episode_id=episode_id,
             cycle=cycle,
             previous_heat=previous_heat,
+            heat_goal_m=heat_goal_m,
         )
         previous_heat = observation.heat
         reply = agent.act(observation)

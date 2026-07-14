@@ -44,9 +44,19 @@ keys, and unsafe scenario paths.
 The NIM transport is configured externally with `NIM_MODEL`, `NIM_BASE_URL`,
 and optionally `NVIDIA_API_KEY`. It only sends an already-rendered prompt to
 the OpenAI-compatible chat-completions endpoint; prompt construction, parsing,
-and retries stay in the harness. The current v0.2 prompt is explicitly a draft
-pending the architect's prompt freeze and must not be used for publishable
-comparisons.
+and retries stay in the harness. The reviewed standard-cycle prompt is frozen
+as version `1.0`.
+
+Evaluate the executable pack gates (the sampling-MPC kill criterion is the
+CPU-heavy part):
+
+```bash
+chronogym-gates packs/core_v0
+```
+
+This reports full-pack byte reproducibility, the matched-state budget probe,
+the masked-searcher feedback band, and the registered kill criterion as
+canonical JSON. Exact golden fixtures remain the pytest-owned gate (iii).
 
 Reproducibility is a hard requirement: physics is a pure function of scenario,
 state, held action, and simulated time delta. Same-seed baseline runs produce

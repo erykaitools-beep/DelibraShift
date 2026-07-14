@@ -15,6 +15,7 @@ dependencies = []
 [project.scripts]
 chronogym-demo = "chronogym.demo:main"
 chronogym-run = "chronogym.cli:main"
+chronogym-gates = "chronogym.gate_cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]

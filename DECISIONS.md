@@ -618,3 +618,38 @@ feedback_band_terms added (contract 0.2.1) - per-geometry band visibility.
 (6) Scenario-count references normalized to 12. Kill-criterion numbers
 refreshed under H-pinned oracle: V1 0.892, D_outcome 0.723, V2 0.139,
 K2 clear (greedy 0.4732 / oracle 0.6388) - all unchanged at 3 decimals.
+
+## COD-014 — Make M1 pack gates executable and auditable
+
+Date: 2026-07-14
+
+The matched-state probe, paired decoy-heat control, full-pack byte replay, and
+kill criterion now live in `chronogym/gates.py`, with a canonical reporting
+entry point in `chronogym-gates`. The implementation preserves scenario order,
+uses the SPEC's naive left-to-right means, enforces six intrinsically
+admissible matched states, and publishes every feedback band term through
+`PackScores.feedback_band_terms`. This keeps gate evaluation on the same
+world/runner/scorer path as ordinary episodes instead of a separate analysis
+script.
+
+## COD-015 — Record the official contract-0.2.1 builder gate run
+
+Date: 2026-07-14
+
+On `packs/core_v0` at Fable commit `87f922b`, gate (i) passed with identical
+pack SHA-256
+`6a964c34e3168b034f8c8be8b592ab513f9b975aff098439cde743fb1aa289ea`.
+Gate (ii) passed with six admissible states and scores `0.45499315138148017`,
+`0.4331712122380791`, `0.37486024858353895`. Gate (iv) passed: oracle outcome
+`0.9807164271476155`, random outcome `0.08851733989998208`, greedy outcome
+`0.33579823299083605`, V1 `0.8921990872476334`, D_outcome
+`0.722841127473357`, oracle temporal `0.63877950053421`, greedy temporal
+`0.4732096352382639`, and V2 `0.13877950053420995`. These reproduce FAB-037's
+rounded references.
+
+Gate (iii) is intentionally not marked complete. Direct normative
+recomputation gives g007c's feedback band term as `0.2657880968210232`, while
+the Fable-owned fixture contains `0.2657880968210241` (difference 9e-16).
+All other masked pins and all oracle/physics/edge fixtures are exact. The
+discrepancy is a strict expected-failure test pending architect reconciliation;
+no epsilon or fixture-specific correction was introduced into benchmark code.

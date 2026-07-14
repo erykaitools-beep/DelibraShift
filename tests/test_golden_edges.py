@@ -4,7 +4,10 @@ import json
 from pathlib import Path
 
 from chronogym.clock import advance_deliberation, latch_action
-from chronogym.types import Action, ScenarioConfig, WindComponent
+from chronogym.agents import NoOpAgent, persistence_prediction
+from chronogym.runner import run_episode
+from chronogym.scoring import score_prediction_fidelity, score_temporal_anticipation
+from chronogym.types import Action, AgentReply, ScenarioConfig, WindComponent
 from chronogym.world import initial_state, step
 
 
@@ -89,3 +92,32 @@ def test_deadline_mid_second_window_is_exact_and_truncated() -> None:
     assert second.state.outcome == edge["outcome"]
     assert second.truncated == edge["cycle1_truncated"]
     assert_kinematics(second.state, edge["final_state"])
+
+
+def test_timeout_at_engage_tick_is_fidelity_valid_and_temporal_excluded() -> None:
+    edge = FIXTURE["e004_timeout_at_engage_tick"]
+    config = scenario(edge, "e004")
+    class FixedAgent:
+        name = "fixed"
+
+        def act(self, observation):
+            action_x, action_y = edge["engaged_action_window2"]
+            return AgentReply(
+                action=Action(action_x, action_y),
+                prediction=persistence_prediction(observation),
+            )
+
+    result = run_episode(config, FixedAgent())
+    final_record = result.records[1]
+    assert result.final_state.tick == edge["event_tick"]
+    assert result.final_state.outcome == edge["outcome"]
+    assert_kinematics(result.final_state, edge["final_state"])
+    assert final_record.prediction_target is not None
+    assert not final_record.truncated
+    assert not final_record.action_engaged
+    assert final_record.engaged_action is None
+    fidelity = score_prediction_fidelity((final_record,))
+    temporal = score_temporal_anticipation(config, (final_record,))
+    assert fidelity.n_valid_prediction_cycles == 1
+    assert temporal.n_scored_cycles == 0
+    assert temporal.temporal_anticipation is None

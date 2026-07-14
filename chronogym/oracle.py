@@ -99,8 +99,11 @@ def oracle_action(
     """Return the pinned elite-mean first action for one oracle invocation."""
     if state.done:
         return NOOP_ACTION
-    rng = random.Random(config.seed * 1_000_003 + cycle * 8_191 + variant)
-    remaining = config.deadline_tick - state.tick
+    if variant not in (0, 1):
+        raise ValueError("oracle variant must be 0 or 1")
+    rng = random.Random(config.seed * 1_000_003 + cycle * 8_191)
+    engage_tick = state.tick if variant == 0 else state.tick + config.deliberation_ticks
+    remaining = config.deadline_tick - engage_tick
     horizon = min(6, max(1, math.ceil(remaining / config.deliberation_ticks)))
     noop_plan = (NOOP_ACTION,) * horizon
     greedy_plan = (_greedy_for_state(config, state),) * horizon
