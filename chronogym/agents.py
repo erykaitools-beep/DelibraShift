@@ -29,6 +29,34 @@ def persistence_prediction(observation: Observation) -> Prediction:
     )
 
 
+def arrival_action(
+    *,
+    pos_x_m: float,
+    pos_y_m: float,
+    vel_x_mps: float,
+    vel_y_mps: float,
+    goal_x_m: float,
+    goal_y_m: float,
+    gravity_mps2: float,
+    max_accel_mps2: float,
+) -> Action:
+    """SPEC 5.2 arrival steering, shared by greedy and oracle seed plans."""
+    delta_x = goal_x_m - pos_x_m
+    delta_y = goal_y_m - pos_y_m
+    distance = math.hypot(delta_x, delta_y)
+    if distance < 1e-9:
+        desired_x = 0.0
+        desired_y = 0.0
+    else:
+        desired_speed = min(8.0, 0.35 * distance)
+        desired_x = desired_speed * delta_x / distance
+        desired_y = desired_speed * delta_y / distance
+    raw_x = 1.2 * (desired_x - vel_x_mps)
+    raw_y = 1.2 * (desired_y - vel_y_mps) + gravity_mps2
+    accel_x, accel_y = clamp_accel(raw_x, raw_y, max_accel_mps2)
+    return Action(accel_x, accel_y)
+
+
 class NoOpAgent:
     """Always command zero thrust and emit the persistence prediction."""
 
@@ -46,12 +74,15 @@ class RandomAgent:
 
     name = "random"
 
-    def __init__(self, seed: int) -> None:
+    def __init__(self, seed: int, *, repetition: int = 0) -> None:
         self.seed = seed
+        self.repetition = repetition
 
     def act(self, observation: Observation) -> AgentReply:
-        rng = random.Random(self.seed * 7_919 + observation.cycle)
-        angle = rng.random() * TWO_PI
+        rng = random.Random(
+            self.seed * 7_919 + self.repetition * 1_000_003 + observation.cycle
+        )
+        angle = rng.uniform(0.0, TWO_PI)
         radius = observation.max_accel_mps2 * math.sqrt(rng.random())
         return AgentReply(
             action=Action(radius * math.cos(angle), radius * math.sin(angle)),
@@ -71,14 +102,15 @@ class GreedyAgent:
         if observation.cycle == 0:
             self._masked_heading_rad = 0.0
         if observation.goal_x_m is not None and observation.goal_y_m is not None:
-            raw_x = (
-                2.0 * (observation.goal_x_m - observation.pos_x_m)
-                - 2.8 * observation.vel_x_mps
-            )
-            raw_y = (
-                2.0 * (observation.goal_y_m - observation.pos_y_m)
-                - 2.8 * observation.vel_y_mps
-                + observation.gravity_mps2
+            action = arrival_action(
+                pos_x_m=observation.pos_x_m,
+                pos_y_m=observation.pos_y_m,
+                vel_x_mps=observation.vel_x_mps,
+                vel_y_mps=observation.vel_y_mps,
+                goal_x_m=observation.goal_x_m,
+                goal_y_m=observation.goal_y_m,
+                gravity_mps2=observation.gravity_mps2,
+                max_accel_mps2=observation.max_accel_mps2,
             )
         else:
             if observation.heat_delta < 0.0:
@@ -89,12 +121,13 @@ class GreedyAgent:
                 thrust * math.sin(self._masked_heading_rad)
                 + observation.gravity_mps2
             )
-        accel_x, accel_y = clamp_accel(
-            raw_x,
-            raw_y,
-            observation.max_accel_mps2,
-        )
+            accel_x, accel_y = clamp_accel(
+                raw_x,
+                raw_y,
+                observation.max_accel_mps2,
+            )
+            action = Action(accel_x, accel_y)
         return AgentReply(
-            action=Action(accel_x, accel_y),
+            action=action,
             prediction=persistence_prediction(observation),
         )

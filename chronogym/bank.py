@@ -86,19 +86,17 @@ def _load_scenario(path: Path) -> ScenarioConfig:
     wind_payload = payload.get("wind_components", [])
     if not isinstance(wind_payload, list):
         raise PackError(f"wind_components must be a list: {path}")
-    components = []
+    normalized_components = []
     for index, component in enumerate(wind_payload):
         if not isinstance(component, dict):
             raise PackError(f"wind component {index} must be an object: {path}")
         _require_exact_fields(component, _WIND_FIELDS, "wind component")
         try:
-            components.append(
-                WindComponent(
-                    **{
-                        name: _as_float(component[name], f"wind component {name}")
-                        for name in _WIND_FIELDS
-                    }
-                )
+            normalized_components.append(
+                {
+                    name: _as_float(component[name], f"wind component {name}")
+                    for name in _WIND_FIELDS
+                }
             )
         except (KeyError, TypeError) as error:
             raise PackError(f"invalid wind component {index}: {error}") from error
@@ -106,8 +104,8 @@ def _load_scenario(path: Path) -> ScenarioConfig:
     axis_tags = payload.get("axis_tags", [])
     if not isinstance(axis_tags, list) or any(not isinstance(tag, str) for tag in axis_tags):
         raise PackError(f"axis_tags must be a list of strings: {path}")
-    payload["wind_components"] = tuple(components)
-    payload["axis_tags"] = tuple(axis_tags)
+    payload["wind_components"] = normalized_components
+    payload["axis_tags"] = axis_tags
     for name in _FLOAT_FIELDS & payload.keys():
         payload[name] = _as_float(payload[name], name)
     for name in _INTEGER_FIELDS & payload.keys():
@@ -115,15 +113,14 @@ def _load_scenario(path: Path) -> ScenarioConfig:
         if isinstance(value, bool) or not isinstance(value, int):
             raise PackError(f"{name} must be an integer")
     try:
-        scenario = ScenarioConfig(**payload)
+        scenario = ScenarioConfig.from_json_dict(payload)
         validate_scenario(scenario)
     except (TypeError, ValueError) as error:
         raise PackError(f"invalid scenario {path}: {error}") from error
     return scenario
 
 
-def load_pack(path: str | Path) -> list[ScenarioConfig]:
-    """Load one strict v0 pack directory in manifest order."""
+def load_pack_metadata(path: str | Path) -> dict[str, object]:
     root = Path(path)
     if not root.is_dir():
         raise PackError(f"pack path is not a directory: {root}")
@@ -145,6 +142,17 @@ def load_pack(path: str | Path) -> list[ScenarioConfig]:
         not isinstance(name, str) for name in scenario_files
     ):
         raise PackError("manifest scenarios must be a list of filenames")
+    return manifest
+
+
+def load_pack(path: str | Path) -> list[ScenarioConfig]:
+    """Load one strict v0 pack directory in manifest order."""
+    root = Path(path)
+    if not root.is_dir():
+        raise PackError(f"pack path is not a directory: {root}")
+    manifest = load_pack_metadata(root)
+    scenario_files = manifest["scenarios"]
+    assert isinstance(scenario_files, list)
 
     scenarios: list[ScenarioConfig] = []
     seen_ids: set[str] = set()

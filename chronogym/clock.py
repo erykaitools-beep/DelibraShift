@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from .types import Action, GroundTruthState, ScenarioConfig, clamp_accel
-from .world import advance_ticks
+from .world import step
 
 
 @dataclass(frozen=True)
@@ -15,6 +15,7 @@ class WindowAdvance:
     state: GroundTruthState
     ticks_elapsed: int
     truncated: bool
+    min_distance_to_goal_m: float
 
 
 def advance_deliberation(
@@ -23,12 +24,19 @@ def advance_deliberation(
 ) -> WindowAdvance:
     """Advance B ticks under the action already latched in ``state``."""
     target_tick = state.tick + config.deliberation_ticks
-    advanced = advance_ticks(config, state, config.deliberation_ticks)
+    advanced = state
+    min_distance = state.distance_to_goal_m
+    for _ in range(config.deliberation_ticks):
+        if advanced.done:
+            break
+        advanced = step(config, advanced)
+        min_distance = min(min_distance, advanced.distance_to_goal_m)
     elapsed = advanced.tick - state.tick
     return WindowAdvance(
         state=advanced,
         ticks_elapsed=elapsed,
         truncated=advanced.tick != target_tick,
+        min_distance_to_goal_m=min_distance,
     )
 
 

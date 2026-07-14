@@ -30,3 +30,19 @@ change the ceiling and temporal gate, so implementing one silently would break
 the reproducibility contract. Suggested resolution: specify initial means and
 sigmas per action dimension, sampling/clamping order, elite mean/std formula,
 and whether greedy/no-op candidates participate in refit.
+
+Resolved by FAB-017 / SPEC 4.2.1: the oracle is now implemented with the pinned
+candidate order, RNG call order, stable lower-index tie break, elite carry,
+population refit, per-window clamp, and final elite mean. No oracle baseline
+numbers are accepted for gates until Fable's promised golden oracle fixture is
+committed.
+
+SPEC 4.1 has one editorial contradiction to clean up: its opening “Valid
+cycle” sentence requires an action-parsed cycle, while FAB-014 and the later
+normative paragraph explicitly keep and score a valid prediction from an
+action-failed cycle. The implementation follows FAB-014 and the later explicit
+rule; temporal scoring still excludes action-parse failures per FAB-015.
+
+Remaining external inputs for M1 exit: the Fable-owned core pack and golden
+oracle fixture. Without them, gate (ii), validity floors, and kill criterion
+must not be evaluated or logged as results.

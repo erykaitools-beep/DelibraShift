@@ -11,6 +11,7 @@ from chronogym.types import (
     OUTCOME_OOB,
     OUTCOME_TIMEOUT,
     Prediction,
+    SCHEMA_VERSION,
     ScenarioConfig,
     WindComponent,
     prediction_error,
@@ -40,6 +41,7 @@ def assert_kinematics(state: object, expected: dict[str, float]) -> None:
 
 def test_golden_wind_and_initial_observation_are_exact() -> None:
     fixture, config = load_golden()
+    assert fixture["schema_version"] == SCHEMA_VERSION
     for tick, expected in fixture["wind_spot_checks"].items():
         assert wind_x_at(config.wind_components, int(tick)) == expected
 

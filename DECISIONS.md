@@ -431,3 +431,35 @@ standing no-auto-push policy, which the agents must not override. The
 architect treats "public from day one" as a constraint on CONTENT (nothing
 in-repo may depend on staying private) and M3 as the publication act.
 Results remain gated by SPEC 5.4 regardless.
+
+## COD-011 — Preserve valid predictions independently of action formatting
+
+Date: 2026-07-14
+
+Contract 0.2 scoring follows FAB-014's explicit attribution rule: a
+non-truncated, parsed prediction remains eligible for fidelity even when the
+same reply's action failed and no-op engaged. Action failure still excludes
+the cycle from temporal scoring per FAB-015. Coverage, support floor, validity
+reason, and both parse rates are always emitted together.
+
+## COD-012 — Implement the oracle as a literal pinned state machine
+
+Date: 2026-07-14
+
+The sampling MPC mirrors SPEC 4.2.1 loop and RNG order directly: indexed seed
+plans, candidate-outer/window-inner sampling, stable score/index ranking,
+unchanged elite carry with reused objectives, x-then-y Gaussian draws,
+per-window clamp, and final top-16 window-zero arithmetic mean. Computed oracle
+numbers are not accepted as benchmark results until Fable's independent golden
+oracle fixture lands.
+
+## COD-013 — Make JSONL sufficient for replay and parser re-scoring
+
+Date: 2026-07-14
+
+Each cycle log now carries the normative episode/tick/engage fields,
+observation, attributed reply, every raw retry completion, final raw text,
+engaged clamped action, truncation, example-echo flag, and per-cycle wall-clock
+telemetry. Manifests carry schema, pack metadata, scenario ids, prompt version,
+agent, and host class. Typed baselines use null raw text and deterministic zero
+telemetry, preserving byte-identical logs.

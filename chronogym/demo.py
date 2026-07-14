@@ -7,7 +7,7 @@ import sys
 
 from .agents import GreedyAgent, NoOpAgent, RandomAgent
 from .runner import run_episode
-from .scoring import score_prediction_fidelity
+from .scoring import score_outcome, score_prediction_fidelity
 from .types import ScenarioConfig, WindComponent, canonical_json
 
 
@@ -52,8 +52,12 @@ def main(argv: list[str] | None = None) -> int:
                 "cycles": result.cycles,
                 "final_heat": result.final_state.heat,
                 "outcome": result.final_state.outcome,
-                "parse_rate": fidelity.parse_rate,
-                "persistence_floor": fidelity.persistence_floor,
+                "outcome_score": score_outcome(config, result),
+                "action_parse_rate": fidelity.action_parse_rate,
+                "prediction_parse_rate": fidelity.prediction_parse_rate,
+                "prediction_coverage": fidelity.prediction_coverage,
+                "fidelity_invalid_reason": fidelity.fidelity_invalid_reason,
+                "persistence_floor_fidelity": fidelity.persistence_floor_fidelity,
                 "prediction_fidelity": fidelity.prediction_fidelity,
                 "tick": result.final_state.tick,
             }

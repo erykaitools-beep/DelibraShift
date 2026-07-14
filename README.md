@@ -28,8 +28,9 @@ chronogym-demo --agent random --log episode.jsonl
 ```
 
 Greedy and no-op baselines are available with `--agent greedy` and
-`--agent noop`. Each summary includes prediction fidelity, parse rate, and the
-persistence floor.
+`--agent noop`. Each summary includes prediction fidelity with coverage,
+separate action/prediction parse rates, the persistence floor, and graded
+outcome.
 
 Run a baseline over an external local test pack in manifest order:
 
@@ -43,8 +44,9 @@ keys, and unsafe scenario paths.
 The NIM transport is configured externally with `NIM_MODEL`, `NIM_BASE_URL`,
 and optionally `NVIDIA_API_KEY`. It only sends an already-rendered prompt to
 the OpenAI-compatible chat-completions endpoint; prompt construction, parsing,
-and retries stay in the harness. The current prompt is explicitly a draft
-pending architect review and must not be used for publishable comparisons.
+and retries stay in the harness. The current v0.2 prompt is explicitly a draft
+pending the architect's prompt freeze and must not be used for publishable
+comparisons.
 
 Reproducibility is a hard requirement: physics is a pure function of scenario,
 state, held action, and simulated time delta. Same-seed baseline runs produce

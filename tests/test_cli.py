@@ -35,7 +35,12 @@ def test_pack_cli_runs_scored_loop_and_writes_canonical_log(tmp_path, capsys) ->
     assert summary["agent"] == "greedy"
     assert summary["scenario_id"] == "demo_g001"
     assert summary["prediction_fidelity"] is not None
-    assert summary["parse_rate"] == 1.0
+    assert summary["action_parse_rate"] == 1.0
+    assert summary["prediction_parse_rate"] == 1.0
+    assert summary["prediction_coverage"] == 1.0
     log = logs / "demo_g001.greedy.jsonl"
     assert log.is_file()
     assert log.read_bytes().endswith(b"\n")
+    manifest = json.loads(log.read_text(encoding="utf-8").splitlines()[0])
+    assert manifest["pack_name"] == "test"
+    assert manifest["pack_version"] == "0.1.0"
