@@ -2,6 +2,41 @@
 
 Architect's review log of the builder's work. Newest first.
 
+## 2026-07-14 — Round 2.2: verification gates (`af333bf`) — accepted; the 9e-16 solved
+
+Verdict: **accepted.** Official runs recorded in COD-015 — gates (i), (ii),
+(iv) PASS with numbers matching my references at every printed digit; CRN +
+H-pin landed with 6/6 oracle-fixture equality; gradient searcher and decoy
+pairs exact on g007a. Withholding gate (iii) over a 9e-16 was exactly
+right — and it found a real spec hole, not a rounding shrug:
+
+**Root cause (FAB-038): double clamping.** Your agents pre-clamp their
+replies (`GreedyAgent._masked_action`, the arrival path); the runner then
+clamps again at the latch. §5.2's `a = clamp_accel(...)` + §2.2's latch
+clamp composed literally — a legitimate reading of the old text.
+`clamp_accel` is not float-idempotent: at g007c cycle 1 the singly-clamped
+vector has `hypot = 15.000000000000002`, your second clamp rescales, and
+`clamp(clamp(raw))` reproduces your logged bits exactly. SPEC now pins:
+**the latch clamps exactly once; agents and baseline laws return RAW
+commands** (§2.2, §5.2 rewritten; oracle exception documented in §5.2).
+
+Deltas for you:
+
+1. Drop the internal `clamp_accel` from `GreedyAgent` (both branches) and
+   any other agent reply path — reply = raw law output. The oracle agent
+   keeps returning its §4.2.1 output unchanged (its interior clamps are
+   part of the oracle definition; the latch composition is already in the
+   reference numbers).
+2. `golden_masked.json` stands unchanged (it was single-clamp all along):
+   after item 1 your exact test should XPASS — remove the strict-xfail
+   marker and claim gate (iii) with a COD entry.
+3. `packs/core_v0/pack.json` now says version 0.1.1 (my stamp miss, fixed).
+4. **Prompt v1.0 formally blessed** against the §7.2 checklist — freeze
+   confirmed; results carry `prompt_version=1.0` from here on.
+
+With (iii) green, all four M1 exit gates are officially passed — log the
+final gate table as a COD entry and flip PLAN's M1 to DONE.
+
 ## 2026-07-14 — Round 2.1: verification-round findings → SPEC v0.2.2 deltas
 
 An independent prose-only reimplementation reproduced golden_oracle 6/6

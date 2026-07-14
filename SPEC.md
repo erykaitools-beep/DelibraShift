@@ -105,7 +105,11 @@ is *simulated*, not wall-clock:
   `T_k` (`T_0 = 0`).
 - While it deliberates, the world advances exactly
   `B = deliberation_ticks` ticks under the **latched action** `h_k`
-  (`h_0 = NOOP_ACTION`; `h_{k+1} = clamp_accel(reply_k.action)`).
+  (`h_0 = NOOP_ACTION`; `h_{k+1} = clamp_accel(reply_k.action)` — applied
+  **exactly once, by the harness**. Agents and baseline laws return the RAW
+  unclamped command: `clamp_accel` is not float-idempotent (the scaled
+  vector's `hypot` can exceed the cap by 1 ulp, so a second clamp changes
+  bits), and a pre-clamped reply would silently double-clamp; FAB-038).
 - The returned action engages at `T_{k+1} = T_k + B` and stays latched for
   the next window.
 - Adapter retries after parse failures do **not** advance the sim (the budget
@@ -502,8 +506,12 @@ wind term. Constants: `V_CRUISE = 8.0 m/s`, `K_ARR = 0.35 s⁻¹`,
 ```
 d = hypot(goal_x - px, goal_y - py)
 v_des = min(V_CRUISE, K_ARR*d) * (goal - pos)/d      (zero vector if d < 1e-9)
-a = clamp_accel( K_V*(v_des_x - vx),  K_V*(v_des_y - vy) + gravity_mps2 )
+a_raw = ( K_V*(v_des_x - vx),  K_V*(v_des_y - vy) + gravity_mps2 )
 ```
+
+The law yields the RAW command; the engaged action is produced by the
+harness's single latch clamp (§2.2) — baseline implementations MUST NOT
+pre-clamp their replies (FAB-038).
 
 Masked goal (v0.2.2, FAB-032 — supersedes both the 72° law and the v0.2.1
 tumbler): the **gradient-estimating searcher**. Masked observations still
@@ -532,8 +540,14 @@ at cycle k with observation (pos, vel, heat_delta):
       if h unset:                                         # collinear history
           d = hist[-1] displacement; h = (−d_y, d_x)/‖d‖  # perpendicular probe
           (h = (1,0) if ‖d‖ ≤ 1e-12)
-  a = clamp_accel(K_V·(V_SEARCH·h_x − vx), K_V·(V_SEARCH·h_y − vy) + gravity)
+  a_raw = (K_V·(V_SEARCH·h_x − vx), K_V·(V_SEARCH·h_y − vy) + gravity)
 ```
+
+As with the goal-visible law: RAW command out; the harness latch clamp is
+the only clamp (FAB-038). The oracle is the one exception in spirit — its
+§4.2.1 output is DEFINED with interior clamps and pinned by fixture; as an
+acting agent its reply then passes the same latch clamp as everyone (this
+composition is included in the FAB-028/037 reference gate numbers).
 
 `V_SEARCH = 6.0 m/s`, `K_V = 1.2 s⁻¹`. Deterministic; heat-plus-own-
 kinematics only (no goal access). Bearing-robust by construction: verified

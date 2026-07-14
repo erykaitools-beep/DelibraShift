@@ -47,10 +47,13 @@ Contract-change rule: only Fable edits `types.py`; every change bumps
   v0.1.1 (12 scenarios, g007c) + golden_masked.json + edges e004
   (FAB-032..037); prose-only reimplementation reproduced oracle fixture,
   probe numbers and edges binary64-exact.
-- Codex: REVIEW round 2.1 items 1–6 (stale tests, CRN + H-pin, gradient
-  searcher, fixture CI tests incl. masked + e004, probe gate (ii),
-  pack/schema stamps) + official gate runs (numbers → COD entry in
-  DECISIONS.md).
+- [x] Codex: round 2.1 items landed (`af333bf`) — CRN + H-pin (6/6 oracle
+  rows exact), gradient searcher + decoys exact, executable gates +
+  `chronogym-gates`, official runs: gates (i)/(ii)/(iv) PASS (COD-015);
+  prompt frozen v1.0 (blessed, REVIEW round 2.2).
+- Codex: FAB-038 de-clamp (agents return RAW commands) → masked exact test
+  XPASS → remove xfail marker → claim gate (iii) → log final gate table
+  (COD) and flip M1 to DONE.
 - Exit gates (ALL must pass, SPEC §6): (i) byte-identical same-seed runs;
   (ii) stale-reactor budget sweep decreasing with margin GATE_II_MARGIN;
   (iii) BOTH golden fixtures CI green (g001 + edges); (iv) kill criterion

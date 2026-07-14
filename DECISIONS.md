@@ -653,3 +653,28 @@ the Fable-owned fixture contains `0.2657880968210241` (difference 9e-16).
 All other masked pins and all oracle/physics/edge fixtures are exact. The
 discrepancy is a strict expected-failure test pending architect reconciliation;
 no epsilon or fixture-specific correction was introduced into benchmark code.
+
+## FAB-038 — Clamp ownership pinned: the latch clamps exactly once
+
+Date: 2026-07-14
+
+Root cause of the builder's gate-(iii) 9e-16 band mismatch, isolated to the
+bit: SPEC 5.2 wrote the baseline laws as `a = clamp_accel(...)` while SPEC
+2.2 clamps `reply.action` at the latch — a conforming builder composed BOTH
+(agent pre-clamps, latch re-clamps). clamp_accel is not float-idempotent:
+at g007c cycle 1 the singly-clamped vector's hypot is 15.000000000000002,
+so the second clamp rescales and shifts the last two bits; the trajectory
+divergence compounds to ~3e-14 in d_min and 9e-16 in the band term.
+Verified: clamp(clamp(raw)) reproduces the builder's logged bits exactly;
+clamp(raw) reproduces the fixture's. Resolution: the harness latch clamp is
+THE clamp, applied exactly once; agents and baseline laws return RAW
+unclamped commands (5.2 laws now written as `a_raw = ...`). Exception: the
+oracle's 4.2.1 output is defined WITH its interior clamps (fixture-pinned);
+as an acting agent it passes the latch clamp like everyone — that
+composition is already inside the FAB-028/037 reference numbers.
+golden_masked.json is UNCHANGED (it was single-clamp all along). Also:
+pack.json version stamp corrected to 0.1.1 (FAB-037 said so, the file
+didn't), and the builder's frozen prompt v1.0 is formally blessed against
+the 7.2 checklist (physics+units, engage-tick timeline, HELD-action
+semantics, null-keyed observation JSON, out-of-band example, single-object
+instruction — all present).
