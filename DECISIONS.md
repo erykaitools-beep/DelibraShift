@@ -885,3 +885,22 @@ Resume validation is adversarially tested for truncated, non-canonical, and
 terminally invalid logs plus mismatched scenario, adapter, prompt, pack,
 version, host, and scenario list. Every rejection must occur before the fresh
 adapter receives a model call.
+
+## COD-026 — Fail closed on malformed packs and gate branch coverage
+
+Date: 2026-07-19
+
+External pack and archive inputs are an untrusted boundary. JSON numeric
+extensions (`NaN` and infinities), values that overflow to non-finite floats,
+unsafe archive labels, malformed or non-object sidecars, invalid member
+digests, duplicate ZIP entries, missing `pack.json`, absolute paths, parent
+traversal, and Windows-style separators are rejected. Archive verification is
+a predicate and therefore returns `False` for malformed or unreadable inputs
+instead of leaking parser or filesystem exceptions.
+
+The archive and pack-loader modules are pinned at 100% line and branch
+coverage. Project-wide CI measures branch coverage once on Python 3.10 with an
+85% failure floor; Python 3.12 runs the normal suite without duplicating the
+coverage cost. The initial project-wide result is 89%. The floor is a
+regression guard, not a target to game, and semantic golden/release gates
+remain authoritative over the aggregate percentage.

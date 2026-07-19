@@ -11,6 +11,14 @@ python3 -m pip install -e '.[dev]'
 python3 -m pytest
 ```
 
+Before publication-sensitive changes, also run the same branch-coverage gate
+as CI:
+
+```bash
+python3 -m coverage run -m pytest
+python3 -m coverage report
+```
+
 ## Change rules
 
 - Preserve deterministic physics and canonical-log reproducibility.

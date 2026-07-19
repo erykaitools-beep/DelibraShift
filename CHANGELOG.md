@@ -15,3 +15,7 @@ All notable changes to DelibraShift are documented here.
 - END2END versus WM-SCAFFOLD matched ablation with 84 published Dracarys logs,
   probe controls, paired decoy heat, and a canonical report.
 - Strict verified resume for interrupted external runs.
+- Strict rejection of malformed packs, non-finite JSON numbers, unsafe archive
+  labels, corrupt sidecars, duplicate ZIP members, and traversal paths.
+- Python 3.10 branch-coverage gate plus Python 3.12 compatibility testing and
+  an installed-wheel release smoke.

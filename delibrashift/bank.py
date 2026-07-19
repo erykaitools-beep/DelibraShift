@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import fields
+import math
 from pathlib import Path
 from typing import Any
 
@@ -46,11 +47,16 @@ def _no_duplicate_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
+def _reject_non_json_constant(value: str) -> None:
+    raise PackError(f"invalid JSON numeric constant: {value}")
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(
             path.read_text(encoding="utf-8"),
             object_pairs_hook=_no_duplicate_object,
+            parse_constant=_reject_non_json_constant,
         )
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise PackError(f"cannot read JSON {path}: {error}") from error
@@ -77,7 +83,10 @@ def _require_exact_fields(payload: dict[str, Any], expected: set[str], label: st
 def _as_float(value: object, label: str) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise PackError(f"{label} must be numeric")
-    return float(value)
+    normalized = float(value)
+    if not math.isfinite(normalized):
+        raise PackError(f"{label} must be finite")
+    return normalized
 
 
 def _load_scenario(path: Path) -> ScenarioConfig:

@@ -210,3 +210,17 @@
   experiment identity field. Each asserts zero calls on the fresh adapter.
 - Verification: 96 fast tests pass; the isolated installed-wheel release smoke
   passes; official M2 report and core archive SHA-256 values remain unchanged.
+
+## 2026-07-19 — Pack security and coverage gate
+
+- Hardened external JSON loading against duplicate keys, malformed roots,
+  missing or wrongly typed fields, invalid scenarios, non-standard numeric
+  constants, and finite-float overflow.
+- Hardened archive creation and verification against unsafe labels, malformed
+  sidecars, missing files, invalid hashes, bad ZIPs, duplicate or incomplete
+  member sets, absolute paths, parent traversal, and Windows separators.
+- Expanded the fast suite to 153 passing tests. `archive.py` and `bank.py` now
+  have 100% line and branch coverage; project-wide branch coverage is 89%
+  against a new 85% Python 3.10 CI floor. Python 3.12 remains in the matrix.
+- The installed-wheel release smoke passes after hardening. The core pack ZIP
+  and official M2 report retain their published SHA-256 values.
