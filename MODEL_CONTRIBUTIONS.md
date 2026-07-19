@@ -89,8 +89,15 @@ Verified work:
 - built the auditable local-Ollama multi-model screen, added transport-condition
   identity for thinking mode, retained model/prompt/driver hashes and raw
   responses, and added replay tests without changing the official M2 result;
-- recorded 32 `COD-###` decisions including visualization integration and the
-  cross-platform judge-path audit.
+- authored the project-first competition narrative and implemented the
+  reproducible Chromium capture, synthetic narration, subtitle, evidence-card,
+  video assembly, and media-quality audit pipeline;
+- audited the complete Git/GitHub publication surface for secrets, reconciled
+  the approved MIT release across package and report metadata, and added
+  least-privilege CI permissions;
+- recorded 34 `COD-###` decisions including visualization integration, the
+  cross-platform judge-path audit, competition video, and public-release
+  licensing.
 
 Git evidence: commits authored `Codex Chief Builder`, beginning with `93b18c2`;
 notable milestones include `b0ad499`, `1379c87`, `af333bf`, `2a85727`,

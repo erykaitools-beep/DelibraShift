@@ -217,8 +217,8 @@ standing notes accompany it: `footer.frozen_note` (prompts are hash-pinned),
 `footer.determinism_note` (deterministic physics, scoring, and local baselines on
 the documented host; external model replies may vary), and `footer.offline_note`
 (this page never touches the network). `footer.license` carries the current
-copyright holder and private-evaluation status; it must agree with the root
-`LICENSE` and must never retain a superseded licence label.
+copyright holder and MIT status; it must agree with the root `LICENSE` and must
+never retain superseded private-evaluation wording.
 
 ---
 

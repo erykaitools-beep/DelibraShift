@@ -171,8 +171,7 @@ zero and a seed; see [`LIMITATIONS.md`](LIMITATIONS.md).
 - [`CITATION.cff`](CITATION.cff): citation metadata.
 - [`SECURITY.md`](SECURITY.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
-## Rights
+## License
 
-Copyright © 2026 Eryk Wyrębek. All rights reserved. This private repository is
-provided for authorized review and OpenAI Build Week evaluation only. See
-[`LICENSE`](LICENSE) for the complete terms.
+Copyright © 2026 Eryk Wyrębek. DelibraShift is open-source software released
+under the [MIT License](LICENSE).
