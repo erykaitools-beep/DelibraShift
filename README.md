@@ -144,8 +144,10 @@ Report SHA-256:
 
 Physics is a pure function of scenario, state, held action, and simulated time
 delta. Same-seed local baseline runs produce byte-identical logs on the same
-host. External model responses may vary even with temperature zero and a seed;
-see [`LIMITATIONS.md`](LIMITATIONS.md).
+host. CPython 3.10 on Linux x86_64 is the exact golden-fixture reference;
+supported runtimes additionally enforce the narrow cross-runtime bound in
+[`SPEC.md`](SPEC.md). External model responses may vary even with temperature
+zero and a seed; see [`LIMITATIONS.md`](LIMITATIONS.md).
 
 ## Project documentation
 

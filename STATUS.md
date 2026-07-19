@@ -1,5 +1,15 @@
 # Status
 
+## 2026-07-19 — Jury-readiness and cross-runtime CI
+
+- Added the Build Week evidence record, judge quick path, limitations, human
+  ownership, private-evaluation rights, and competition-focused README.
+- Kept CPython 3.10/Linux x86_64 as the exact binary64 fixture reference and
+  added an 8-ULP portability alarm for libm-derived oracle/masked values on
+  other supported runtimes; per-host byte reproducibility remains exact.
+- Verified the judge path locally: 153 Python tests, 678 JavaScript tests, and
+  independent replay of all 78 published episodes.
+
 ## 2026-07-19 — Offline M2 report integrated
 
 - Integrated the bilingual offline visualization under `report/`, reading the

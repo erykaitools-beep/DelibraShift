@@ -7,6 +7,7 @@ from delibrashift.agents import GreedyAgent
 from delibrashift.bank import load_pack
 from delibrashift.gates import decoy_goal, score_feedback_use
 from delibrashift.runner import run_episode
+from _float_contract import assert_golden_float
 
 
 FIXTURE = json.loads(
@@ -30,12 +31,18 @@ def test_masked_searcher_first_actions_and_true_heat_episode_are_exact() -> None
         assert record.cycle == expected["cycle"]
         assert record.tick == expected["tick"]
         assert record.engaged_action is not None
-        assert record.engaged_action.accel_x_mps2 == expected["engaged_accel_x_mps2"]
-        assert record.engaged_action.accel_y_mps2 == expected["engaged_accel_y_mps2"]
+        assert_golden_float(
+            record.engaged_action.accel_x_mps2,
+            expected["engaged_accel_x_mps2"],
+        )
+        assert_golden_float(
+            record.engaged_action.accel_y_mps2,
+            expected["engaged_accel_y_mps2"],
+        )
     episode = FIXTURE["g007a_true_heat_episode"]
     assert result.final_state.tick == episode["end_tick"]
     assert result.final_state.outcome == episode["outcome"]
-    assert result.closest_approach_m == episode["d_min"]
+    assert_golden_float(result.closest_approach_m, episode["d_min"])
 
 
 def test_masked_decoys_are_exact() -> None:
@@ -53,7 +60,11 @@ def test_masked_feedback_band_is_binary64_exact() -> None:
     scenario_ids = ("g007a", "g007b", "g007c")
     scenarios = tuple(PACK[scenario_id] for scenario_id in scenario_ids)
     scores = score_feedback_use(scenarios, GreedyAgent)
-    assert scores.feedback_band_terms == tuple(
+    expected_terms = tuple(
         FIXTURE["band_terms"][scenario_id] for scenario_id in scenario_ids
     )
-    assert scores.feedback_band == FIXTURE["band"]
+    assert len(scores.feedback_band_terms) == len(expected_terms)
+    for actual, expected in zip(scores.feedback_band_terms, expected_terms):
+        assert_golden_float(actual, expected)
+    assert scores.feedback_band is not None
+    assert_golden_float(scores.feedback_band, FIXTURE["band"])

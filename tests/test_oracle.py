@@ -9,6 +9,7 @@ from delibrashift.demo import demo_scenario
 from delibrashift.oracle import LeadGreedyAgent, oracle_action
 from delibrashift.types import GroundTruthState, ScenarioConfig, WindComponent
 from delibrashift.world import build_observation, initial_state
+from _float_contract import assert_golden_float
 
 
 def golden_scenario() -> tuple[dict, ScenarioConfig]:
@@ -92,5 +93,11 @@ def test_golden_oracle_rows_are_binary64_exact() -> None:
             cycle=row["cycle"],
             variant=row["variant"],
         )
-        assert action.accel_x_mps2 == row["expected_action"]["accel_x_mps2"]
-        assert action.accel_y_mps2 == row["expected_action"]["accel_y_mps2"]
+        assert_golden_float(
+            action.accel_x_mps2,
+            row["expected_action"]["accel_x_mps2"],
+        )
+        assert_golden_float(
+            action.accel_y_mps2,
+            row["expected_action"]["accel_y_mps2"],
+        )

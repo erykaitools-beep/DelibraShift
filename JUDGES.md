@@ -25,7 +25,8 @@ The report is self-contained and makes no network requests after it is built.
 Requirements:
 
 - Linux or macOS shell for the commands below;
-- Python 3.10 or 3.12;
+- Python 3.10 for exact reference-fixture verification (3.12 is also tested
+  under the documented cross-runtime ULP bound);
 - Node.js 22 for report validation;
 - no API key for deterministic tests, baselines, report generation, or replay.
 
