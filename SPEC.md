@@ -655,9 +655,11 @@ ii. **Temporal invariant:** the matched-state probe (§5.6) decreasing with
    implementation): 0.4550 → 0.4332 → 0.3749.
 iii. **Golden fixtures CI green** (§9): `golden_g001.json` AND
    `golden_edges.json` AND `golden_oracle.json` AND `golden_masked.json`,
-   exact float equality, not approx. (Oracle and masked fixtures added by
-   FAB-035 — every temporal/feedback number flows through them, so M1 must
-   not exit around a non-conformant oracle or searcher.)
+   exact float equality on the reference runtime, not approx. Other supported
+   runtimes apply §10's narrow libm-portability bound to oracle/masked derived
+   values only. (Oracle and masked fixtures added by FAB-035 — every
+   temporal/feedback number flows through them, so M1 must not exit around a
+   non-conformant oracle or searcher.)
 iv. **Kill criterion** (§5.4) evaluated with its validity floors and passed;
    numbers logged in DECISIONS.md.
 
@@ -881,6 +883,12 @@ hashes (COD-017/019).
 - Test: same-seed double run → byte-identical logs (gate i). Cross-*platform*
   bit-identity is NOT claimed (libm variance); the claim is per-host
   determinism, documented in README. Results tables always state host class.
+- **Golden reference runtime (COD-028):** CPython 3.10 on Linux x86_64 retains
+  exact binary64 fixture equality. On other supported Python runtimes,
+  libm-derived oracle and masked-searcher fixture values must remain within
+  8 ULP of the reference bits; this bound is a portability alarm, never a
+  license to regenerate normative fixtures. Same-runtime byte reproducibility
+  remains exact.
 - LLM agents are not deterministic even at temperature 0; determinism is
   claimed for the *world, scoring, and baselines*. LLM rows report
   mean ± range over ≥3 repetitions (§11).
