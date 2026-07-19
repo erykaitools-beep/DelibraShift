@@ -3,10 +3,10 @@ message: "If you use DelibraShift, please cite this software."
 title: "DelibraShift: The world moves while agents think"
 type: software
 authors:
-  - name: "DelibraShift contributors"
+  - family-names: "Wyrębek"
+    given-names: "Eryk"
 version: 0.1.0
 date-released: 2026-07-19
-license: MIT
 keywords:
   - artificial intelligence
   - agent evaluation
