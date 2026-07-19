@@ -2,15 +2,25 @@
 
 **The world moves while agents think.**
 
-DelibraShift is an open, deliberation-aware benchmark for diagnosing agent
-cognition in deterministic simulated worlds. Its first world couples gravity,
-time-varying lateral wind, steering, and a deadline while exposing a graded
-hot/cold signal.
+DelibraShift is a reproducible, deliberation-aware benchmark for diagnosing
+agent cognition in deterministic simulated worlds. Its first world combines
+gravity, time-varying lateral wind, steering, a deadline, and a graded hot/cold
+signal.
 
-Unlike agent benchmarks that pause between decisions, DelibraShift advances
-the world by a fixed simulated deliberation budget while the agent thinks. The
-previous action remains latched until the new action engages. Host latency is
+Unlike benchmarks that pause between decisions, DelibraShift advances the world
+by a fixed simulated deliberation budget while the agent thinks. The previous
+action remains latched until the newly returned action engages. Host latency is
 recorded as infrastructure telemetry but never advances or scores the world.
+
+**Human project owner and competition entrant:** Eryk Wyrębek. AI-assisted
+architecture, implementation, experiments, visualization, and audit are
+disclosed in [`MODEL_CONTRIBUTIONS.md`](MODEL_CONTRIBUTIONS.md).
+
+## Judge and Build Week paths
+
+- [`JUDGES.md`](JUDGES.md): a 60-second review and full verification path.
+- [`BUILD_WEEK.md`](BUILD_WEEK.md): event-period origin and first-commit evidence.
+- [`LIMITATIONS.md`](LIMITATIONS.md): boundaries of the published result.
 
 ## Quickstart
 
@@ -35,7 +45,7 @@ Greedy and no-op baselines are available with `--agent greedy` and
 separate action/prediction parse rates, the persistence floor, and graded
 outcome.
 
-Run a baseline over an external local test pack in manifest order:
+Run a baseline over an external local test pack:
 
 ```bash
 delibrashift-run /path/to/pack --agent random --log-dir logs
@@ -44,42 +54,32 @@ delibrashift-run /path/to/pack --agent random --log-dir logs
 The strict loader rejects schema mismatches, unknown fields, duplicate JSON
 keys, and unsafe scenario paths.
 
-The NIM transport is configured externally with `NIM_MODEL`, `NIM_BASE_URL`,
-and optionally `NVIDIA_API_KEY`. It only sends an already-rendered prompt to
-the OpenAI-compatible chat-completions endpoint; prompt construction, parsing,
-and retries stay in the harness. The reviewed standard-cycle prompt is frozen
-as version `1.0`.
+## Offline interactive report
 
-The second transport targets Ollama's native `/api/chat` endpoint. It defaults
-to `llama3.1:8b` at `http://localhost:11434`; override these with
-`OLLAMA_MODEL` and `OLLAMA_BASE_URL`. Both adapters remain transport-only:
-`HarnessAgent` owns prompts, parsing, and retry accounting.
-
-Formatting-control and forced-choice probes have separately frozen prompt
-versions (`probe-format-1.0` and `probe-choice-1.0`), so those controls cannot
-mutate or silently unfreeze the standard `1.0` results prompt. Complete prompt
-hashes are pinned in CI.
-
-Evaluate the executable pack gates (the sampling-MPC kill criterion is the
-CPU-heavy part):
+Build the bilingual, self-contained report in English for judging:
 
 ```bash
-delibrashift-gates packs/core_v0
+python report/build_report.py --lang en
 ```
 
-This reports full-pack byte reproducibility, the matched-state budget probe,
-the masked-searcher feedback band, and the registered kill criterion as
-canonical JSON. Exact golden fixtures remain the pytest-owned gate (iii).
+Then open `report/delibrashift_report.html` locally. The output requires no
+server, CDN, or network connection. Node.js 22 is required only to build and
+validate the report.
 
-M1's four exit gates pass on `core_v0` v0.1.1. See
-[`DECISIONS.md`](DECISIONS.md) for the exact final table and
-[`STATUS.md`](STATUS.md) for current milestone progress.
+## Model adapters
 
-### Deterministic baseline reference
+The NIM transport is configured externally with `NIM_MODEL`, `NIM_BASE_URL`,
+and optionally `NVIDIA_API_KEY`. The Ollama transport defaults to
+`llama3.1:8b` at `http://localhost:11434`. Adapters remain transport-only:
+prompt construction, parsing, retry accounting, and pacing stay in the harness.
 
-Core visible non-probe subset S, core_v0 v0.1.1, Linux x86_64. Random outcome
-uses the registered 20 repetitions. These are simulator/baseline references,
-not LLM results.
+External model calls require explicit acknowledgement and are not needed to
+verify the published result.
+
+## Deterministic baseline reference
+
+Core visible non-probe subset S, `core_v0` v0.1.1, Linux x86_64. Random outcome
+uses 20 repetitions. These are simulator/baseline references, not LLM results.
 
 | agent | mean outcome | mean temporal anticipation |
 |---|---:|---:|
@@ -87,26 +87,26 @@ not LLM results.
 | greedy | 0.3358 | 0.4707 |
 | oracle | 0.9807 | 0.6393 |
 
-Build the downloadable pack ZIP and canonical SHA-256 sidecar manifest:
+Evaluate the executable pack gates:
+
+```bash
+delibrashift-gates packs/core_v0
+```
+
+Build the deterministic pack archive and SHA-256 sidecar:
 
 ```bash
 delibrashift-pack packs/core_v0 --output-dir dist
 ```
 
-The archive preserves the local pack layout, uses fixed ZIP metadata, and
-includes per-member hashes in addition to the archive hash.
+## M2 matched architecture ablation
 
-### M2 matched architecture ablation
-
-The same adapter/model can be run as frozen END2END `1.0` or the 131-line,
+The same adapter/model runs as frozen END2END `1.0` or as the 131-line,
 two-stage `wm-scaffold-1.0`. The runner shares pacing, alternates arm order,
-passes repetition-derived seeds, writes per-episode canonical logs, and reports
-a sensitivity slice excluding every cycle retried in either scaffold stage.
-Masked scenarios additionally receive paired deterministic decoy-heat runs;
-format and forced-choice scenarios are emitted as separate shared-model
-control rows with parse rates and trial counts, never as treatment scores.
+passes repetition-derived seeds, writes canonical logs, and reports a separate
+sensitivity slice excluding cycles retried in either scaffold stage.
 
-External calls require an explicit acknowledgement:
+To launch a new external run intentionally:
 
 ```bash
 delibrashift-ablate packs/core_v0 --execute \
@@ -114,17 +114,12 @@ delibrashift-ablate packs/core_v0 --execute \
   --log-dir results/m2/logs --report results/m2/report.json
 ```
 
-If an endpoint timeout interrupts a long run, repeat the command with
-`--resume`. Every existing canonical log is strictly checked against the
-requested scenario, model arm, prompt/pack versions, host, and scenario list;
-only missing episodes make external calls.
+Without `--execute`, the command exits before constructing the external adapter.
 
-Without `--execute`, the command exits before constructing the NIM adapter.
+### Official Dracarys result
 
-Official Dracarys result: `core_v0` v0.1.1, R=3, Linux x86_64. Ranges are
-episode minima/maxima; Δ is the mean same-scenario, same-repetition
-WM-SCAFFOLD minus END2END difference. Fidelity support differs because low
-coverage invalidates an episode under §4.1.
+`core_v0` v0.1.1, R=3, Linux x86_64. Ranges are episode minima/maxima; Δ is the
+mean same-scenario, same-repetition WM-SCAFFOLD minus END2END difference.
 
 | metric | END2END mean [range] | WM-SCAFFOLD mean [range] | paired Δ |
 |---|---:|---:|---:|
@@ -139,30 +134,32 @@ coverage invalidates an episode under §4.1.
 The scaffold improved structured-output reliability and prediction coverage,
 but reduced temporal anticipation on every one of 21 paired visible cells and
 reduced mean outcome. Both arms showed no measurable use of hot/cold feedback.
-Controls passed formatting (identity fidelity 1.0, 30/30 parsed); forced-choice
-accuracy was 0.60/0.70/0.80 (mean 0.70, 30/30 parsed). The complete canonical
-report and 84 logs are in [`results/m2`](results/m2); report SHA-256 is
+The negative architecture result is published unchanged.
+
+The complete canonical report and 84 logs are in [`results/m2`](results/m2).
+Report SHA-256:
 `5ed6e76793684c9c7ef996ae58168ec57301afbcc615f4967c533e853f2506fa`.
 
-Reproducibility is a hard requirement: physics is a pure function of scenario,
-state, held action, and simulated time delta. Same-seed baseline runs produce
-byte-identical JSONL logs on the same host. Wall-clock latency is telemetry,
-never a score.
+## Reproducibility boundary
+
+Physics is a pure function of scenario, state, held action, and simulated time
+delta. Same-seed local baseline runs produce byte-identical logs on the same
+host. External model responses may vary even with temperature zero and a seed;
+see [`LIMITATIONS.md`](LIMITATIONS.md).
 
 ## Project documentation
 
 - [`SPEC.md`](SPEC.md): normative benchmark and scoring specification.
+- [`DECISIONS.md`](DECISIONS.md): append-only scientific and engineering record.
+- [`STATUS.md`](STATUS.md): milestone and verification history.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): development and change-control rules.
-- [`CHANGELOG.md`](CHANGELOG.md): release history.
-- [`report/README.md`](report/README.md): build and audit the interactive offline M2 report.
-- [`MODEL_CONTRIBUTIONS.md`](MODEL_CONTRIBUTIONS.md): evidence-backed AI model contribution ledger.
+- [`report/README.md`](report/README.md): build and audit the interactive report.
+- [`MODEL_CONTRIBUTIONS.md`](MODEL_CONTRIBUTIONS.md): human direction and AI assistance.
 - [`CITATION.cff`](CITATION.cff): citation metadata.
 - [`SECURITY.md`](SECURITY.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
-## Status
+## Rights
 
-See [STATUS.md](STATUS.md) for the active implementation gate and progress.
-
-## License
-
-MIT
+Copyright © 2026 Eryk Wyrębek. All rights reserved. This private repository is
+provided for authorized review and OpenAI Build Week evaluation only. See
+[`LICENSE`](LICENSE) for the complete terms.
