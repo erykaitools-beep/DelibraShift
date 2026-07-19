@@ -37,7 +37,7 @@ MAX_PARSE_RETRIES = 2
 
 
 def render_prompt(observation: Observation) -> str:
-    """Render the draft v0 prompt with all SPEC section 7.2 requirements."""
+    """Render frozen standard prompt version 1.0 per SPEC section 7.2."""
     engage_tick = observation.tick + observation.deliberation_ticks
     return (
         "You control a craft in a deterministic 2D world. Units are meters, "
@@ -221,6 +221,9 @@ class HarnessAgent:
         self.max_parse_retries = max_parse_retries
         self.probe_config = probe_config
         tags = set(probe_config.axis_tags) if probe_config is not None else set()
+        probe_tags = tags & {"probe:forced_choice", "probe:format"}
+        if probe_config is not None and len(probe_tags) != 1:
+            raise ValueError("probe_config must contain exactly one supported probe tag")
         self.probe_kind = None
         if "probe:forced_choice" in tags:
             self.probe_kind = "forced_choice"
@@ -241,6 +244,11 @@ class HarnessAgent:
         self.last_wall_clock_ms = 0.0
 
     def act(self, observation: Observation) -> AgentReply:
+        if (
+            self.probe_config is not None
+            and observation.scenario_id != self.probe_config.scenario_id
+        ):
+            raise ValueError("probe config and observation scenario_id must match")
         if self.probe_kind == "forced_choice":
             assert self.probe_config is not None
             prompt = render_forced_choice_prompt(self.probe_config, observation)

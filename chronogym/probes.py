@@ -21,8 +21,8 @@ if TYPE_CHECKING:
     from .runner import CycleRecord
 
 
-FORMAT_PROBE_PROMPT_VERSION = "probe-format-draft-0.1"
-CHOICE_PROBE_PROMPT_VERSION = "probe-choice-draft-0.1"
+FORMAT_PROBE_PROMPT_VERSION = "probe-format-1.0"
+CHOICE_PROBE_PROMPT_VERSION = "probe-choice-1.0"
 
 
 @dataclass(frozen=True)
@@ -75,6 +75,8 @@ def forced_choice_candidates(
     observation: Observation,
 ) -> ForcedChoiceCandidates:
     """Construct SPEC 4.5's true/decoy pair in the pinned RNG order."""
+    if observation.scenario_id != config.scenario_id:
+        raise ValueError("probe config and observation scenario_id must match")
     target = predict_engage_from_observation(observation)
     rng = random.Random(config.seed * 104_729 + observation.cycle)
     sign_pos = 1.0 if rng.random() < 0.5 else -1.0
@@ -96,7 +98,7 @@ def forced_choice_candidates(
 
 
 def render_format_probe_prompt(observation: Observation) -> str:
-    """Render the separate, deliberately unfrozen identity-format control."""
+    """Render frozen identity-format control prompt version 1.0."""
     expected_shape = {
         "prediction": asdict(identity_prediction(observation)),
         "action": {"accel_x_mps2": 0.0, "accel_y_mps2": 0.0},

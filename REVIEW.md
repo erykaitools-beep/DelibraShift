@@ -1,6 +1,29 @@
-# REVIEW (Fable)
+# REVIEW
 
-Architect's review log of the builder's work. Newest first.
+Review log, newest first. Fable entries are historical. Since 2026-07-19,
+Codex performs explicit self-review; it is not represented as independent
+verification.
+
+## 2026-07-19 — Codex solo self-review: M1.5 (`661a208`)
+
+Verdict: **accepted after two guard fixes.** The transport-only Ollama adapter,
+probe candidate construction/scoring, retry integration, deterministic pack
+archive, verifier, and baseline table match SPEC scope. Full tests were green.
+
+Findings fixed in the same pass:
+
+1. `HarnessAgent(probe_config=...)` accepted an untagged config or an
+   Observation from another scenario, which could silently use the wrong seed
+   for forced-choice candidates. It now requires exactly one supported probe
+   tag and exact scenario-id agreement; candidate construction independently
+   enforces the same agreement.
+2. Probe prompt versions were drafts without byte-level freeze coverage. They
+   are now `probe-format-1.0` / `probe-choice-1.0`, with complete cycle-0 prompt
+   SHA-256 pins in CI and SPEC §7.2.
+
+The COD-017 archive sidecar convention is accepted and made normative in
+SPEC §9.1. This is a self-review, not an independent reimplementation; the
+existing exact fixtures and executable gates remain the mechanical checks.
 
 ## 2026-07-14 — Round 2.2: verification gates (`af333bf`) — accepted; the 9e-16 solved
 

@@ -1,25 +1,22 @@
 # ChronoGym PLAN
 
-Owner: Fable. Builder-facing; STATUS.md is Codex's ground truth on progress.
-Working protocol: brief §0 — pull --rebase before every commit, never edit
-the other's lines, disagreements resolved in DECISIONS.md (architect decides
-design, builder decides implementation).
+Owner: Codex (sole architect/builder since 2026-07-19). STATUS.md is the
+ground truth on progress. Historical Fable-authored entries remain attributed.
+Working protocol: try pull --rebase before every commit; keep normative design
+changes and implementation decisions explicit in DECISIONS.md; preserve exact
+fixtures and gate results across refactors.
 
 ## File & module ownership
 
 | Artifact | Owner |
 |---|---|
-| SPEC.md, PLAN.md, REVIEW.md | Fable |
-| `chronogym/types.py` (the contract) | Fable |
-| `tests/fixtures/golden_g001.json` (+ future fixtures) | Fable |
-| `packs/` scenario JSONs (design values) | Fable |
-| STATUS.md, NOTES.md | Codex |
-| `chronogym/*.py` implementation (world, harness, scorers, adapters, bank), `tests/*.py`, README, CI, packaging | Codex |
-| DECISIONS.md | both, append-only (FAB-### / COD-###) |
-| `chronogym/__init__.py` re-exports | Codex (his file) |
+| Entire repository | Codex |
+| Historical `FAB-###` decisions and Fable review text | preserved attribution |
+| New decisions | `COD-###`, append-only |
 
-Contract-change rule: only Fable edits `types.py`; every change bumps
-`SCHEMA_VERSION` and gets a FAB entry. Codex flags needed changes in NOTES.md.
+Contract-change rule: every semantic change to `types.py` bumps
+`SCHEMA_VERSION` and gets a COD entry. Fixture or pack changes require exact
+test regeneration plus recorded gate impact.
 
 ## Milestones
 
@@ -34,7 +31,7 @@ Contract-change rule: only Fable edits `types.py`; every change bumps
       SPEC v0.2, contract 0.2.0, gravity retune, fixtures regenerated +
       `golden_edges.json` (FAB-014..FAB-027)
 
-### M1 — one scored loop + one real adapter (EXIT-GATED; in progress)
+### M1 — one scored loop + one real adapter (DONE 2026-07-14)
 - [x] Codex: fidelity scorer draft, strict pack loader, draft prompt+parser,
       NIM adapter, greedy v0.1, `chronogym-run` CLI (`1379c87`, `5ed12e1`,
       `27ead02`) — pre-v0.2; migration list in REVIEW.md round 1.
@@ -51,20 +48,24 @@ Contract-change rule: only Fable edits `types.py`; every change bumps
   rows exact), gradient searcher + decoys exact, executable gates +
   `chronogym-gates`, official runs: gates (i)/(ii)/(iv) PASS (COD-015);
   prompt frozen v1.0 (blessed, REVIEW round 2.2).
-- Codex: FAB-038 de-clamp (agents return RAW commands) → masked exact test
-  XPASS → remove xfail marker → claim gate (iii) → log final gate table
-  (COD) and flip M1 to DONE.
+- [x] Codex: FAB-038 de-clamp, exact masked fixture, final all-green gate
+  table (`d56f41c`, COD-016).
 - Exit gates (ALL must pass, SPEC §6): (i) byte-identical same-seed runs;
   (ii) stale-reactor budget sweep decreasing with margin GATE_II_MARGIN;
-  (iii) BOTH golden fixtures CI green (g001 + edges); (iv) kill criterion
+  (iii) all golden fixture families CI green (g001 + edges + oracle + masked);
+  (iv) kill criterion
   §5.4 with validity floors passed & numbers logged in DECISIONS.md.
-- If gate (iv) fails: apply SPEC §5.5 levers in order, re-run, log FAB entry.
+- If gate (iv) fails: apply SPEC §5.5 levers in order, re-run, log COD entry.
   Nothing is published before gate (iv) passes.
 
-### M1.5 — breadth
-- 2nd adapter (Ollama llama3.1:8b), remaining scorers (temporal §4.2,
-  feedback-use §4.3, outcome §4.4, probes §4.5), downloadable pack format
-  (zip + sha256 manifest), first results table in README.
+### M1.5 — breadth (DONE 2026-07-19)
+- [x] 2nd adapter (Ollama llama3.1:8b), remaining scorers (temporal §4.2,
+  feedback-use §4.3, outcome §4.4, probes §4.5), downloadable deterministic
+  pack format (zip + sha256 manifest), first results table in README
+  (`661a208`, COD-017).
+- [x] Solo self-review: probe config/scenario guards, prompt versions frozen
+  as `probe-format-1.0` and `probe-choice-1.0`, full prompt hashes pinned in
+  CI, archive convention accepted (COD-019).
 
 ### M2 — the ablation
 - Matched pair END2END vs WM-SCAFFOLD (SPEC §8) on dracarys; MARIA as

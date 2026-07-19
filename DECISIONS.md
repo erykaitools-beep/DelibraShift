@@ -726,3 +726,34 @@ scenario IDs. A verifier checks the archive hash, exact member set, and member
 hashes. This is the narrowest auditable interpretation of SPEC 9.1's “zip of
 the same layout + sha256 in a manifest”; the concrete sidecar shape remains a
 builder choice pending Fable review.
+
+## COD-018 — Move to single-agent repository ownership
+
+Date: 2026-07-19
+
+At the project owner's direction, Fable is retired from the active workflow
+for cost efficiency and Codex becomes sole architect and builder. Historical
+FAB decisions, commits, and review text keep their attribution. New design and
+implementation decisions use COD identifiers. Contract changes still require
+schema bumps; fixture and pack changes still require exact regeneration and
+gate-impact logging. Self-review is labeled honestly and never described as
+independent verification.
+
+## COD-019 — Accept M1.5 after solo self-review and freeze probe prompts
+
+Date: 2026-07-19
+
+The M1.5 pass at `661a208` is accepted after adding two safeguards: a probe
+config must contain exactly one supported probe tag, and config/Observation
+scenario IDs must match both in the harness and candidate generator. This
+prevents silent wrong-seed choice labels.
+
+The probe templates are frozen as `probe-format-1.0` and
+`probe-choice-1.0`. Their complete core cycle-0 prompt hashes are
+`297feeef1b9b5335e57eccc08975d2b4464c573df132a84f8b8fb758524e9104` and
+`6719631b32b5b3bb05daf24f46fd8f0bfa90d077b129b1cbc5dda8e0d034a78c`,
+evaluated on cycle 0 with `episode_id="prompt-freeze"` because runtime episode
+IDs legitimately vary prompt bytes. Any template-byte change requires a
+version bump. COD-017's deterministic stored ZIP and canonical sidecar format
+is accepted into SPEC 9.1. This closes M1.5; the next implementation milestone
+is M2's matched architecture ablation.

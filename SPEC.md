@@ -1,9 +1,10 @@
 # ChronoGym SPEC v0.2.2
 
-Owner: Fable (Chief Architect & Scientist). Normative unless marked
-*informative*. The executable contract is `chronogym/types.py` (schema
-version 0.2.0); where prose and `types.py` disagree, `types.py` wins and the
-disagreement is a bug to log in DECISIONS.md.
+Owner: Codex (sole architect/builder since 2026-07-19). Normative unless
+marked *informative*. Historical Fable contributions retain attribution. The
+executable contract is `chronogym/types.py` (schema version 0.2.1); where prose
+and `types.py` disagree, `types.py` wins and the disagreement is a bug to log
+in DECISIONS.md.
 
 v0.2 integrates adversarial review round 1 (five independent reviewers +
 an empirical greedy red-team; FAB-014..FAB-027). Major changes vs v0.1:
@@ -691,6 +692,17 @@ Observation as JSON **including null-valued keys**; the reply schema with
 instruction to output a single JSON object and nothing else. Prompt changes
 bump the results version — scores are never compared across prompt versions.
 
+Frozen prompt identifiers: ordinary cycles use `1.0`; format-control cycles
+use `probe-format-1.0`; forced-choice cycles use `probe-choice-1.0`. The two
+probe templates are isolated from the ordinary template. On core_v0 cycle 0
+with the canonical `episode_id="prompt-freeze"`, their prompt-byte SHA-256
+pins are respectively
+`297feeef1b9b5335e57eccc08975d2b4464c573df132a84f8b8fb758524e9104`
+(g008) and
+`6719631b32b5b3bb05daf24f46fd8f0bfa90d077b129b1cbc5dda8e0d034a78c`
+(g009). Any template byte change requires a prompt-version bump and updated
+hash test; runtime episode IDs are expected to make actual prompt hashes vary.
+
 ### 7.3 Reply parsing and repair (tolerant, never exact-match; FAB-014/024/026)
 
 1. Strip markdown code fences.
@@ -779,7 +791,13 @@ invariants (`__post_init__`: forecast ≥ B, start in bounds and outside the
 goal disc, positive dt, deadline ≥ 1) are enforced at load time — the loader
 may add checks but never fewer (FAB-026).
 Loader API (builder-owned): `chronogym.bank.load_pack(path) -> list[ScenarioConfig]`.
-Downloadable packs (M1.5): zip of the same layout + sha256 in a manifest.
+Downloadable packs (M1.5): deterministic stored ZIP of the same layout plus a
+canonical JSON sidecar manifest. ZIP members are in manifest order, rooted at
+the pack name, stored uncompressed, timestamped `1980-01-01 00:00:00`, and
+carry mode 0644. The sidecar records pack/schema versions, ordered scenario
+IDs, archive filename + SHA-256, and every member path + SHA-256. Verification
+requires the exact member set, safe rooted paths, archive hash, and all member
+hashes (COD-017/019).
 
 ### 9.2 Core pack v0 (authored by Fable at M1; intent table)
 

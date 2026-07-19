@@ -52,9 +52,10 @@ to `llama3.1:8b` at `http://localhost:11434`; override these with
 `OLLAMA_MODEL` and `OLLAMA_BASE_URL`. Both adapters remain transport-only:
 `HarnessAgent` owns prompts, parsing, and retry accounting.
 
-Formatting-control and forced-choice probes have separate draft prompt
-versions, so development of those controls cannot mutate or silently unfreeze
-the standard `1.0` results prompt.
+Formatting-control and forced-choice probes have separately frozen prompt
+versions (`probe-format-1.0` and `probe-choice-1.0`), so those controls cannot
+mutate or silently unfreeze the standard `1.0` results prompt. Complete prompt
+hashes are pinned in CI.
 
 Evaluate the executable pack gates (the sampling-MPC kill criterion is the
 CPU-heavy part):

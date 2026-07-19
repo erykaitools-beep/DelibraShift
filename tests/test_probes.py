@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
+
+import pytest
 
 from chronogym.bank import load_pack
 from chronogym.harness import HarnessAgent
@@ -9,11 +12,14 @@ from chronogym.probes import (
     FORMAT_PROBE_PROMPT_VERSION,
     forced_choice_candidates,
     identity_prediction,
+    render_forced_choice_prompt,
+    render_format_probe_prompt,
     score_forced_choice_probe,
     score_format_probe,
 )
 from chronogym.runner import run_episode
 from chronogym.types import Action, AgentReply
+from chronogym.world import build_observation, initial_state
 
 
 PACK = {
@@ -126,3 +132,38 @@ def test_format_harness_prompt_is_separate_from_frozen_standard_prompt() -> None
     assert agent.prompt_version == FORMAT_PROBE_PROMPT_VERSION
     assert reply.prediction == prediction
     assert "FORMAT CONTROL" in adapter.prompts[0]
+
+
+def test_frozen_probe_prompt_hashes() -> None:
+    format_config = PACK["g008"]
+    format_observation = build_observation(
+        format_config,
+        initial_state(format_config),
+        episode_id="prompt-freeze",
+        cycle=0,
+    )
+    choice_config = PACK["g009"]
+    choice_observation = build_observation(
+        choice_config,
+        initial_state(choice_config),
+        episode_id="prompt-freeze",
+        cycle=0,
+    )
+    assert hashlib.sha256(
+        render_format_probe_prompt(format_observation).encode("utf-8")
+    ).hexdigest() == "297feeef1b9b5335e57eccc08975d2b4464c573df132a84f8b8fb758524e9104"
+    assert hashlib.sha256(
+        render_forced_choice_prompt(choice_config, choice_observation).encode("utf-8")
+    ).hexdigest() == "6719631b32b5b3bb05daf24f46fd8f0bfa90d077b129b1cbc5dda8e0d034a78c"
+
+
+def test_probe_config_must_be_tagged_and_match_observation() -> None:
+    adapter = StubAdapter(['{"choice":"A"}'])
+    with pytest.raises(ValueError, match="exactly one"):
+        HarnessAgent(adapter, probe_config=PACK["g001"])
+    agent = HarnessAgent(adapter, probe_config=PACK["g009"])
+    wrong_observation = run_episode(PACK["g008"], IdentityAgent()).records[0].observation
+    with pytest.raises(ValueError, match="scenario_id"):
+        agent.act(wrong_observation)
+    with pytest.raises(ValueError, match="scenario_id"):
+        forced_choice_candidates(PACK["g009"], wrong_observation)

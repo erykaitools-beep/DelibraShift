@@ -110,3 +110,15 @@
 - Verification: 70 tests pass. The generated core_v0 v0.1.1 archive verifies
   successfully with SHA-256
   `06916079638966d3803ce3cda500b3542c1d703604b99453f3365fec5f93a1c8`.
+
+## 2026-07-19 — Solo ownership and M1.5 closure
+
+- Codex is now the sole architect/builder; historical Fable attribution is
+  preserved, while all repository artifacts are actively maintained by Codex.
+- Completed an explicit non-independent self-review of M1.5. Added strict
+  probe config/tag/scenario guards and froze both probe prompts at version 1.0
+  with full SHA-256 CI pins.
+- Accepted the deterministic archive sidecar as the normative SPEC 9.1 format.
+- Verification: 72 tests pass with no skips or expected failures.
+- M1.5 is complete. The next milestone is M2's END2END vs WM-SCAFFOLD matched
+  pair; no LLM experiment has been launched by this administrative transition.
