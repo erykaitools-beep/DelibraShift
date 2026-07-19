@@ -5,6 +5,7 @@ import hashlib
 import math
 from pathlib import Path
 
+from _float_contract import assert_golden_float
 from delibrashift.bank import load_pack
 from delibrashift.harness import parse_reply, render_prompt
 from delibrashift.types import Prediction, prediction_fidelity
@@ -46,7 +47,10 @@ def test_exploratory_pilot_is_separate_and_internally_consistent() -> None:
 
     persistence = Prediction(20.0, 70.0, 0.0, 0.0)
     expected_floor = prediction_fidelity(persistence, target_object)
-    assert payload["persistence_floor"]["cycle0_raw_fidelity"] == expected_floor
+    assert_golden_float(
+        payload["persistence_floor"]["cycle0_raw_fidelity"],
+        expected_floor,
+    )
 
     digests = set()
     for record in payload["models"]:
@@ -54,13 +58,16 @@ def test_exploratory_pilot_is_separate_and_internally_consistent() -> None:
         assert len(record["digest"]) == 64
         assert record["raw_content"] is not None
         prediction = Prediction(**record["prediction"])
-        assert record["cycle0_raw_fidelity"] == prediction_fidelity(
-            prediction,
-            target_object,
+        assert_golden_float(
+            record["cycle0_raw_fidelity"],
+            prediction_fidelity(prediction, target_object),
         )
-        assert record["position_error_m"] == math.hypot(
-            prediction.pos_x_m - target["pos_x_m"],
-            prediction.pos_y_m - target["pos_y_m"],
+        assert_golden_float(
+            record["position_error_m"],
+            math.hypot(
+                prediction.pos_x_m - target["pos_x_m"],
+                prediction.pos_y_m - target["pos_y_m"],
+            ),
         )
     assert len(digests) == len(payload["models"])
 
@@ -116,13 +123,16 @@ def test_repeated_screen_is_replayable_from_retained_raw_responses() -> None:
             assert run["action_parse_ok"] is True
             assert run["prediction_parse_ok"] is True
             assert run["example_echo"] is False
-            assert run["cycle0_raw_fidelity"] == prediction_fidelity(
-                reply.prediction,
-                target,
+            assert_golden_float(
+                run["cycle0_raw_fidelity"],
+                prediction_fidelity(reply.prediction, target),
             )
-            assert run["position_error_m"] == math.hypot(
-                reply.prediction.pos_x_m - target.pos_x_m,
-                reply.prediction.pos_y_m - target.pos_y_m,
+            assert_golden_float(
+                run["position_error_m"],
+                math.hypot(
+                    reply.prediction.pos_x_m - target.pos_x_m,
+                    reply.prediction.pos_y_m - target.pos_y_m,
+                ),
             )
             assert run["ollama_response_metadata"]["done"] is True
             assert run["ollama_response_metadata"]["done_reason"] == "stop"
