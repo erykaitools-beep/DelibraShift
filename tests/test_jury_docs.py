@@ -18,8 +18,11 @@ def test_model_impact_estimates_are_present_and_sum_to_100() -> None:
     assert "not a legal ownership split" in section
 
 
-def test_report_and_normative_docs_reject_superseded_public_licence_claims() -> None:
+def test_report_and_normative_docs_publish_the_approved_mit_terms() -> None:
     paths = [
+        ROOT / "LICENSE",
+        ROOT / "pyproject.toml",
+        ROOT / "CITATION.cff",
         ROOT / "SPEC.md",
         ROOT / "README.md",
         ROOT / "CONTRIBUTING.md",
@@ -28,18 +31,23 @@ def test_report_and_normative_docs_reject_superseded_public_licence_claims() -> 
         ROOT / "report" / "spec" / "COPY.md",
     ]
     text = "\n".join(path.read_text(encoding="utf-8") for path in paths)
+    lowered = text.lower()
 
-    for stale in (
-        "MIT licence",
-        "Licencja MIT",
-        "Open benchmark",
-        "Otwarty benchmark",
-        "open, reproducible agent benchmark",
-        "Initial public release",
+    for superseded in (
+        "private evaluation",
+        "prywatna ewaluacja",
+        "all rights reserved",
+        "wszelkie prawa zastrzeżone",
+        "licenseref-proprietary",
+        "currently private",
     ):
-        assert stale not in text
-    assert "private evaluation, all rights reserved" in text
-    assert "prywatna ewaluacja, wszelkie prawa zastrzeżone" in text
+        assert superseded not in lowered
+
+    assert (ROOT / "LICENSE").read_text(encoding="utf-8").startswith("MIT License\n")
+    assert 'license = "MIT"' in (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    assert "license: MIT" in (ROOT / "CITATION.cff").read_text(encoding="utf-8")
+    assert "licencja MIT" in text
+    assert "MIT License" in text
 
 
 def test_documented_cod_decision_count_matches_ledger() -> None:
@@ -47,5 +55,5 @@ def test_documented_cod_decision_count_matches_ledger() -> None:
     contributions = (ROOT / "MODEL_CONTRIBUTIONS.md").read_text(encoding="utf-8")
     count = len(re.findall(r"^## COD-\d{3}", decisions, flags=re.MULTILINE))
 
-    assert count == 32
+    assert count == 34
     assert f"recorded {count} `COD-###` decisions" in contributions

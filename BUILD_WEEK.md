@@ -44,6 +44,8 @@ The model evaluated in M2 is experimental subject data, not a project builder.
 - `SPEC.md`: normative benchmark semantics;
 - `results/m2`: 84 canonical experiment/control logs and aggregate report;
 - `MODEL_CONTRIBUTIONS.md`: evidence-backed AI assistance disclosure;
+- `VIDEO_SCRIPT.md` and `video/`: project-first competition narrative and its
+  reproducible browser-capture/render pipeline;
 - `STATUS.md`: milestone and verification history.
 
 The Codex `/feedback` session identifier is supplied in the competition

@@ -1049,3 +1049,47 @@ valid, byte-identical raw replies across seeds 0, 1, and 2 for the frozen
 persistence floor. These observations demonstrate transport compatibility and
 within-condition repeatability only; they do not amend, extend, or replicate
 the official M2 architecture comparison.
+
+## COD-033 — Keep the competition video project-first and auditable
+
+Date: 2026-07-19
+
+The three-minute competition video presents DelibraShift as the subject. It
+opens with the moving-world mechanism, demonstrates a canonical Lab replay,
+states the bounded M2 result, and shows the evidence chain before briefly
+disclosing the Build Week model roles. The entrant is not introduced or used
+as promotional material. Numerical narration is limited to the official
+84-log, three-repetition result and preserves its one-model, mixed-outcome, and
+simulated-clock boundaries. Exploratory local-model checks are excluded.
+
+The production path is stored under `video/` and reads its six narration blocks
+directly from `VIDEO_SCRIPT.md`. It records the real offline report in Chromium,
+uses local evidence cards rather than screenshots of unverifiable claims,
+derives subtitle timing from the synthetic narration, and produces an H.264/AAC
+1080p master plus an SRT sidecar. Generated audio, browser recordings, locally
+extracted runtime libraries, and final media remain ignored because they are
+large or provider-dependent; the scripts, evidence layout, and claims are
+versioned. A render may vary at the byte level when the external speech service
+changes, so reproducibility applies to the disclosed pipeline and inputs, not
+to a permanent audio hash.
+
+## COD-034 — Release DelibraShift under the MIT License
+
+Date: 2026-07-19
+
+The project owner approved public release under the MIT License and accepted
+the existing operator e-mail in historical commit metadata. The root license,
+Python package metadata, citation record, contributor guidance, README, and
+bilingual offline report must identify MIT consistently. Report validation and
+tests reject the temporary private-evaluation wording so a generated artifact
+cannot silently contradict the repository license.
+
+This decision supersedes only the legal-provenance portion of COD-030. Its
+portability, deterministic-data, extraction, and browser-audit requirements
+remain in force. The early MIT revision is therefore consistent with the final
+release and does not require destructive history rewriting. Before visibility
+changes, the full reachable Git/GitHub surface was scanned without finding a
+credential; two credential-shaped episode identifiers were manually confirmed
+as false positives. GitHub Actions receives explicit read-only repository
+contents permission, with branch protection and platform secret scanning to be
+enabled when the repository becomes public.

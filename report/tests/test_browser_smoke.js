@@ -34,7 +34,7 @@ async function main() {
   assert.ok(['pl', 'en'].includes(initialLang), `unexpected initial language: ${initialLang}`);
   assert.match(
     await page.locator('#cg-footer-provenance').innerText(),
-    initialLang === 'pl' ? /prywatna ewaluacja/i : /private evaluation/i,
+    initialLang === 'pl' ? /licencja MIT/i : /MIT License/i,
   );
   assert.doesNotMatch(
     await page.locator('#cg-footer-notes').innerText(),
@@ -62,11 +62,11 @@ async function main() {
 
   await page.click('#cg-lang [data-lang="en"]');
   await page.waitForFunction(() => document.documentElement.lang === 'en');
-  assert.match(await page.locator('#cg-footer-provenance').innerText(), /private evaluation/i);
+  assert.match(await page.locator('#cg-footer-provenance').innerText(), /MIT License/i);
   await page.click('#cg-lang [data-lang="pl"]');
   await page.waitForFunction(() => document.documentElement.lang === 'pl');
   assert.equal(await page.getAttribute('html', 'lang'), 'pl');
-  assert.match(await page.locator('#cg-footer-provenance').innerText(), /prywatna ewaluacja/i);
+  assert.match(await page.locator('#cg-footer-provenance').innerText(), /licencja MIT/i);
   const oldTheme = await page.getAttribute('html', 'data-theme');
   await page.click('#cg-theme-btn');
   assert.notEqual(await page.getAttribute('html', 'data-theme'), oldTheme);

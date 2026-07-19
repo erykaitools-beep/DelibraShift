@@ -1,9 +1,30 @@
 # Status
 
+## 2026-07-19 — MIT public-release preparation
+
+- Scanned all reachable Git commits, branch and pull-request refs, retained
+  GitHub Actions logs, and current source with secret-pattern tooling; no
+  credential was found. Two episode identifiers were verified false positives.
+- Restored the approved MIT License consistently across the package metadata,
+  citation file, contributor guidance, README, and bilingual offline report.
+- Accepted the existing operator e-mail in immutable commit metadata and added
+  explicit read-only workflow permissions before changing repository visibility.
+
+## 2026-07-19 — Project-first competition video
+
+- Reframed the three-minute narrative around DelibraShift's mechanism,
+  controlled result, and verifiable evidence rather than the entrant.
+- Added a six-scene 1080p renderer driven directly from `VIDEO_SCRIPT.md`, with
+  live Chromium report capture, local evidence cards, synthetic English
+  narration, burned captions, and a separate SRT sidecar.
+- Rendered and visually audited a 2:52 H.264/AAC master. The final media has no
+  embedded credentials or private paths, decodes without errors, and retains a
+  reproducible source pipeline while generated media remains outside Git.
+
 ## 2026-07-19 — Jury-readiness and cross-runtime CI
 
 - Added the Build Week evidence record, judge quick path, limitations, human
-  ownership, private-evaluation rights, and competition-focused README.
+  ownership, legal provenance, and competition-focused README.
 - Kept CPython 3.10/Linux x86_64 as the exact binary64 fixture reference and
   added an 8-ULP portability alarm for libm-derived oracle/masked values on
   other supported runtimes; per-host byte reproducibility remains exact.
@@ -27,9 +48,10 @@
 
 ## 2026-07-13 — Codex M0 implementation
 
-- Repository scaffold initialized with Python 3.10+ packaging, an initial
-  license file later superseded by the current private-evaluation terms,
-  development test configuration, and a clean ignore policy.
+- Repository scaffold initialized with Python 3.10+ packaging, an initial MIT
+  license that was temporarily superseded by evaluation-only terms and restored
+  for public release by COD-034, development test configuration, and a clean
+  ignore policy.
 - Fable's `types.py`, SPEC v0.1, PLAN, and golden fixture were read after their
   commits removed the contract gate.
 - Implemented the pure semi-implicit Euler transition, fixed B-tick

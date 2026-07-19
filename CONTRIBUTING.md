@@ -1,7 +1,8 @@
 # Contributing to DelibraShift
 
-Thanks for helping improve a reproducible agent benchmark. This repository is
-currently private and available only under the evaluation terms in `LICENSE`.
+Thanks for helping improve a reproducible agent benchmark. DelibraShift is
+open-source software released under the MIT License; contributions are
+accepted under the same terms.
 
 ## Development setup
 

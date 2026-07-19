@@ -759,17 +759,33 @@ def validate(
         "none of " + ", ".join(repr(token) for token in FORBIDDEN_TOKENS) if not hits else f"found: {hits}",
     )
 
-    stale_legal_copy = [
+    superseded_legal_copy = [
         phrase
-        for phrase in ("MIT licence", "Licencja MIT", "Open benchmark", "Otwarty benchmark")
+        for phrase in (
+            "private evaluation",
+            "prywatna ewaluacja",
+            "all rights reserved",
+            "wszelkie prawa zastrzeżone",
+        )
         if phrase.lower() in lowered
     ]
     validator.add(
-        not stale_legal_copy,
+        not superseded_legal_copy,
         "legal provenance",
-        "current private-evaluation terms embedded"
-        if not stale_legal_copy
-        else f"superseded copy found: {stale_legal_copy}",
+        "no superseded private-evaluation terms embedded"
+        if not superseded_legal_copy
+        else f"superseded copy found: {superseded_legal_copy}",
+    )
+    missing_legal_copy = [
+        phrase for phrase in ("MIT License", "licencja MIT")
+        if phrase.lower() not in lowered
+    ]
+    validator.add(
+        not missing_legal_copy,
+        "MIT licence",
+        "approved bilingual MIT terms embedded"
+        if not missing_legal_copy
+        else f"missing: {missing_legal_copy}",
     )
 
     css_source = "\n".join(

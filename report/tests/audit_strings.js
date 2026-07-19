@@ -82,21 +82,24 @@ var staleCopy = [];
   Object.keys(S[lang]).forEach(function (key) {
     var value = S[lang][key];
     if (typeof value !== 'string') return;
-    if (/MIT licen[cs]e|Licencja MIT|\bOpen benchmark\b|\bOtwarty benchmark\b/i.test(value)) {
+    if (/private evaluation|prywatna ewaluacja|all rights reserved|wszelkie prawa zastrzeżone/i.test(value)) {
       staleCopy.push(lang + '.' + key + '=' + JSON.stringify(value));
     }
   });
 });
-console.log('stale legal/public copy:', staleCopy.length ? staleCopy : 'none');
+console.log('superseded private legal copy:', staleCopy.length ? staleCopy : 'none');
 
 if (onlyPl.length || onlyEn.length) failures.push('language key sets differ');
 if (Object.keys(missing).length) failures.push('literal translation keys are missing');
 if (dyn.length) failures.push('dynamic metric families are incomplete');
 if (scenMiss.length) failures.push('scenario translation keys are missing');
 if (rMiss.length) failures.push('reason translation keys are missing');
-if (staleCopy.length) failures.push('superseded licence/public copy remains');
-if (!/Eryk Wyrębek/.test(S.pl['footer.license']) || !/Eryk Wyrębek/.test(S.en['footer.license'])) {
-  failures.push('footer legal provenance omits the human copyright holder');
+if (staleCopy.length) failures.push('superseded private-evaluation copy remains');
+if (!/Eryk Wyrębek/.test(S.pl['footer.license']) ||
+    !/Eryk Wyrębek/.test(S.en['footer.license']) ||
+    !/licencja MIT/i.test(S.pl['footer.license']) ||
+    !/MIT License/i.test(S.en['footer.license'])) {
+  failures.push('footer legal provenance does not match the approved MIT release');
 }
 if (failures.length) {
   console.error('AUDIT FAILED: ' + failures.join('; '));
