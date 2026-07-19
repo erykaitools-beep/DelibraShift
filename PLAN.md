@@ -74,7 +74,7 @@ test regeneration plus recorded gate impact.
   slice, and explicit external-call acknowledgement (`chronogym-ablate`).
 - [x] Add paired decoy-heat feedback rows and separately reported probe-control
   rows to the experiment report.
-- [ ] Run END2END vs WM-SCAFFOLD on dracarys after NIM configuration exists;
+- [x] Run END2END vs WM-SCAFFOLD on dracarys after NIM configuration exists;
   ≥3 reps, publish null/negative result unchanged.
 - [ ] MARIA as labeled CONFOUNDED datapoint (read-only integration — do NOT
   touch the Maria repo/services); README quickstart (install → run → table in

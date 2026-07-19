@@ -117,8 +117,29 @@ requested scenario, model arm, prompt/pack versions, host, and scenario list;
 only missing episodes make external calls.
 
 Without `--execute`, the command exits before constructing the NIM adapter.
-Current repository tables remain deterministic baseline references; no
-dracarys result is claimed until a configured endpoint completes the run.
+
+Official Dracarys result: `core_v0` v0.1.1, R=3, Linux x86_64. Ranges are
+episode minima/maxima; Δ is the mean same-scenario, same-repetition
+WM-SCAFFOLD minus END2END difference. Fidelity support differs because low
+coverage invalidates an episode under §4.1.
+
+| metric | END2END mean [range] | WM-SCAFFOLD mean [range] | paired Δ |
+|---|---:|---:|---:|
+| prediction fidelity | 0.116 [0.058, 0.187], n=10 | 0.129 [0.052, 0.253], n=18 | +0.018, n=4 |
+| prediction coverage | 0.585 [0.200, 1.000], n=30 | 0.875 [0.250, 1.000], n=30 | +0.290 |
+| temporal anticipation | 0.512 [0.485, 0.566], n=21 | 0.473 [0.429, 0.494], n=21 | **−0.039** |
+| outcome | 0.169 [0.005, 0.951], n=30 | 0.090 [0.005, 0.312], n=30 | **−0.079** |
+| action parse rate | 0.616 [0.200, 0.857], n=30 | 1.000 [1.000, 1.000], n=30 | +0.384 |
+| retried-cycle rate | 0.636 [0.357, 0.833], n=30 | 0.190 [0.000, 0.800], n=30 | −0.446 |
+| feedback-use | 0.500, n=9 pairs | 0.500, n=9 pairs | 0.000 |
+
+The scaffold improved structured-output reliability and prediction coverage,
+but reduced temporal anticipation on every one of 21 paired visible cells and
+reduced mean outcome. Both arms showed no measurable use of hot/cold feedback.
+Controls passed formatting (identity fidelity 1.0, 30/30 parsed); forced-choice
+accuracy was 0.60/0.70/0.80 (mean 0.70, 30/30 parsed). The complete canonical
+report and 84 logs are in [`results/m2`](results/m2); report SHA-256 is
+`5ed6e76793684c9c7ef996ae58168ec57301afbcc615f4967c533e853f2506fa`.
 
 Reproducibility is a hard requirement: physics is a pure function of scenario,
 state, held action, and simulated time delta. Same-seed baseline runs produce

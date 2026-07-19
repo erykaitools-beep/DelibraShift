@@ -166,3 +166,19 @@
   completed episodes are validated and locally re-scored while only missing
   episodes call NIM. The run will resume with unchanged parameters.
 - Verification after the recovery change: 86 tests pass.
+
+## 2026-07-19 — Official M2 matched ablation complete
+
+- Completed 84/84 Dracarys logs and the canonical report after one strictly
+  verified resume. A zero-call reconstruction validated every file and
+  reproduced the report byte-for-byte; SHA-256
+  `5ed6e76793684c9c7ef996ae58168ec57301afbcc615f4967c533e853f2506fa`.
+- WM-SCAFFOLD improved prediction coverage (+0.290 paired) and action parsing
+  (+0.384), but reduced temporal anticipation (-0.039 across every paired
+  visible cell) and outcome (-0.079). Retry-free temporal remained negative.
+- Both arms ignored hot/cold under the registered decoy test
+  (`feedback_use=0.5`, raw delta 0.0). Format control was perfect; forced-choice
+  accuracy averaged 0.70 with 30/30 parsed trials for each control family.
+- The negative matched-architecture result is recorded unchanged in COD-023
+  and README. Remaining M2 work is the separately labeled, read-only MARIA
+  confounded datapoint and quickstart polish.

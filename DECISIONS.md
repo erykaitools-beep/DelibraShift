@@ -818,3 +818,27 @@ schema, scenario, adapter/arm, prompt, pack, host, and scenario list. Any
 mismatch aborts rather than mixing runs. Missing episodes retain the original
 loop order, repetition seed, shared pacer, and filenames. Secrets remain
 memory-only and no Maria file is modified.
+
+## COD-023 — Publish the negative Dracarys scaffold result unchanged
+
+Date: 2026-07-19
+
+The official `core_v0` v0.1.1 Dracarys run completed all 84 canonical logs:
+60 treatment episodes, 18 decoy episodes, and 6 controls over R=3 on Linux
+x86_64. A zero-call resume reconstruction validated every log and reproduced
+the stored report byte-for-byte. Report SHA-256 is
+`5ed6e76793684c9c7ef996ae58168ec57301afbcc615f4967c533e853f2506fa`.
+
+WM-SCAFFOLD minus END2END paired means were +0.29013 prediction coverage,
++0.38390 action parse rate, -0.44586 retried-cycle rate, -0.03929 temporal
+anticipation (negative in all 21 visible cells), and -0.07904 outcome over 30
+cells. Prediction fidelity was measurable in only 4 common cells; its paired
+delta was +0.01825 and is reported with that support rather than generalized.
+The retry-free temporal slice remained negative at -0.04181 over 21 cells.
+
+Both arms had feedback-use 0.5 with raw normal-minus-decoy outcome 0.0 over
+9 pairs: neither used the hot/cold signal measurably. Format controls parsed
+30/30 with identity fidelity 1.0. Forced-choice parsed 30/30 and scored
+0.60/0.70/0.80 by repetition (mean 0.70). The treatment therefore improved
+format compliance and coverage but harmed anticipation and outcome. Per the
+pre-registration, this negative architecture result is published unchanged.
