@@ -11,6 +11,7 @@ import pytest
 from delibrashift.archive import build_pack_archive, verify_pack_archive
 from delibrashift.bank import PackError
 from delibrashift.types import canonical_json
+from _symlink_contract import symlink_or_skip
 
 
 PACK = Path(__file__).parents[1] / "packs" / "core_v0"
@@ -73,7 +74,11 @@ def test_pack_archive_rejects_unsafe_name_or_version(tmp_path, field, label) -> 
     manifest = json.loads((PACK / "pack.json").read_text(encoding="utf-8"))
     manifest[field] = label
     (pack / "pack.json").write_text(json.dumps(manifest), encoding="utf-8")
-    (pack / "scenarios").symlink_to(PACK / "scenarios")
+    symlink_or_skip(
+        pack / "scenarios",
+        PACK / "scenarios",
+        target_is_directory=True,
+    )
     with pytest.raises(PackError, match="archive-safe"):
         build_pack_archive(pack, tmp_path / "dist")
 

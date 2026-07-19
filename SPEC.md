@@ -1,10 +1,11 @@
 # DelibraShift SPEC v0.2.2
 
-Owner: Codex (sole architect/builder since 2026-07-19). Normative unless
-marked *informative*. Historical Fable contributions retain attribution. The
-executable contract is `delibrashift/types.py` (schema version 0.2.1); where prose
-and `types.py` disagree, `types.py` wins and the disagreement is a bug to log
-in DECISIONS.md.
+Project owner and human operator: **Eryk Wyrębek**. Codex is the active
+technical steward under human direction. Normative unless marked
+*informative*. Historical Fable contributions retain attribution. The
+executable contract is `delibrashift/types.py` (schema version 0.2.1); where
+prose and `types.py` disagree, `types.py` wins and the disagreement is a bug
+to log in DECISIONS.md.
 
 v0.2 integrates adversarial review round 1 (five independent reviewers +
 an empirical greedy red-team; FAB-014..FAB-027). Major changes vs v0.1:
@@ -21,20 +22,20 @@ decoy-goal feedback ablation (FAB-020).
 
 ### 1.1 The one sentence (locked, FAB-016; supersedes FAB-001)
 
-> **DelibraShift is the first open benchmark that scores temporal anticipation
-> as an explicit diagnostic axis — comparing each engaged action against
-> engage-time versus observed-time oracles under a seed-fixed *simulated*
-> deliberation budget in a never-pausing world — and that decomposes agent
-> performance into prediction-fidelity, temporal anticipation, feedback-use,
-> and outcome with graded hot/cold signals, under a matched-pair world-model
-> ablation on the same base model.**
+> **To our knowledge, DelibraShift is the first benchmark that scores temporal
+> anticipation as an explicit diagnostic axis — comparing each engaged action
+> against engage-time versus observed-time oracles under a seed-fixed
+> *simulated* deliberation budget in a never-pausing world — and that
+> decomposes agent performance into prediction-fidelity, temporal
+> anticipation, feedback-use, and outcome with graded hot/cold signals, under
+> a matched-pair world-model ablation on the same base model.**
 
 The deliberation-aware *clock* is deliberately standard machinery — a
 constant-delay MDP with latched actions, a lineage from real-time heuristic
-search through RTMDP and SC2LE's `step_mul` (§12). What no prior benchmark
-does is *measure whether the agent compensates for that delay* as an
-isolated, probe-controlled score. The mechanism is inherited; the
-measurement is new.
+search through RTMDP and SC2LE's `step_mul` (§12). We did not identify a prior
+benchmark that *measures whether the agent compensates for that delay* as an
+isolated, probe-controlled score. The mechanism is inherited; the measurement
+is the project's proposed contribution.
 
 ### 1.2 The three challenges
 
@@ -923,8 +924,8 @@ validity floors, fidelity-vs-outcome scatter (do good predictors win?).
 6. Matched-pair ablation (RULE D) + confounded full-system datapoint.
 7. Diagnosis case studies (per-axis failure narratives).
 8. Limitations & threats (§13).
-9. Open release: packs, seeds, logs. Funding angle: open eval infra
-   (NLnet/NGI, NVIDIA Inception).
+9. Evaluation release: packs, seeds, logs under the current project licence;
+   any future open release requires a separate owner decision.
 
 ---
 

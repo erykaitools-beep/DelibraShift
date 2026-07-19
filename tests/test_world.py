@@ -19,6 +19,7 @@ from delibrashift.types import (
     wind_x_at,
 )
 from delibrashift.world import build_observation, initial_state, step
+from _float_contract import assert_golden_float
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "golden_g001.json"
@@ -86,12 +87,14 @@ def test_golden_prediction_metrics_are_exact() -> None:
     fixture, config = load_golden()
     target = advance_deliberation(config, initial_state(config)).state
     prediction = Prediction(**fixture["fidelity_example"]["prediction"])
-    assert prediction_error(prediction, target) == fixture["fidelity_example"][
-        "expected_normalized_error"
-    ]
-    assert prediction_fidelity(prediction, target) == fixture["fidelity_example"][
-        "expected_fidelity"
-    ]
+    assert_golden_float(
+        prediction_error(prediction, target),
+        fixture["fidelity_example"]["expected_normalized_error"],
+    )
+    assert_golden_float(
+        prediction_fidelity(prediction, target),
+        fixture["fidelity_example"]["expected_fidelity"],
+    )
 
     persistence = Prediction(
         pos_x_m=config.start_pos_x_m,
@@ -99,12 +102,14 @@ def test_golden_prediction_metrics_are_exact() -> None:
         vel_x_mps=config.start_vel_x_mps,
         vel_y_mps=config.start_vel_y_mps,
     )
-    assert prediction_error(persistence, target) == fixture["persistence_baseline"][
-        "expected_normalized_error"
-    ]
-    assert prediction_fidelity(persistence, target) == fixture["persistence_baseline"][
-        "expected_fidelity"
-    ]
+    assert_golden_float(
+        prediction_error(persistence, target),
+        fixture["persistence_baseline"]["expected_normalized_error"],
+    )
+    assert_golden_float(
+        prediction_fidelity(persistence, target),
+        fixture["persistence_baseline"]["expected_fidelity"],
+    )
 
 
 def test_deliberation_clock_latches_only_after_fixed_window() -> None:

@@ -24,6 +24,7 @@ data is written only below ``report/data``.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import sys
@@ -32,6 +33,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
+from delibrashift.agents import GreedyAgent
+from delibrashift.gates import score_feedback_use
 from delibrashift.oracle import state_from_observation  # noqa: F401  (contract check)
 from delibrashift.probes import score_forced_choice_probe, score_format_probe
 from delibrashift.runner import CycleRecord, EpisodeResult
@@ -67,6 +70,7 @@ PROJECT_ROOT = ROOT.parent
 LOGS_DIR = PROJECT_ROOT / "results" / "m2" / "logs"
 PACKS_DIR = PROJECT_ROOT / "packs" / "core_v0"
 REPORT_PATH = PROJECT_ROOT / "results" / "m2" / "report.json"
+PROVENANCE_PATH = PROJECT_ROOT / "results" / "m2" / "provenance.json"
 OUT_PATH = ROOT / "data" / "bundle.json"
 
 
@@ -112,6 +116,23 @@ ARM_METRICS = (
     "retried_cycle_rate",
     "wall_clock_ms",
 )
+
+# ``MatchedPairReport`` uses the telemetry field's full dataclass name while
+# the visualization bundle keeps the shorter public key.  Every other report
+# metric has the same name in both representations.
+REPORT_ARM_METRICS = {
+    "prediction_fidelity": "prediction_fidelity",
+    "prediction_coverage": "prediction_coverage",
+    "temporal_anticipation": "temporal_anticipation",
+    "outcome": "outcome",
+    "action_parse_rate": "action_parse_rate",
+    "prediction_parse_rate": "prediction_parse_rate",
+    "retried_cycle_rate": "retried_cycle_rate",
+    "mean_divergence_weight": "mean_divergence_weight",
+    "fidelity_no_retry": "fidelity_no_retry",
+    "temporal_no_retry": "temporal_no_retry",
+    "wall_clock_ms_telemetry_only": "wall_clock_ms",
+}
 
 #: Size ceiling above which trajectory precision is reduced (bytes).
 SIZE_LIMIT_BYTES = 25 * 1024 * 1024
@@ -220,6 +241,148 @@ def read_log(path: Path) -> tuple[dict, list[dict], dict]:
     if summary is None:
         raise ValueError(f"{path.name}: truncated log (no summary line)")
     return manifest, cycles, summary
+
+
+def validate_log_provenance(
+    log_paths: list[Path], configs: dict[str, ScenarioConfig], pack: dict
+) -> dict | None:
+    """Fail closed when the snapshot mixes incompatible run identities."""
+    sample: dict | None = None
+    common: dict[str, set[Any]] = {
+        "host_class": set(),
+        "pack_name": set(),
+        "pack_version": set(),
+        "schema_version": set(),
+        "agent_base": set(),
+    }
+    probe_ids = [
+        scenario_id
+        for scenario_id, config in configs.items()
+        if any(tag.startswith("probe:") for tag in config.axis_tags)
+    ]
+    treatment_ids = [scenario_id for scenario_id in configs if scenario_id not in probe_ids]
+    prompt_by_arm = {"end2end": "1.0", "wm-scaffold": "wm-scaffold-1.0"}
+
+    for path in log_paths:
+        manifest, _cycles, _summary = read_log(path)
+        scenario_id, _rep, arm, _variant, _key = parse_log_name(path)
+        if sample is None:
+            sample = manifest
+        expected_prompt = prompt_by_arm.get(arm)
+        if arm == "control":
+            expected_prompt = {
+                "g008": "probe-format-1.0",
+                "g009": "probe-choice-1.0",
+            }.get(scenario_id)
+        expected = {
+            "scenario_id": scenario_id,
+            "seed": configs[scenario_id].seed,
+            "pack_name": pack.get("name"),
+            "pack_version": pack.get("version"),
+            "schema_version": pack.get("schema_version"),
+            "prompt_version": expected_prompt,
+            "scenario_ids": probe_ids if arm == "control" else treatment_ids,
+        }
+        for field, value in expected.items():
+            if manifest.get(field) != value:
+                raise ValueError(
+                    f"{path.name}: manifest {field} {manifest.get(field)!r} "
+                    f"!= expected {value!r}"
+                )
+        agent = manifest.get("agent", "")
+        if not agent.endswith(f":{arm}"):
+            raise ValueError(f"{path.name}: agent identity does not match arm {arm!r}")
+        for field in ("host_class", "pack_name", "pack_version", "schema_version"):
+            common[field].add(manifest.get(field))
+        common["agent_base"].add(agent.rsplit(":", 1)[0])
+
+    for field, values in common.items():
+        if len(values) > 1:
+            raise ValueError(f"mixed {field} values in snapshot: {sorted(values)!r}")
+    return sample
+
+
+def log_set_sha256(log_paths: list[Path]) -> str:
+    """Hash names and bytes of an ordered log set without path dependence."""
+    digest = hashlib.sha256()
+    for path in sorted(log_paths, key=lambda item: item.name):
+        digest.update(path.name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def validate_snapshot_provenance(log_paths: list[Path], manifest: dict | None) -> None:
+    """Verify the tracked official snapshot identity when metadata is present."""
+    if not PROVENANCE_PATH.exists():
+        return
+    payload = json.loads(PROVENANCE_PATH.read_text(encoding="utf-8"))
+    required = {"log_count", "logs_sha256", "model", "agent_base", "report_sha256"}
+    missing = sorted(required - payload.keys())
+    if missing:
+        raise ValueError(f"snapshot provenance missing fields: {missing}")
+    if payload["log_count"] != len(log_paths):
+        raise ValueError("snapshot provenance log_count mismatch")
+    if payload["logs_sha256"] != log_set_sha256(log_paths):
+        raise ValueError("snapshot provenance logs_sha256 mismatch")
+    agent = manifest.get("agent", "") if manifest else ""
+    agent_base = agent.rsplit(":", 1)[0] if agent else ""
+    model = agent_base.split(":", 1)[1] if ":" in agent_base else ""
+    if payload["agent_base"] != agent_base or payload["model"] != model:
+        raise ValueError("snapshot provenance model identity mismatch")
+    if REPORT_PATH.exists():
+        report_digest = hashlib.sha256(REPORT_PATH.read_bytes()).hexdigest()
+        if payload["report_sha256"] != report_digest:
+            raise ValueError("snapshot provenance report_sha256 mismatch")
+
+
+def validate_completed_run_matrix(
+    log_paths: list[Path],
+    configs: dict[str, ScenarioConfig],
+    report: dict | None,
+    manifest: dict | None,
+    pack: dict,
+) -> None:
+    """A closing report is valid only for the complete planned log matrix."""
+    if report is None:
+        return
+    probe_ids = {
+        scenario_id
+        for scenario_id, config in configs.items()
+        if any(tag.startswith("probe:") for tag in config.axis_tags)
+    }
+    expected: set[str] = set()
+    for scenario_id, config in configs.items():
+        for repetition in range(REPETITIONS_EXPECTED):
+            if scenario_id in probe_ids:
+                expected.add(f"{scenario_id}.r{repetition}.control.jsonl")
+                continue
+            for arm in ARM_NAMES:
+                expected.add(f"{scenario_id}.r{repetition}.{arm}.jsonl")
+                if not config.goal_visible:
+                    expected.add(f"{scenario_id}.r{repetition}.{arm}.decoy.jsonl")
+    actual = {path.name for path in log_paths}
+    if actual != expected:
+        missing = sorted(expected - actual)
+        extra = sorted(actual - expected)
+        raise ValueError(
+            "completed report requires the full planned log matrix; "
+            f"missing={missing}, extra={extra}"
+        )
+    agent = manifest.get("agent", "") if manifest else ""
+    agent_base = agent.rsplit(":", 1)[0] if agent else ""
+    expected_report = {
+        "adapter_name": agent_base,
+        "pack_name": pack.get("name"),
+        "pack_version": pack.get("version"),
+        "repetitions": REPETITIONS_EXPECTED,
+    }
+    for field, value in expected_report.items():
+        if report.get(field) != value:
+            raise ValueError(
+                f"completed report {field} {report.get(field)!r} != logs {value!r}"
+            )
 
 
 # --------------------------------------------------------------------------
@@ -483,6 +646,10 @@ def cycle_payload(record: CycleRecord) -> dict[str, Any]:
                 "ay": rnd(record.engaged_action.accel_y_mps2),
             }
         ),
+        "returned": {
+            "ax": rnd(record.reply.action.accel_x_mps2),
+            "ay": rnd(record.reply.action.accel_y_mps2),
+        },
         "predicted": predicted,
         "truth_at_engage": truth,
         "pred_pos_error_m": rnd(pos_error),
@@ -556,6 +723,7 @@ def build_episode(
         "retried_cycle_rate": summary.get("retried_cycle_rate"),
         "transport_retries": summary.get("transport_retries", 0),
         "wall_clock_ms": rnd(summary.get("wall_clock_ms_telemetry_only", 0.0), 1),
+        "_wall_clock_ms_exact": summary.get("wall_clock_ms_telemetry_only", 0.0),
         "scores": {
             "prediction_fidelity": fidelity_score.prediction_fidelity,
             "prediction_coverage": fidelity_score.prediction_coverage,
@@ -596,6 +764,29 @@ def build_episode(
             "dist": rnd_list(trajectory["dist"], traj_places),
         },
         "cycles": [cycle_payload(record) for record in records],
+        "_effective_actions_exact": [
+            (record.reply.action.accel_x_mps2, record.reply.action.accel_y_mps2)
+            for record in records
+        ],
+        "_predictions_exact": [
+            None
+            if record.reply.prediction is None
+            else (
+                record.reply.prediction.pos_x_m,
+                record.reply.prediction.pos_y_m,
+                record.reply.prediction.vel_x_mps,
+                record.reply.prediction.vel_y_mps,
+            )
+            for record in records
+        ],
+        "_parse_paths_exact": [
+            (
+                record.reply.parse_failed,
+                record.reply.prediction_parse_failed,
+                record.reply.parse_retries,
+            )
+            for record in records
+        ],
     }
     return episode, gate_row
 
@@ -654,7 +845,12 @@ def build_arms(episodes: list[dict]) -> dict[str, Any]:
         ]
         summary: dict[str, Any] = {"n_episodes": len(selected)}
         for metric in ARM_METRICS:
-            if metric in ("retried_cycle_rate", "wall_clock_ms"):
+            if metric == "wall_clock_ms":
+                values = [
+                    episode.get("_wall_clock_ms_exact", episode.get(metric))
+                    for episode in selected
+                ]
+            elif metric == "retried_cycle_rate":
                 values = [episode.get(metric) for episode in selected]
             else:
                 values = [episode["scores"].get(metric) for episode in selected]
@@ -666,12 +862,17 @@ def build_arms(episodes: list[dict]) -> dict[str, Any]:
     return arms
 
 
-def engaged_actions(episode: dict) -> list[tuple[float, float] | None]:
-    """The command sequence a run actually latched, cycle by cycle."""
-    return [
-        None if cycle.get("engaged") is None else (cycle["engaged"]["ax"], cycle["engaged"]["ay"])
-        for cycle in episode.get("cycles", [])
-    ]
+def returned_actions(episode: dict) -> list[tuple[float, float]]:
+    """Harness-resolved actions: accepted parses or no-op fallbacks."""
+    return episode.get("_effective_actions_exact", [])
+
+
+def returned_predictions(episode: dict) -> list[tuple[float, float, float, float] | None]:
+    return episode.get("_predictions_exact", [])
+
+
+def parse_paths(episode: dict) -> list[tuple[bool, bool, int]]:
+    return episode.get("_parse_paths_exact", [])
 
 
 def build_feedback(episodes: list[dict]) -> list[dict]:
@@ -697,10 +898,14 @@ def build_feedback(episodes: list[dict]) -> list[dict]:
                 "normal_outcome": normal_outcome,
                 "decoy_outcome": decoy_outcome,
                 "outcome_delta": normal_outcome - decoy_outcome,
-                # Equal outcomes are only consistent with ignoring the heat
-                # channel; equal ACTIONS prove it, because two different command
-                # sequences can land on the same score by coincidence.
-                "actions_identical": engaged_actions(episode) == engaged_actions(decoy),
+                # Outcome equality alone is inconclusive. Compare the commands
+                # the harness resolved from accepted parses or no-op fallbacks;
+                # this supports a claim about effective control only.
+                "actions_identical": returned_actions(episode) == returned_actions(decoy),
+                "predictions_identical": (
+                    returned_predictions(episode) == returned_predictions(decoy)
+                ),
+                "parse_paths_identical": parse_paths(episode) == parse_paths(decoy),
                 "normal_key": episode["key"],
                 "decoy_key": decoy["key"],
             }
@@ -709,7 +914,7 @@ def build_feedback(episodes: list[dict]) -> list[dict]:
 
 
 def build_feedback_summary(pairs: list[dict], band: float | None) -> list[dict]:
-    """Mirror experiments._summarize_feedback; band comes from report.json only."""
+    """Mirror ``experiments._summarize_feedback`` from independently checked data."""
     summaries = []
     for arm in ARM_NAMES:
         selected = [pair for pair in pairs if pair["arm"] == arm]
@@ -729,20 +934,127 @@ def build_feedback_summary(pairs: list[dict], band: float | None) -> list[dict]:
     return summaries
 
 
-def read_report() -> tuple[dict | None, float | None]:
+def _report_values_match(actual: Any, expected: Any) -> bool:
+    """Compare derived report values while tolerating harmless sum-order noise."""
+    if actual is None or expected is None:
+        return actual is expected
+    if (
+        isinstance(actual, (int, float))
+        and not isinstance(actual, bool)
+        and isinstance(expected, (int, float))
+        and not isinstance(expected, bool)
+    ):
+        return math.isclose(float(actual), float(expected), rel_tol=1e-12, abs_tol=1e-15)
+    return actual == expected
+
+
+def validate_report_aggregates(
+    report: dict,
+    episodes: list[dict],
+    pairs: list[dict],
+    configs: dict[str, ScenarioConfig],
+) -> float | None:
+    """Reject a closing report whose aggregates do not follow from its logs.
+
+    The report is an input, not an authority.  Arm metrics are rebuilt from the
+    replayed episodes, and the registered feedback-searcher band is recomputed
+    from the scenario pack using the production scoring function.
+    """
+    expected_arms = build_arms(episodes)
+    report_summaries = report.get("summaries")
+    if not isinstance(report_summaries, list):
+        raise ValueError("completed report summaries must be a list")
+    summaries_by_arm = {
+        summary.get("arm"): summary
+        for summary in report_summaries
+        if isinstance(summary, dict)
+    }
+    if set(summaries_by_arm) != set(ARM_NAMES) or len(report_summaries) != len(
+        ARM_NAMES
+    ):
+        raise ValueError("completed report summaries must contain each arm exactly once")
+
+    range_fields = {"mean": "mean", "minimum": "min", "maximum": "max", "n": "n"}
+    for arm in ARM_NAMES:
+        actual_summary = summaries_by_arm[arm]
+        expected_summary = expected_arms[arm]
+        for field in ("n_episodes", "transport_retries"):
+            if not _report_values_match(actual_summary.get(field), expected_summary[field]):
+                raise ValueError(f"completed report {arm}.{field} does not match logs")
+        for report_metric, bundle_metric in REPORT_ARM_METRICS.items():
+            actual_range = actual_summary.get(report_metric)
+            if not isinstance(actual_range, dict):
+                raise ValueError(f"completed report {arm}.{report_metric} is missing")
+            expected_range = expected_summary[bundle_metric]
+            for report_field, bundle_field in range_fields.items():
+                if not _report_values_match(
+                    actual_range.get(report_field), expected_range[bundle_field]
+                ):
+                    raise ValueError(
+                        f"completed report {arm}.{report_metric}.{report_field} "
+                        "does not match logs"
+                    )
+
+    if report.get("feedback_reference_agent") != "greedy":
+        raise ValueError("completed report feedback_reference_agent must be 'greedy'")
+    masked_configs = tuple(
+        config
+        for config in configs.values()
+        if not config.goal_visible
+        and not any(tag.startswith("probe:") for tag in config.axis_tags)
+    )
+    reference = score_feedback_use(masked_configs, GreedyAgent)
+    band = reference.feedback_band
+    band_terms = list(reference.feedback_band_terms or ())
+    expected_feedback = {
+        summary["arm"]: summary for summary in build_feedback_summary(pairs, band)
+    }
+    report_feedback = report.get("feedback_summaries")
+    if not isinstance(report_feedback, list):
+        raise ValueError("completed report feedback_summaries must be a list")
+    feedback_by_arm = {
+        summary.get("arm"): summary
+        for summary in report_feedback
+        if isinstance(summary, dict)
+    }
+    if set(feedback_by_arm) != set(ARM_NAMES) or len(report_feedback) != len(
+        ARM_NAMES
+    ):
+        raise ValueError(
+            "completed report feedback_summaries must contain each arm exactly once"
+        )
+    for arm in ARM_NAMES:
+        actual = feedback_by_arm[arm]
+        expected = expected_feedback[arm]
+        for field in ("feedback_raw", "feedback_use", "feedback_band", "n_pairs"):
+            if not _report_values_match(actual.get(field), expected[field]):
+                raise ValueError(
+                    f"completed report {arm}.{field} does not match logs/scoring"
+                )
+        actual_terms = actual.get("feedback_band_terms")
+        if not isinstance(actual_terms, list) or len(actual_terms) != len(band_terms):
+            raise ValueError(
+                f"completed report {arm}.feedback_band_terms do not match scoring"
+            )
+        if not all(
+            _report_values_match(actual_term, expected_term)
+            for actual_term, expected_term in zip(actual_terms, band_terms)
+        ):
+            raise ValueError(
+                f"completed report {arm}.feedback_band_terms do not match scoring"
+            )
+    return band
+
+
+def read_report() -> dict | None:
     """Load the run report if the (still running) experiment has written it."""
     if not REPORT_PATH.exists():
-        return None, None
+        return None
     try:
         report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return None, None
-    band = None
-    for summary in report.get("feedback_summaries", ()) or ():
-        if summary.get("feedback_band") is not None:
-            band = summary["feedback_band"]
-            break
-    return report, band
+        return None
+    return report
 
 
 # --------------------------------------------------------------------------
@@ -800,11 +1112,19 @@ def build_scenarios_block(
 def newest_source_date(log_paths: list[Path]) -> str | None:
     """Date of the newest input actually read, as plain ``YYYY-MM-DD``.
 
-    This answers "when was this data produced", not "when was this page built",
-    so it reads the logs' own modification times.  Staging preserves them; see
-    ``build_report.stage_logs``.  The report file counts too when present,
-    because it is written after the last episode.
+    The official snapshot pins its production date in tracked provenance so a
+    clone, ZIP extraction, or copy to another filesystem cannot rewrite
+    history through file modification times.  Ad-hoc snapshots without that
+    metadata retain a best-effort mtime fallback.
     """
+    if PROVENANCE_PATH.exists():
+        payload = json.loads(PROVENANCE_PATH.read_text(encoding="utf-8"))
+        value = payload.get("data_date")
+        try:
+            return datetime.strptime(value, "%Y-%m-%d").date().isoformat()
+        except (TypeError, ValueError) as exc:
+            raise ValueError("provenance data_date must be YYYY-MM-DD") from exc
+
     stamps = []
     for path in list(log_paths) + ([REPORT_PATH] if REPORT_PATH.exists() else []):
         try:
@@ -818,9 +1138,12 @@ def newest_source_date(log_paths: list[Path]) -> str | None:
 
 def build_bundle(traj_places: int = 4) -> tuple[dict[str, Any], list[tuple[str, str, str]]]:
     configs, raw_scenarios, pack = load_scenarios()
-    report, band = read_report()
+    report = read_report()
 
     log_paths = sorted(LOGS_DIR.glob("*.jsonl"))
+    manifest_sample = validate_log_provenance(log_paths, configs, pack)
+    validate_snapshot_provenance(log_paths, manifest_sample)
+    validate_completed_run_matrix(log_paths, configs, report, manifest_sample, pack)
     episodes: list[dict] = []
     probes: list[dict] = []
     gate_rows: list[tuple[str, str, str]] = []
@@ -837,10 +1160,18 @@ def build_bundle(traj_places: int = 4) -> tuple[dict[str, Any], list[tuple[str, 
 
     episodes.sort(key=lambda episode: episode["key"])
     pairs = build_feedback(episodes)
+    arms = build_arms(episodes)
+    band = (
+        validate_report_aggregates(report, episodes, pairs, configs)
+        if report is not None
+        else None
+    )
+    for episode in episodes:
+        episode.pop("_effective_actions_exact", None)
+        episode.pop("_predictions_exact", None)
+        episode.pop("_parse_paths_exact", None)
+        episode.pop("_wall_clock_ms_exact", None)
 
-    manifest_sample = None
-    if log_paths:
-        manifest_sample, _cycles, _summary = read_log(log_paths[0])
     agent_name = manifest_sample["agent"] if manifest_sample else ""
     # agent name is "<adapter>:<model>:<arm>" -> strip transport and arm suffix.
     adapter_name = agent_name.split(":", 1)[0] if agent_name else ""
@@ -859,15 +1190,16 @@ def build_bundle(traj_places: int = 4) -> tuple[dict[str, Any], list[tuple[str, 
         notes.append({"code": "no_report", "params": {}})
     if not probes:
         notes.append({"code": "no_probes", "params": {}})
-    notes.append(
-        {
-            "code": "reps_present",
-            "params": {
-                "reps": ", ".join(f"r{rep}" for rep in reps),
-                "total": REPETITIONS_EXPECTED,
-            },
-        }
-    )
+    if report is None or reps != list(range(REPETITIONS_EXPECTED)):
+        notes.append(
+            {
+                "code": "reps_present",
+                "params": {
+                    "reps": ", ".join(f"r{rep}" for rep in reps),
+                    "total": REPETITIONS_EXPECTED,
+                },
+            }
+        )
     notes.append({"code": "temporal_masked_null", "params": {}})
 
     bundle = {
@@ -908,7 +1240,7 @@ def build_bundle(traj_places: int = 4) -> tuple[dict[str, Any], list[tuple[str, 
         "baselines": BASELINES,
         "scenarios": build_scenarios_block(configs, raw_scenarios),
         "episodes": episodes,
-        "arms": build_arms(episodes),
+        "arms": arms,
         "feedback": pairs,
         "feedback_summary": build_feedback_summary(pairs, band),
         "probes": probes,

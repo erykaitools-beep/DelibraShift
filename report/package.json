@@ -2,8 +2,12 @@
   "name": "delibrashift-report",
   "version": "0.1.0",
   "private": true,
-  "description": "Dependency-free tests for the DelibraShift offline M2 report",
+  "description": "Validation and Chromium smoke tests for the DelibraShift offline M2 report",
   "scripts": {
-    "test": "node --check assets/app.js && node --check assets/arena.js && node --check assets/charts.js && node --check assets/strings.js && node tests/test_app_pure.js && node tests/test_app_render_smoke.js && node tests/test_arena_pure.js && node tests/test_arena_render_smoke.js && node tests/test_charts_pure.js && node tests/review3_keys.mjs && node tests/audit_strings.js && node spec/contrast_check.mjs"
+    "test": "node --check assets/app.js && node --check assets/arena.js && node --check assets/charts.js && node --check assets/strings.js && node tests/test_app_pure.js && node tests/test_app_render_smoke.js && node tests/test_arena_pure.js && node tests/test_arena_render_smoke.js && node tests/test_charts_pure.js && node tests/review3_keys.mjs && node tests/audit_strings.js && node spec/contrast_check.mjs",
+    "test:browser": "node tests/test_browser_smoke.js"
+  },
+  "devDependencies": {
+    "playwright": "1.61.1"
   }
 }

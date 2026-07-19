@@ -1,0 +1,8 @@
+{
+  "data_date": "2026-07-19",
+  "log_count": 84,
+  "logs_sha256": "8a7b2e9008a9831ff849593b9552330a552d0d7163d9295ade31b3c7dd2df40e",
+  "model": "abacusai/dracarys-llama-3.1-70b-instruct",
+  "agent_base": "nim:abacusai/dracarys-llama-3.1-70b-instruct",
+  "report_sha256": "5ed6e76793684c9c7ef996ae58168ec57301afbcc615f4967c533e853f2506fa"
+}

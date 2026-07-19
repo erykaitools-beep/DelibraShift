@@ -20,8 +20,8 @@
  *     already computed, a euclidean position distance for the persistence
  *     reference line, and the unreachable outcome band, which follows from
  *     goal_radius and HEAT_SCALE_M.
- *   - No error bars, no confidence intervals, no significance (W6). Spread
- *     across repetitions is a range and is labelled as one.
+ *   - No error bars, no confidence intervals, no significance (W6). Whiskers
+ *     are min-max across measured scenario x repetition cells.
  *
  * Public API, all render into containerEl and return it:
  *   Charts.verdict(el, bundle, opts)

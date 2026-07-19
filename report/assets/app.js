@@ -1493,15 +1493,28 @@
       var identicalCommands = pairs.filter(function (pair) {
         return pair.actions_identical === true;
       }).length;
+      var changedPredictions = pairs.filter(function (pair) {
+        return pair.predictions_identical === false;
+      }).length;
+      var changedParsePaths = pairs.filter(function (pair) {
+        return pair.parse_paths_identical === false;
+      }).length;
+      var bodyParams = {
+        n: identicalCommands,
+        total: nPairs,
+        pred_changed: changedPredictions,
+        parse_changed: changedParsePaths
+      };
       var raw = null;
       summaries.forEach(function (row) {
         if (row.feedback_raw !== null && row.feedback_raw !== undefined) {
           raw = (raw === null ? 0 : raw) + Math.abs(row.feedback_raw);
         }
       });
-      if (!nPairs || raw === null) { return { ok: false }; }
+      if (!nPairs || raw === null) { return { ok: false, bodyParams: bodyParams }; }
       return {
         ok: identicalCommands === nPairs,
+        bodyParams: bodyParams,
         basis: t('finding.decoy.basis', {
           n: identicalCommands,
           total: nPairs,
@@ -1519,17 +1532,36 @@
       };
     }
     if (name === 'scaffold') {
-      var sub = comparableSubset(eps, scenarios());
-      var oa = mean(sub.filter(function (e) { return e.arm === 'end2end'; })
+      var outcomeEpisodes = eps.filter(function (ep) {
+        var sc = scenarios()[ep.scenario_id];
+        return sc && sc.is_probe !== true && ep.variant === 'normal';
+      });
+      var oa = mean(outcomeEpisodes.filter(function (e) { return e.arm === 'end2end'; })
         .map(function (e) { return e.scores ? e.scores.outcome : null; }));
-      var ob = mean(sub.filter(function (e) { return e.arm === 'wm-scaffold'; })
+      var ob = mean(outcomeEpisodes.filter(function (e) { return e.arm === 'wm-scaffold'; })
         .map(function (e) { return e.scores ? e.scores.outcome : null; }));
       if (oa.mean === null || ob.mean === null) { return { ok: false }; }
-      // The claim is that scaffolding does not buy steering, so it only stands
-      // while the two-stage arm fails to beat the single-prompt one.  A
-      // hardcoded true would keep asserting it after the data turned against it.
+      var cells = {};
+      outcomeEpisodes.forEach(function (ep) {
+        var key = ep.scenario_id + '|r' + ep.repetition;
+        cells[key] = cells[key] || {};
+        cells[key][ep.arm] = ep.scores ? ep.scores.outcome : null;
+      });
+      var wins = 0, losses = 0, ties = 0;
+      Object.keys(cells).forEach(function (key) {
+        var aValue = cells[key].end2end;
+        var bValue = cells[key]['wm-scaffold'];
+        if (typeof aValue !== 'number' || aValue !== aValue ||
+            typeof bValue !== 'number' || bValue !== bValue) { return; }
+        if (bValue > aValue) { wins += 1; }
+        else if (bValue < aValue) { losses += 1; }
+        else { ties += 1; }
+      });
       return {
         ok: ob.mean <= oa.mean,
+        bodyParams: {
+          wins: wins, losses: losses, ties: ties, total: wins + losses + ties
+        },
         basis: t('finding.scaffold.basis', { a: fmtNum(oa.mean, 4), b: fmtNum(ob.mean, 4) })
       };
     }
@@ -1567,7 +1599,10 @@
     ['decoy', 'format', 'scaffold', 'oob', 'floor'].forEach(function (name) {
       var evidence = findingEvidence(name) || { ok: false };
       var head = el('div', { 'class': 'cg-panel__head' }, [
-        el('h4', { 'class': 'cg-panel__title', text: t('finding.' + name + '.title') })
+        el('h4', {
+          'class': 'cg-panel__title',
+          text: t(evidence.ok ? 'finding.' + name + '.title' : 'finding.provisional.title')
+        })
       ]);
       if (!evidence.ok) {
         head.appendChild(el('span', {
@@ -1577,7 +1612,11 @@
         }));
       }
       var body = el('div', { 'class': 'cg-panel__body' }, [
-        el('p', { text: t('finding.' + name + '.body') })
+        el('p', {
+          text: evidence.ok
+            ? t('finding.' + name + '.body', evidence.bodyParams || {})
+            : t('finding.provisional.note')
+        })
       ]);
       body.appendChild(el('p', {
         'class': 'cg-panel__note',

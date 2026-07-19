@@ -7,7 +7,7 @@
 - Kept CPython 3.10/Linux x86_64 as the exact binary64 fixture reference and
   added an 8-ULP portability alarm for libm-derived oracle/masked values on
   other supported runtimes; per-host byte reproducibility remains exact.
-- Verified the judge path locally: 153 Python tests, 678 JavaScript tests, and
+- Verified the judge path locally: 176 Python tests, 681 JavaScript tests, and
   independent replay of all 78 published episodes.
 - Removed the `/usr/bin/node` host assumption; report validation now uses the
   Node.js selected on `PATH`, including the Node 22 GitHub Actions toolchain.
@@ -27,7 +27,8 @@
 
 ## 2026-07-13 — Codex M0 implementation
 
-- Repository scaffold initialized with Python 3.10+ packaging, MIT license,
+- Repository scaffold initialized with Python 3.10+ packaging, an initial
+  license file later superseded by the current private-evaluation terms,
   development test configuration, and a clean ignore policy.
 - Fable's `types.py`, SPEC v0.1, PLAN, and golden fixture were read after their
   commits removed the contract gate.
@@ -201,10 +202,12 @@
 - WM-SCAFFOLD improved prediction coverage (+0.290 paired) and action parsing
   (+0.384), but reduced temporal anticipation (-0.039 across every paired
   visible cell) and outcome (-0.079). Retry-free temporal remained negative.
-- Both arms ignored hot/cold under the registered decoy test
-  (`feedback_use=0.5`, raw delta 0.0). Format control was perfect; forced-choice
+- Both arms had identical harness-resolved effective actions and zero mean
+  outcome effect under the registered decoy test (`feedback_use=0.5`, raw
+  delta 0.0); predictions and parse paths could differ. Format control was
+  perfect; forced-choice
   accuracy averaged 0.70 with 30/30 parsed trials for each control family.
-- The negative matched-architecture result is recorded unchanged in COD-023
+- The negative mean matched-architecture result is recorded unchanged in COD-023
   and README. Remaining M2 work is the separately labeled, read-only MARIA
   confounded datapoint and quickstart polish.
 

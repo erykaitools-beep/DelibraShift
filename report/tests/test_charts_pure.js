@@ -490,7 +490,7 @@ test('pairRows carries the delta and the heat difference the runs were shown', f
   });
   var c = rows.filter(function (r) { return r.scenarioId === 'g007c'; })[0];
   ok(c.heatDelta > 0.1,
-    'the heat channel really did differ, which is what makes "ignored" a claim and not an artefact');
+    'the heat channel differed, so unchanged control commands are an observed result, not an artefact');
 });
 
 test('allPairsIdentical needs evidence, not emptiness', function () {
@@ -500,7 +500,7 @@ test('allPairsIdentical needs evidence, not emptiness', function () {
     { sameScore: true, actionsIdentical: false }
   ]), false, 'equal outcomes do not prove equal commands');
   eq(P.allPairsIdentical([{ sameScore: false, actionsIdentical: true }]), true,
-    'the command-channel claim follows commands, not the outcome score');
+    'the control-action claim follows harness-resolved effective actions, not the outcome score');
 });
 
 /* ==========================================================================

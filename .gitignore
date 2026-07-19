@@ -11,3 +11,4 @@ dist/
 report/data/
 report/delibrashift_report.html
 report/delibrashift_report.artifact.html
+report/node_modules/

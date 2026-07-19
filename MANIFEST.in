@@ -1,0 +1,17 @@
+include LICENSE
+include *.md
+include CITATION.cff
+recursive-include delibrashift *.py
+recursive-include tests *.py *.json
+recursive-include packs *.json
+recursive-include results *.json *.jsonl *.md
+include report/*.py
+include report/*.html
+include report/*.json
+include report/*.md
+recursive-include report/assets *.css *.js *.svg
+recursive-include report/spec *.md *.mjs
+recursive-include report/tests *.py *.js *.mjs
+prune report/data
+exclude report/delibrashift_report.html
+exclude report/delibrashift_report.artifact.html

@@ -374,6 +374,26 @@ ok('every finding names its basis',
   String(findings.querySelectorAll('.cg-panel__note').length));
 ok('the basis label comes from strings.js',
   findings.textContent.indexOf(t('finding.basis')) !== -1);
+ok('the heat finding renders dynamic command, prediction and parse-path counts',
+  findings.textContent.indexOf(t('finding.decoy.body', {
+    n: 18, total: 18, pred_changed: 18, parse_changed: 7
+  })) !== -1);
+ok('the scaffold finding renders the dynamic paired outcome distribution',
+  findings.textContent.indexOf(t('finding.scaffold.body', {
+    wins: 16, losses: 11, ties: 3, total: 30
+  })) !== -1);
+var wmNormal = bundleObj.episodes.filter(function (ep) {
+  return ep.arm === 'wm-scaffold' && ep.variant === 'normal';
+});
+var savedOutcomes = wmNormal.map(function (ep) { return ep.scores.outcome; });
+wmNormal.forEach(function (ep) { ep.scores.outcome = 1; });
+sandbox.App.setLang('en');
+ok('a custom-data reversal suppresses the official scaffold claim',
+  findings.textContent.indexOf(STRINGS.en['finding.provisional.title']) !== -1 &&
+  findings.textContent.indexOf(STRINGS.en['finding.scaffold.title']) === -1 &&
+  findings.textContent.indexOf(STRINGS.en['finding.scaffold.body'].split('{wins}')[0]) === -1);
+wmNormal.forEach(function (ep, index) { ep.scores.outcome = savedOutcomes[index]; });
+sandbox.App.setLang('pl');
 
 section('every intro caption has a legend key it can point at');
 var legendKeys = doc.byId['cg-demo-legend'].querySelectorAll('.cg-legend__item')
