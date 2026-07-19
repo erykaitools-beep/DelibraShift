@@ -947,3 +947,18 @@ masked-searcher values derived through `hypot`, `exp`, trigonometry or their
 downstream arithmetic. The bound is intentionally small enough to catch
 semantic drift and must never be used to regenerate the normative fixtures.
 Same-seed byte reproducibility remains an exact per-host gate.
+
+## COD-029 — Discover Node.js through the execution environment
+
+Date: 2026-07-19
+
+The first clean GitHub report build exposed a host-specific assumption in the
+visualization prototype: Node.js was invoked only as `/usr/bin/node`. GitHub's
+`setup-node` correctly installs the requested Node 22 toolchain elsewhere on
+`PATH`, so the report failed before its JavaScript validation despite Node
+being available.
+
+The builder now resolves `node` with the platform execution path and fails
+closed with an explicit error if it is absent. No fallback skips JavaScript
+syntax or in-engine validation. This makes the documented Linux/macOS judge
+path and GitHub runner use the selected Node installation consistently.

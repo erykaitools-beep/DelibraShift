@@ -66,7 +66,7 @@ DEFAULT_OUT = ROOT / "delibrashift_report.html"
 
 DEFAULT_REPORT = PROJECT_ROOT / "results" / "m2" / "report.json"
 
-NODE = Path("/usr/bin/node")
+NODE = shutil.which("node")
 
 #: Built without spelling the token out, so that "no placeholder survived" can
 #: be grepped over the produced file without matching this script's own text.
@@ -259,8 +259,8 @@ def read_text(path: Path, label: str) -> str:
 
 def node_check(source: str, label: str) -> tuple[bool, str]:
     """Parse ``source`` with ``node --check`` (fed through stdin)."""
-    if not NODE.is_file():
-        raise BuildError(f"node not found at {NODE}; cannot verify JavaScript")
+    if NODE is None:
+        raise BuildError("node not found on PATH; cannot verify JavaScript")
     proc = subprocess.run(
         [str(NODE), "--check"],
         input=source.encode("utf-8"),
@@ -275,6 +275,8 @@ def node_check(source: str, label: str) -> tuple[bool, str]:
 
 def run_in_engine_probe(out_path: Path) -> dict[str, Any]:
     """Execute the built page's script blocks in node and report what loaded."""
+    if NODE is None:
+        raise BuildError("node not found on PATH; cannot run in-engine probe")
     proc = subprocess.run(
         [str(NODE), "-", str(out_path)],
         input=IN_ENGINE_PROBE.encode("utf-8"),

@@ -9,6 +9,8 @@
   other supported runtimes; per-host byte reproducibility remains exact.
 - Verified the judge path locally: 153 Python tests, 678 JavaScript tests, and
   independent replay of all 78 published episodes.
+- Removed the `/usr/bin/node` host assumption; report validation now uses the
+  Node.js selected on `PATH`, including the Node 22 GitHub Actions toolchain.
 
 ## 2026-07-19 — Offline M2 report integrated
 
