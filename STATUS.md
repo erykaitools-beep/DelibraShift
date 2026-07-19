@@ -153,3 +153,16 @@
 - Verification: 84 tests pass with no skips or expected failures.
 - Real dracarys execution remains pending NIM configuration and explicit
   `--execute`; no external call or LLM result has been produced.
+
+## 2026-07-19 — Official M2 run in progress
+
+- Located the existing NVIDIA credential under its Maria-specific environment
+  name and used it read-only in process memory; no secret or Maria file was
+  copied or modified. The official Dracarys endpoint passed a one-call
+  preflight.
+- The first run produced 40/84 complete logs before a request exhausted three
+  120-second transport attempts. No partial episode was accepted.
+- Added strict canonical-log resume support and regression coverage so all 40
+  completed episodes are validated and locally re-scored while only missing
+  episodes call NIM. The run will resume with unchanged parameters.
+- Verification after the recovery change: 86 tests pass.

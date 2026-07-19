@@ -165,6 +165,33 @@ def test_forced_choice_probe_is_a_separate_control_with_trial_counts() -> None:
     assert control.json_parse_rate is None
 
 
+def test_resume_reuses_verified_logs_without_model_calls(tmp_path) -> None:
+    config = replace(demo_scenario(), deadline_tick=80)
+    adapter = AdaptiveAdapter()
+    first = run_matched_pair(
+        (config,),
+        adapter,
+        repetitions=1,
+        pace_rpm=0.0,
+        log_dir=tmp_path,
+        include_temporal=False,
+        allow_underpowered=True,
+    )
+    calls_after_first = len(adapter.calls)
+    resumed = run_matched_pair(
+        (config,),
+        adapter,
+        repetitions=1,
+        pace_rpm=0.0,
+        log_dir=tmp_path,
+        include_temporal=False,
+        allow_underpowered=True,
+        resume=True,
+    )
+    assert len(adapter.calls) == calls_after_first
+    assert resumed == first
+
+
 def test_matched_pair_rejects_underpowered_or_probe_only_runs() -> None:
     config = demo_scenario()
     with pytest.raises(ValueError, match="at least 3"):

@@ -801,3 +801,20 @@ total trial counts, parse rate, probe-specific metrics, wall telemetry,
 transport retries, and its log path. This preserves the probe-exclusion rule
 while preventing an experiment report from silently omitting the controls.
 No contract, fixture, pack, or prompt bytes changed.
+
+## COD-022 — Resume external runs only from strictly verified episode logs
+
+Date: 2026-07-19
+
+The first official M2 attempt reached 40 of 84 canonical logs before one NIM
+request exhausted all three 120-second transport attempts. Completed episodes
+must not be discarded or silently regenerated: doing so wastes external calls
+and changes the sampled service-time order.
+
+`chronogym-ablate --resume` therefore reconstructs `EpisodeResult` from each
+complete existing JSONL and locally re-scores it. Reuse requires canonical
+encoding, ordered cycles, a terminal summary, and exact manifest matches for
+schema, scenario, adapter/arm, prompt, pack, host, and scenario list. Any
+mismatch aborts rather than mixing runs. Missing episodes retain the original
+loop order, repetition seed, shared pacer, and filenames. Secrets remain
+memory-only and no Maria file is modified.

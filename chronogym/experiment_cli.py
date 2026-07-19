@@ -19,6 +19,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--log-dir", default="results/m2/logs")
     parser.add_argument("--report", default="results/m2/report.json")
     parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="verify and reuse completed logs, running only missing episodes",
+    )
+    parser.add_argument(
         "--execute",
         action="store_true",
         help="required acknowledgement: this performs paid/external model calls",
@@ -35,6 +40,7 @@ def main(argv: list[str] | None = None) -> int:
         log_dir=args.log_dir,
         pack_name=str(metadata["name"]),
         pack_version=str(metadata["version"]),
+        resume=args.resume,
     )
     report_path = Path(args.report)
     report_path.parent.mkdir(parents=True, exist_ok=True)

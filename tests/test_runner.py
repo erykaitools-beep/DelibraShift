@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import platform
 from dataclasses import replace
 
 from chronogym.agents import GreedyAgent, NoOpAgent, RandomAgent
 from chronogym.demo import demo_scenario
-from chronogym.runner import run_episode
+from chronogym.runner import load_episode_result, run_episode
 from chronogym.types import NOOP_ACTION, SCHEMA_VERSION
 
 
@@ -59,3 +60,23 @@ def test_probe_records_reply_but_forces_engaged_noop() -> None:
     first = result.records[0]
     assert first.reply.action != NOOP_ACTION
     assert first.engaged_action == NOOP_ACTION
+
+
+def test_completed_canonical_log_round_trips_for_resume(tmp_path) -> None:
+    config = demo_scenario()
+    agent = NoOpAgent()
+    result = run_episode(config, agent)
+    path = tmp_path / "episode.jsonl"
+    path.write_bytes(result.log_bytes)
+
+    loaded = load_episode_result(
+        path,
+        scenario_id=config.scenario_id,
+        agent_name=agent.name,
+        prompt_version="typed-local-v1",
+        pack_name=None,
+        pack_version=None,
+        host_class=platform.machine() or "unknown",
+        scenario_ids=(config.scenario_id,),
+    )
+    assert loaded == result

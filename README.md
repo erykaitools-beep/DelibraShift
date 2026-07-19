@@ -111,6 +111,11 @@ chronogym-ablate packs/core_v0 --execute \
   --log-dir results/m2/logs --report results/m2/report.json
 ```
 
+If an endpoint timeout interrupts a long run, repeat the command with
+`--resume`. Every existing canonical log is strictly checked against the
+requested scenario, model arm, prompt/pack versions, host, and scenario list;
+only missing episodes make external calls.
+
 Without `--execute`, the command exits before constructing the NIM adapter.
 Current repository tables remain deterministic baseline references; no
 dracarys result is claimed until a configured endpoint completes the run.

@@ -16,7 +16,7 @@ from .probes import (
     score_forced_choice_probe,
     score_format_probe,
 )
-from .runner import run_episode
+from .runner import EpisodeResult, load_episode_result, run_episode
 from .scaffold import SCAFFOLD_PROMPT_VERSION, WMScaffoldAgent
 from .scoring import score_episode, score_prediction_fidelity, score_temporal_anticipation
 from .types import FEEDBACK_MIN_BAND, Adapter, ScenarioConfig, canonical_json
@@ -216,6 +216,46 @@ def _summarize_feedback(
     )
 
 
+def _run_logged_episode(
+    config: ScenarioConfig,
+    agent: HarnessAgent,
+    path: Path | None,
+    *,
+    resume: bool,
+    pack_name: str | None,
+    pack_version: str | None,
+    host_class: str,
+    scenario_ids: tuple[str, ...],
+    heat_goal_m: tuple[float, float] | None = None,
+) -> tuple[EpisodeResult, str | None]:
+    if resume and path is not None and path.is_file():
+        return (
+            load_episode_result(
+                path,
+                scenario_id=config.scenario_id,
+                agent_name=agent.name,
+                prompt_version=agent.prompt_version,
+                pack_name=pack_name,
+                pack_version=pack_version,
+                host_class=host_class,
+                scenario_ids=scenario_ids,
+            ),
+            str(path),
+        )
+    result = run_episode(
+        config,
+        agent,
+        pack_name=pack_name,
+        pack_version=pack_version,
+        host_class=host_class,
+        scenario_ids=scenario_ids,
+        heat_goal_m=heat_goal_m,
+    )
+    if path is not None:
+        path.write_bytes(result.log_bytes)
+    return result, str(path) if path is not None else None
+
+
 def run_matched_pair(
     scenarios: Iterable[ScenarioConfig],
     adapter: Adapter,
@@ -228,6 +268,7 @@ def run_matched_pair(
     host_class: str | None = None,
     include_temporal: bool = True,
     allow_underpowered: bool = False,
+    resume: bool = False,
 ) -> MatchedPairReport:
     """Run both arms on matched configs/seeds; wall time never changes sim time."""
     if repetitions < 1 or (repetitions < 3 and not allow_underpowered):
@@ -268,19 +309,21 @@ def run_matched_pair(
                 arms = tuple(reversed(arms))
             for arm in arms:
                 agent = _agent_for_arm(arm, adapter, repetition, pacer)
-                result = run_episode(
+                path = (
+                    destination / f"{config.scenario_id}.r{repetition}.{arm}.jsonl"
+                    if destination is not None
+                    else None
+                )
+                result, log_path = _run_logged_episode(
                     config,
                     agent,
+                    path,
+                    resume=resume,
                     pack_name=pack_name,
                     pack_version=pack_version,
                     host_class=resolved_host,
                     scenario_ids=scenario_ids,
                 )
-                log_path = None
-                if destination is not None:
-                    path = destination / f"{config.scenario_id}.r{repetition}.{arm}.jsonl"
-                    path.write_bytes(result.log_bytes)
-                    log_path = str(path)
                 scores = score_episode(
                     config,
                     result,
@@ -332,22 +375,23 @@ def run_matched_pair(
                 )
                 if not config.goal_visible:
                     decoy_agent = _agent_for_arm(arm, adapter, repetition, pacer)
-                    decoy_result = run_episode(
+                    decoy_path = (
+                        destination
+                        / f"{config.scenario_id}.r{repetition}.{arm}.decoy.jsonl"
+                        if destination is not None
+                        else None
+                    )
+                    decoy_result, decoy_log_path = _run_logged_episode(
                         config,
                         decoy_agent,
+                        decoy_path,
+                        resume=resume,
                         pack_name=pack_name,
                         pack_version=pack_version,
                         host_class=resolved_host,
                         scenario_ids=scenario_ids,
                         heat_goal_m=decoy_goal(config),
                     )
-                    decoy_log_path = None
-                    if destination is not None:
-                        path = destination / (
-                            f"{config.scenario_id}.r{repetition}.{arm}.decoy.jsonl"
-                        )
-                        path.write_bytes(decoy_result.log_bytes)
-                        decoy_log_path = str(path)
                     decoy_outcome = score_episode(
                         config,
                         decoy_result,
@@ -380,19 +424,21 @@ def run_matched_pair(
                 transport_pacer=pacer,
                 arm_name="control",
             )
-            result = run_episode(
+            path = (
+                destination / f"{config.scenario_id}.r{repetition}.control.jsonl"
+                if destination is not None
+                else None
+            )
+            result, log_path = _run_logged_episode(
                 config,
                 agent,
+                path,
+                resume=resume,
                 pack_name=pack_name,
                 pack_version=pack_version,
                 host_class=resolved_host,
                 scenario_ids=excluded,
             )
-            log_path = None
-            if destination is not None:
-                path = destination / f"{config.scenario_id}.r{repetition}.control.jsonl"
-                path.write_bytes(result.log_bytes)
-                log_path = str(path)
             if probe_kind == "format":
                 score = score_format_probe(result.records)
                 probe_episodes.append(

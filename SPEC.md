@@ -787,6 +787,13 @@ rows retain their independently frozen prompt versions and always publish
 and their probe-specific metrics. They are controls on interpretation, not a
 third treatment arm.
 
+Long external runs may be resumed only from complete canonical episode logs.
+Before reuse, the runner validates canonical encoding and terminal summary,
+plus scenario, adapter/arm, frozen prompt version, schema, pack, host class,
+and ordered scenario IDs against the requested run. A mismatch is fatal;
+validated episodes are re-scored locally and only missing paths may call the
+adapter. This changes neither seeds nor arm ordering.
+
 **Full-system MARIA** runs as a separate, clearly labeled **CONFOUNDED**
 datapoint (different prompts, memory, planning stack) — never the treatment
 arm. Maria's repo/services are read-only subjects (brief §7).
