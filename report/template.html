@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="pl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DelibraShift</title>
+<!--
+  ============================================================================
+  DelibraShift / Windrift viewer - build template
+  ============================================================================
+
+  This file is a SKELETON. A build script replaces every marker with a file's
+  contents and writes one self-contained HTML file that must open from file://
+  on a machine with no network at all.
+
+  A marker is the word INJECT, then a colon, then the payload name, wrapped in
+  an HTML comment. Each one sits alone on its own line, so a plain textual
+  replace is enough. This block deliberately spells no marker out in full, so
+  that a build script can assert "no marker survives" over its own output.
+
+  ---------------------------------------------------------------------------
+  PAYLOADS, in the order the browser needs them
+  ---------------------------------------------------------------------------
+    META         : optional meta tags        e.g. generator, build date
+    TOKENS_CSS   : assets/tokens.css         raw CSS text
+    APP_CSS      : assets/app.css            raw CSS text
+    SPRITES      : assets/sprites.svg        one raw svg element
+    STRINGS_JS   : assets/strings.js         raw JS text, defines STRINGS
+    ARENA_JS     : assets/arena.js           raw JS text, defines window.Arena
+    CHARTS_JS    : assets/charts.js          raw JS text, defines window.Charts
+    APP_JS       : assets/app.js             raw JS text, defines window.App
+    BUNDLE_JSON  : data/bundle.json          JSON text, escaped, see below
+
+  Two payloads are optional. If assets/arena.js or assets/charts.js does not
+  exist yet, inject an empty string: the shell detects their absence and says
+  so on screen.
+
+  Note which element receives that fallback. The .cg-frame divs (cg-demo-frame,
+  cg-lab-frame) are display:none on screen and exist only so printing has a
+  still image of a canvas it cannot capture. When arena.js is missing, the
+  shell draws its static SVG into the .cg-arena box itself - the visible one -
+  and adds a note beside it. Sending the fallback to .cg-frame instead would
+  render it perfectly and show the reader an empty square.
+
+  ---------------------------------------------------------------------------
+  ESCAPING REQUIREMENTS FOR THE BUILD SCRIPT - read this before writing it
+  ---------------------------------------------------------------------------
+  1. BUNDLE_JSON lands inside a script element of type application/json. The
+     HTML parser ends that element at the first "</script" it sees, case
+     insensitively, so the injected JSON MUST be escaped first. In Python:
+
+         esc = (json_text.replace("&", "\\u0026")
+                         .replace("<", "\\u003c")
+                         .replace(">", "\\u003e"))
+
+     Escape the ampersand FIRST, or the second pass mangles the backslashes the
+     first one wrote. All three are legal JSON string content and JSON.parse
+     restores the original characters, so nothing downstream changes.
+
+     The bundle is data, never markup: it is read with
+     JSON.parse(document.getElementById('bundle').textContent) and reaches the
+     DOM only as text. Nothing on this page assigns it to innerHTML.
+
+  2. The four JS payloads and the two CSS payloads land inside script and style
+     elements. None of them may contain the literal sequence "</script" or
+     "</style", including inside string literals and comments. The build script
+     MUST assert this and fail loudly rather than emit a broken page.
+
+  3. The sprite sheet is injected as-is and must stay a single svg element with
+     no XML declaration and no DOCTYPE.
+
+  4. Every payload is injected verbatim: no minification, no HTML escaping of
+     JS or CSS.
+
+  5. The output must contain no href or src pointing at a remote scheme or at a
+     protocol-relative path, no at-import rule, and no runtime network call of
+     any kind. Grepping the built file for a URL scheme is the right final gate,
+     so this comment avoids spelling those tokens out and keeps the gate clean.
+
+  6. assets/strings.js is UTF-8 and carries Polish diacritics. Write the output
+     as UTF-8 and keep the charset meta tag first in the head, above the title.
+-->
+<!--INJECT:META-->
+<style>
+<!--INJECT:TOKENS_CSS-->
+</style>
+<style>
+<!--INJECT:APP_CSS-->
+</style>
+<style>
+/* ---------------------------------------------------------------------------
+   Shell-only additions owned by app.js. Tokens only, no literal colours, no
+   user-facing text. Everything here is a layout or state concern that
+   assets/app.css deliberately leaves to the page shell.
+   --------------------------------------------------------------------------- */
+
+/* Error rail: a visible failure instead of a white page. */
+.cg-errorbar {
+  display: none;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--c-surface-2);
+  border-bottom: var(--bw-strong) solid var(--c-oob);
+  color: var(--c-text-1);
+  font-size: var(--fs-3);
+}
+.cg-errorbar[data-state="open"] { display: flex; }
+.cg-errorbar__icon { width: 18px; height: 18px; flex: none; color: var(--c-oob); }
+.cg-errorbar__body { flex: 1 1 auto; min-width: 0; }
+.cg-errorbar__detail {
+  display: block;
+  margin-top: var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  color: var(--c-text-3);
+  overflow-wrap: anywhere;
+}
+
+/* Keyboard sheet, toggled from the top rail. */
+.cg-keys {
+  max-width: var(--w-content);
+  margin: 0 auto;
+  padding: 0 var(--sp-5);
+}
+.cg-keys[hidden] { display: none; }
+.cg-keys__list {
+  display: grid;
+  gap: var(--sp-2) var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-3);
+}
+
+/* "What it is" tab: prose column beside a demo that plays by itself. */
+.cg-story {
+  display: grid;
+  gap: var(--sp-5);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
+  align-items: start;
+}
+.cg-story__prose { display: flex; flex-direction: column; gap: var(--sp-5); }
+.cg-story__aside { position: sticky; top: calc(var(--h-topbar) + var(--h-tabs) + var(--sp-4)); }
+.cg-story__step { display: flex; flex-direction: column; gap: var(--sp-2); }
+.cg-story__step h3 { color: var(--c-text-1); }
+.cg-caption {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: flex-start;
+  min-height: 3.4em;
+  padding: var(--sp-3);
+  border-top: var(--bw-hair) solid var(--c-border);
+  font-size: var(--fs-3);
+  color: var(--c-text-2);
+}
+.cg-caption__label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-1);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+/* Static replacement frame: used when a view module is absent and in print. */
+.cg-frame { display: none; }
+.cg-frame svg { display: block; width: 100%; height: auto; }
+
+.cg-toolrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: flex-end;
+}
+.cg-field { display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; }
+.cg-field select {
+  min-height: 32px;
+  padding: 0 var(--sp-2);
+  background: var(--c-surface-2);
+  color: var(--c-text-1);
+  border: var(--bw-hair) solid var(--c-border-strong);
+  border-radius: var(--r-1);
+  font-size: var(--fs-3);
+}
+
+.cg-scrub__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cg-table tbody tr[data-clickable="true"] { cursor: pointer; }
+
+/* Raw model reply: the JSON the parser could use, and the noise around it. */
+.cg-raw__json { color: var(--c-text-1); }
+.cg-raw__noise { color: var(--c-text-3); }
+
+/* The skip link is the one .cg-sr-only element that must surface on focus. */
+.cg-skip:focus {
+  position: fixed;
+  top: var(--sp-2);
+  left: var(--sp-2);
+  z-index: var(--z-dialog);
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  clip: auto;
+  clip-path: none;
+  background: var(--c-surface-2);
+  border: var(--bw-hair) solid var(--c-accent);
+  border-radius: var(--r-2);
+  color: var(--c-text-1);
+}
+
+@media (max-width: 1180px) {
+  .cg-story { grid-template-columns: minmax(0, 1fr); }
+  .cg-story__aside { position: static; }
+}
+
+@media print {
+  .cg-keys,
+  .cg-errorbar,
+  .cg-toolrow,
+  .cg-skip { display: none !important; }
+  .cg-story { grid-template-columns: minmax(0, 1fr); }
+  .cg-story__aside { position: static; }
+  .cg-arena { display: none; }
+  .cg-frame { display: block; }
+}
+</style>
+</head>
+<body>
+
+<!--INJECT:SPRITES-->
+
+<a class="cg-skip cg-sr-only" href="#cg-content" data-t="app.skip_to_content"></a>
+
+<div class="cg-app">
+
+  <div class="cg-errorbar" id="cg-errorbar" role="alert" aria-live="assertive">
+    <svg class="cg-errorbar__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <use href="#cg-info"></use>
+    </svg>
+    <div class="cg-errorbar__body">
+      <strong id="cg-errorbar-title" data-t="shell.error.title"></strong>
+      <code class="cg-errorbar__detail" id="cg-errorbar-detail"></code>
+    </div>
+    <button class="cg-btn" type="button" id="cg-errorbar-close" data-t="ui.close"></button>
+  </div>
+
+  <header class="cg-topbar">
+    <div class="cg-brand">
+      <svg class="cg-brand__mark" viewBox="-16 -10 32 20" aria-hidden="true" focusable="false">
+        <use class="cg-icon cg-icon--craft" href="#cg-craft" x="-16" y="-10" width="32" height="20"></use>
+      </svg>
+      <span class="cg-brand__name" data-t="app.title"></span>
+      <span class="cg-brand__sub" data-t="app.subtitle"></span>
+    </div>
+
+    <span class="cg-topbar__spacer"></span>
+
+    <span class="cg-chip cg-mono" id="cg-model-chip" title=""></span>
+    <span class="cg-chip" id="cg-run-chip"></span>
+
+    <div class="cg-topbar__tools">
+      <button class="cg-btn" type="button" id="cg-keys-btn" aria-expanded="false" aria-controls="cg-keys" data-t="shell.keys.title"></button>
+
+      <div class="cg-seg" role="group" id="cg-lang" data-t-attr="aria-label:lang.aria">
+        <button class="cg-seg__btn" type="button" data-lang="pl" aria-pressed="true" data-t="lang.pl" data-t-attr="title:lang.pl_full"></button>
+        <button class="cg-seg__btn" type="button" data-lang="en" aria-pressed="false" data-t="lang.en" data-t-attr="title:lang.en_full"></button>
+      </div>
+
+      <button class="cg-btn cg-btn--icon" type="button" id="cg-theme-btn" aria-pressed="false" data-t-attr="aria-label:shell.theme.aria;title:shell.theme.aria">
+        <svg class="cg-btn__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-theme"></use></svg>
+      </button>
+    </div>
+  </header>
+
+  <nav class="cg-tabs" id="cg-tabs" role="tablist" data-t-attr="aria-label:app.title">
+    <button class="cg-tab" type="button" role="tab" id="cg-tab-what" aria-controls="cg-panel-what" aria-selected="true" data-tab="what" data-t-attr="title:tab.what.hint">
+      <svg class="cg-tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-info"></use></svg>
+      <span data-t="tab.what"></span>
+    </button>
+    <button class="cg-tab" type="button" role="tab" id="cg-tab-results" aria-controls="cg-panel-results" aria-selected="false" tabindex="-1" data-tab="results" data-t-attr="title:tab.results.hint">
+      <svg class="cg-tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-tab-table"></use></svg>
+      <span data-t="tab.results"></span>
+    </button>
+    <button class="cg-tab" type="button" role="tab" id="cg-tab-lab" aria-controls="cg-panel-lab" aria-selected="false" tabindex="-1" data-tab="lab" data-t-attr="title:tab.lab.hint">
+      <svg class="cg-tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-tab-replay"></use></svg>
+      <span data-t="tab.lab"></span>
+    </button>
+  </nav>
+
+  <section class="cg-keys" id="cg-keys" hidden>
+    <div class="cg-panel">
+      <div class="cg-panel__head">
+        <h2 class="cg-panel__title" data-t="shell.keys.title"></h2>
+      </div>
+      <div class="cg-panel__body">
+        <ul class="cg-keys__list">
+          <li data-t="shell.keys.tabs"></li>
+          <li data-t="shell.keys.play"></li>
+          <li data-t="shell.keys.scrub"></li>
+          <li data-t="shell.keys.jump"></li>
+          <li data-t="shell.keys.close"></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <main class="cg-main" id="cg-content" tabindex="-1">
+
+    <!-- ==================================================================
+         TAB 1 - what it is
+         ================================================================== -->
+    <section class="cg-panelset" id="cg-panel-what" role="tabpanel" aria-labelledby="cg-tab-what" data-state="active">
+
+      <div class="cg-hero">
+        <h1 data-t="hero.title"></h1>
+        <p data-t="hero.lede"></p>
+        <div class="cg-panel__actions">
+          <span class="cg-chip" data-t="hero.badge_open"></span>
+          <span class="cg-chip" data-t="hero.badge_deterministic"></span>
+          <span class="cg-chip" data-t="hero.badge_offline"></span>
+        </div>
+      </div>
+
+      <div class="cg-story">
+        <div class="cg-story__prose">
+          <div class="cg-story__step"><h3 data-t="story.lag.title"></h3><p data-t="story.lag.body"></p></div>
+          <div class="cg-story__step"><h3 data-t="story.ghost.title"></h3><p data-t="story.ghost.body"></p></div>
+          <div class="cg-story__step">
+            <h3 data-t="story.rule_a.title"></h3>
+            <p data-t="story.rule_a.body"></p>
+            <p class="cg-panel__note" data-t="story.rule_a.glossary"></p>
+          </div>
+
+          <div class="cg-panel__actions">
+            <button class="cg-btn" type="button" data-goto-tab="results" data-t="hero.cta_results"></button>
+            <button class="cg-btn" type="button" data-goto-tab="lab" data-t="hero.cta_lab"></button>
+          </div>
+
+          <details class="cg-more" id="cg-story-more">
+            <summary data-t="story.more.summary"></summary>
+            <div class="cg-more__body">
+              <div class="cg-story__step"><h3 data-t="story.world.title"></h3><p data-t="story.world.body"></p></div>
+
+              <div class="cg-panel">
+                <div class="cg-panel__head"><h3 class="cg-panel__title" data-t="world.title"></h3></div>
+                <div class="cg-panel__body">
+                  <dl class="cg-readout" id="cg-world-facts"></dl>
+                  <p class="cg-panel__note" id="cg-world-facts-note"></p>
+                </div>
+              </div>
+
+              <div class="cg-story__step"><h3 data-t="story.heat.title"></h3><p data-t="story.heat.body"></p></div>
+              <div class="cg-story__step"><h3 data-t="story.arms.title"></h3><p data-t="story.arms.body"></p></div>
+              <div class="cg-grid" id="cg-arm-cards"></div>
+              <div class="cg-story__step"><h3 data-t="story.why_four.title"></h3><p data-t="story.why_four.body"></p></div>
+              <div class="cg-grid" id="cg-axis-cards"></div>
+
+              <div class="cg-note" data-tone="control">
+                <svg class="cg-note__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-info"></use></svg>
+                <span data-t="metric.group.control.note"></span>
+              </div>
+
+              <div class="cg-story__step"><h3 data-t="story.honest.title"></h3><p data-t="story.honest.body"></p></div>
+            </div>
+          </details>
+        </div>
+
+        <aside class="cg-story__aside">
+          <div class="cg-panel">
+            <div class="cg-panel__head">
+              <h3 class="cg-panel__title" data-t="shell.demo.title"></h3>
+              <span class="cg-panel__note" id="cg-demo-title"></span>
+            </div>
+            <div class="cg-panel__body" data-pad="none">
+              <div class="cg-arena" id="cg-demo-arena"></div>
+              <div class="cg-frame" id="cg-demo-frame"></div>
+              <p class="cg-caption" id="cg-demo-caption">
+                <span class="cg-caption__label" id="cg-demo-caption-label"></span>
+                <span id="cg-demo-caption-text"></span>
+              </p>
+              <div class="cg-legend" id="cg-demo-legend"></div>
+            </div>
+            <div class="cg-panel__foot"><span data-t="shell.demo.note"></span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         TAB 2 - results
+         ================================================================== -->
+    <section class="cg-panelset" id="cg-panel-results" role="tabpanel" aria-labelledby="cg-tab-results">
+
+      <div class="cg-hero">
+        <h1 data-t="results.title"></h1>
+        <p data-t="results.subtitle"></p>
+      </div>
+
+      <div class="cg-note" id="cg-run-note" data-tone="control">
+        <svg class="cg-note__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-info"></use></svg>
+        <span id="cg-run-note-text"></span>
+      </div>
+
+      <div class="cg-grid">
+
+        <section class="cg-panel cg-col-12">
+          <div class="cg-panel__head">
+            <h2 class="cg-panel__title" data-t="finding.group.title"></h2>
+            <svg class="cg-tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-tab-overview"></use></svg>
+          </div>
+          <div class="cg-panel__body"><div class="cg-grid" id="cg-findings"></div></div>
+          <div class="cg-panel__foot"><span data-t="finding.caveat"></span></div>
+        </section>
+
+        <section class="cg-panel cg-col-12">
+          <div class="cg-panel__head">
+            <h2 class="cg-panel__title" data-t="metric.group.cognitive"></h2>
+            <span class="cg-panel__note" data-t="metric.group.cognitive.note"></span>
+          </div>
+          <div class="cg-panel__body"><div class="cg-metrics" id="cg-metric-cards"></div></div>
+          <div class="cg-panel__foot"><span data-t="reason.note"></span></div>
+        </section>
+
+        <section class="cg-panel cg-col-12">
+          <div class="cg-panel__head">
+            <h2 class="cg-panel__title" data-t="arm.compare.title"></h2>
+            <span class="cg-panel__note" data-t="arm.group.note"></span>
+          </div>
+          <div class="cg-panel__body">
+            <div id="cg-chart-arms"></div>
+            <div id="cg-arms-table"></div>
+          </div>
+          <div class="cg-panel__foot"><span data-t="arm.compare.note"></span></div>
+        </section>
+
+        <section class="cg-panel cg-col-12">
+          <div class="cg-panel__head">
+            <h2 class="cg-panel__title" data-t="results.table.title"></h2>
+            <svg class="cg-tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-tab-table"></use></svg>
+            <span class="cg-panel__note" id="cg-results-count"></span>
+            <span class="cg-panel__actions"><span class="cg-panel__note" data-t="results.sort.hint"></span></span>
+          </div>
+          <div class="cg-panel__body">
+            <div class="cg-toolrow" id="cg-filters" data-t-attr="aria-label:results.filter.title"></div>
+          </div>
+          <div class="cg-panel__body" data-pad="none">
+            <div class="cg-tablewrap" id="cg-results-table"></div>
+          </div>
+        </section>
+
+        <section class="cg-panel cg-col-12">
+          <div class="cg-panel__head">
+            <h2 class="cg-panel__title" data-t="results.pairs.title"></h2>
+            <svg class="cg-tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-tab-decoy"></use></svg>
+            <span class="cg-panel__note" data-t="metric.feedback_use.pair_note"></span>
+          </div>
+          <div class="cg-panel__body"><div id="cg-feedback"></div></div>
+        </section>
+
+        <section class="cg-panel cg-col-8">
+          <div class="cg-panel__head">
+            <h2 class="cg-panel__title" data-t="metric.group.control"></h2>
+            <span class="cg-panel__note" data-t="metric.group.control.note"></span>
+          </div>
+          <div class="cg-panel__body" data-pad="none"><div class="cg-tablewrap" id="cg-control-table"></div></div>
+        </section>
+
+        <section class="cg-panel cg-col-4">
+          <div class="cg-panel__head"><h2 class="cg-panel__title" data-t="results.probes.title"></h2></div>
+          <div class="cg-panel__body"><div id="cg-probes"></div></div>
+          <div class="cg-panel__foot"><span data-t="scenario.probe_note"></span></div>
+        </section>
+
+        <section class="cg-panel cg-col-12">
+          <div class="cg-panel__head">
+            <h2 class="cg-panel__title" data-t="ref.group.title"></h2>
+            <span class="cg-panel__note" data-t="ref.group.note"></span>
+          </div>
+          <div class="cg-panel__body" data-pad="none"><div class="cg-tablewrap" id="cg-refs-table"></div></div>
+          <div class="cg-panel__foot"><span data-t="ref.not_llm"></span></div>
+        </section>
+
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         TAB 3 - lab
+         ================================================================== -->
+    <section class="cg-panelset" id="cg-panel-lab" role="tabpanel" aria-labelledby="cg-tab-lab">
+
+      <div class="cg-hero">
+        <h1 data-t="lab.title"></h1>
+        <p data-t="lab.subtitle"></p>
+      </div>
+
+      <div class="cg-panel">
+        <div class="cg-panel__body">
+          <div class="cg-toolrow" id="cg-lab-select" data-t-attr="aria-label:lab.select.episode"></div>
+        </div>
+      </div>
+
+      <div id="cg-lab-empty"></div>
+
+      <div class="cg-stage" id="cg-lab-stage">
+        <div>
+          <div class="cg-panel">
+            <div class="cg-panel__head">
+              <h2 class="cg-panel__title" id="cg-lab-episode-title"></h2>
+              <span class="cg-panel__note" id="cg-lab-episode-note"></span>
+            </div>
+            <div class="cg-panel__body" data-pad="none">
+              <div class="cg-arena" id="cg-lab-arena"></div>
+              <div class="cg-frame" id="cg-lab-frame"></div>
+            </div>
+            <div class="cg-panel__body">
+              <div class="cg-transport" id="cg-transport"></div>
+            </div>
+          </div>
+
+          <div class="cg-panel">
+            <div class="cg-panel__head">
+              <h2 class="cg-panel__title" data-t="lab.error_chart.title"></h2>
+              <svg class="cg-tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-tab-error"></use></svg>
+              <span class="cg-panel__note" data-t="metric.persistence_floor.short"></span>
+            </div>
+            <div class="cg-panel__body">
+              <div id="cg-chart-error"></div>
+              <div id="cg-error-table"></div>
+            </div>
+          </div>
+
+          <div class="cg-panel">
+            <div class="cg-panel__head">
+              <h2 class="cg-panel__title" data-t="lab.cycles.title"></h2>
+            </div>
+            <div class="cg-panel__body" data-pad="none"><div class="cg-tablewrap" id="cg-cycles-table"></div></div>
+          </div>
+        </div>
+
+        <aside class="cg-rail">
+          <div class="cg-panel">
+            <div class="cg-panel__head">
+              <h2 class="cg-panel__title" data-t="lab.current_cycle"></h2>
+              <span class="cg-panel__note" id="cg-cycle-progress"></span>
+            </div>
+            <div class="cg-panel__body"><dl class="cg-readout" id="cg-cycle-readout"></dl></div>
+          </div>
+
+          <div class="cg-panel">
+            <div class="cg-panel__head">
+              <h2 class="cg-panel__title" data-t="lab.raw.title"></h2>
+              <svg class="cg-tab__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#cg-tab-raw"></use></svg>
+            </div>
+            <div class="cg-panel__body" data-pad="none"><div id="cg-raw"></div></div>
+            <div class="cg-panel__foot"><span data-t="lab.raw.note"></span></div>
+          </div>
+
+          <div class="cg-panel">
+            <div class="cg-panel__head"><h2 class="cg-panel__title" data-t="arena.legend.title"></h2></div>
+            <div class="cg-panel__body"><div class="cg-legend" id="cg-lab-legend"></div></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="cg-footer">
+    <div class="cg-footer__item"><span class="cg-label" data-t="footer.versions.title"></span></div>
+    <div class="cg-footer" id="cg-footer-items" style="border-top:0;padding:0"></div>
+    <div class="cg-footer__notes" id="cg-footer-notes"></div>
+    <div class="cg-footer__item" id="cg-footer-provenance"></div>
+    <div class="cg-footer__item"><span data-t="footer.frozen_note"></span></div>
+    <div class="cg-footer__item"><span data-t="footer.determinism_note"></span></div>
+    <div class="cg-footer__item"><span data-t="footer.offline_note"></span></div>
+  </footer>
+
+</div>
+
+<div class="cg-tip" id="cg-tip" role="tooltip" aria-hidden="true"></div>
+
+<!-- Data. Never parsed as HTML; read with JSON.parse. See escaping note above.
+     The id is "bundle"; app.js also accepts "cg-bundle" if a build renames it. -->
+<script type="application/json" id="bundle">
+<!--INJECT:BUNDLE_JSON-->
+</script>
+
+<script>
+/* Bootstrap. Runs before the view modules so that:
+   - the stored theme is applied before first paint (no flash),
+   - window.T exists as a forwarding stub even if a module calls it while it is
+     still being defined; the real implementation arrives with window.App.
+   No user-facing text lives here. */
+(function () {
+  var root = document.documentElement;
+  try {
+    var stored = window.localStorage && window.localStorage.getItem('cg.theme');
+    if (stored === 'light' || stored === 'dark') { root.setAttribute('data-theme', stored); }
+    var lang = window.localStorage && window.localStorage.getItem('cg.lang');
+    if (lang === 'pl' || lang === 'en') { root.setAttribute('lang', lang); }
+  } catch (e) { /* file:// with storage disabled - keep the defaults */ }
+
+  window.T = function (key, params) {
+    if (window.App && window.App.t && window.App.t !== window.T) {
+      return window.App.t(key, params);
+    }
+    return key;
+  };
+
+  /* The whole point of this handler is the case where a payload below failed to
+     execute. Delegating to window.App would then delegate into the very thing
+     that is broken and the reader would get a blank page with no explanation,
+     so there is a DOM-only path that depends on nothing but this block. */
+  function surface(detail) {
+    if (window.App && window.App.reportError) { window.App.reportError(detail); return; }
+    try {
+      var bar = document.getElementById('cg-errorbar');
+      var text = document.getElementById('cg-errorbar-detail');
+      var title = document.getElementById('cg-errorbar-title');
+      if (!bar) { return; }
+      if (title && !title.textContent) {
+        title.textContent = 'This page did not finish loading.';
+      }
+      if (text) {
+        text.textContent = String((detail && detail.message) || detail || 'unknown error');
+      }
+      bar.setAttribute('data-state', 'open');
+      bar.style.display = 'flex';
+    } catch (e) { /* nothing left to fall back to */ }
+  }
+
+  window.addEventListener('error', function (ev) {
+    surface(ev.error || ev.message);
+  });
+  window.addEventListener('unhandledrejection', function (ev) {
+    surface(ev.reason);
+  });
+})();
+</script>
+
+<script>
+<!--INJECT:STRINGS_JS-->
+</script>
+
+<script>
+<!--INJECT:ARENA_JS-->
+</script>
+
+<script>
+<!--INJECT:CHARTS_JS-->
+</script>
+
+<script>
+<!--INJECT:APP_JS-->
+</script>
+
+<script>
+(function () {
+  function boot() {
+    if (window.App && window.App.init) { window.App.init(); }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+
+</body>
+</html>

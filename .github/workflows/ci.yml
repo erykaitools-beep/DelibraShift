@@ -47,3 +47,27 @@ jobs:
             --venv "$RUNNER_TEMP/release-venv" \
             --wheel "$RUNNER_TEMP"/dist/*.whl \
             --workspace "$GITHUB_WORKSPACE"
+
+  offline-report:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: python -m pip install -e '.[dev]'
+      - name: Build the canonical offline report
+        run: python report/build_report.py
+      - name: Run report tests and independent physics audit
+        run: |
+          npm --prefix report test
+          python report/tests/audit_truth.py
+      - name: Reject private paths and credentials in the artifact
+        run: |
+          ! grep -Eq '/home/|192\.168\.|NVIDIA_API_KEY|Authorization: Bearer' \
+            report/delibrashift_report.html

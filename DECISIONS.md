@@ -904,3 +904,28 @@ coverage. Project-wide CI measures branch coverage once on Python 3.10 with an
 coverage cost. The initial project-wide result is 89%. The floor is a
 regression guard, not a target to game, and semantic golden/release gates
 remain authoritative over the aggregate percentage.
+
+## COD-027 — Integrate the offline report with evidence-preserving attribution
+
+Date: 2026-07-19
+
+The unversioned visualization prototype is integrated under `report/` in the
+canonical DelibraShift repository. It reads `results/m2` and `packs/core_v0`
+directly; generated bundle, staging data and standalone HTML remain ignored
+build artifacts rather than duplicate sources of truth. Public output embeds
+only portable repository-relative provenance and CI rejects home paths,
+private-network addresses and credential-shaped strings.
+
+Scientific display gates are part of the integration: heat-use claims require
+identical logged commands rather than equal outcome alone; fidelity arm bars
+use only the four measurable matched cells; temporal values publish scored
+cycle count and mean divergence weight; retry-free sensitivity slices retain
+their separate support. Report CI rebuilds all 78 flight/decoy episodes,
+executes the JavaScript and contrast suites, and runs an independent physics
+audit.
+
+`MODEL_CONTRIBUTIONS.md` records evidence-backed work by FABLE 5, OpenAI Codex
+and Opus 4.8. Impact percentages are explicitly provisional editorial
+estimates, separate from commit evidence and from legal authorship. Opus keeps
+attribution for the original visualization architecture; Codex owns the audit,
+scientific corrections, portability work and repository integration.

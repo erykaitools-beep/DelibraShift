@@ -1,0 +1,1502 @@
+/* ==========================================================================
+   DelibraShift / Windrift viewer - layout and components
+   --------------------------------------------------------------------------
+   Depends on assets/tokens.css. Every colour, size, duration and stroke here
+   comes from a token; there are no literal hex values below.
+
+   Namespace: every class is prefixed cg-. Blocks use cg-block, elements use
+   cg-block__element, variants use data-attributes (data-arm, data-outcome,
+   data-state) rather than modifier classes, so scripts toggle one attribute
+   instead of juggling class lists.
+
+   No user-facing text lives in this file: there is not a single content:
+   declaration carrying words. Strings come from assets/strings.js.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Base
+   -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  background: var(--c-page);
+  color: var(--c-text-2);
+  font-family: var(--font-sans);
+  font-size: var(--fs-4);
+  line-height: var(--lh-body);
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+  margin: 0;
+  color: var(--c-text-1);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-display);
+  text-wrap: balance;
+}
+
+h1 { font-size: var(--fs-8); }
+h2 { font-size: var(--fs-7); }
+h3 { font-size: var(--fs-6); letter-spacing: 0; }
+h4 { font-size: var(--fs-5); letter-spacing: 0; }
+
+p { margin: 0; max-width: 68ch; }
+
+a {
+  color: var(--c-accent);
+  text-decoration-color: var(--c-accent-line);
+  text-underline-offset: 0.18em;
+}
+
+a:hover { text-decoration-color: currentColor; }
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* Focus keeps the element's own radius - it only adds the ring. */
+:where(a, button, summary, input, select, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--glow-focus);
+}
+
+.cg-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Numbers are always mono and always column-aligned. */
+.cg-num,
+.cg-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-mono);
+}
+
+/* The one label style used across the whole interface. */
+.cg-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+/* Sprite sheet: defines symbols, renders nothing. */
+.cg-sprites {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* The single rule that colours and weights every sprite. Symbols set no
+   stroke, no stroke-width and no fill, so all three inherit from here;
+   currentColor means an icon simply takes the colour of its context. */
+.cg-icon {
+  display: inline-block;
+  vertical-align: middle;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--sw-icon);
+  overflow: visible;
+}
+
+.cg-icon--craft { stroke-width: var(--sw-craft); }
+.cg-icon--ghost { stroke-width: var(--sw-ghost); }
+
+/* --------------------------------------------------------------------------
+   2. Shell: top rail, tab bar, content
+   -------------------------------------------------------------------------- */
+
+.cg-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.cg-topbar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-height: var(--h-topbar);
+  padding: 0 var(--sp-5);
+  background: var(--c-surface-1);
+  border-bottom: var(--bw-hair) solid var(--c-border);
+}
+
+.cg-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.cg-brand__mark {
+  flex: none;
+  width: 28px;
+  height: 18px;
+  color: var(--c-arm-e2e);
+}
+
+.cg-brand__name {
+  font-family: var(--font-mono);
+  font-size: var(--fs-4);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  color: var(--c-text-1);
+  white-space: nowrap;
+}
+
+.cg-brand__sub {
+  font-size: var(--fs-2);
+  color: var(--c-text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cg-topbar__spacer { flex: 1 1 auto; }
+
+.cg-topbar__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+}
+
+/* Tabs ------------------------------------------------------------------- */
+
+.cg-tabs {
+  position: sticky;
+  top: var(--h-topbar);
+  z-index: var(--z-sticky);
+  display: flex;
+  gap: var(--sp-1);
+  align-items: stretch;
+  min-height: var(--h-tabs);
+  padding: 0 var(--sp-5);
+  background: var(--c-page);
+  border-bottom: var(--bw-hair) solid var(--c-border);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.cg-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-bottom: var(--bw-strong) solid transparent;
+  background: none;
+  color: var(--c-text-3);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--dur-2) var(--ease-out),
+    border-color var(--dur-2) var(--ease-out);
+}
+
+.cg-tab__icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.cg-tab:hover { color: var(--c-text-2); }
+
+.cg-tab[aria-selected="true"] {
+  color: var(--c-text-1);
+  border-bottom-color: var(--c-accent);
+}
+
+.cg-main {
+  width: 100%;
+  max-width: var(--w-content);
+  margin: 0 auto;
+  padding: var(--sp-5);
+  flex: 1 1 auto;
+}
+
+.cg-panelset { display: none; }
+.cg-panelset[data-state="active"] { display: block; }
+
+/* --------------------------------------------------------------------------
+   3. Panels and grids
+   -------------------------------------------------------------------------- */
+
+.cg-grid {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+}
+
+.cg-col-3  { grid-column: span 3; }
+.cg-col-4  { grid-column: span 4; }
+.cg-col-6  { grid-column: span 6; }
+.cg-col-8  { grid-column: span 8; }
+.cg-col-12 { grid-column: span 12; }
+
+.cg-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--c-surface-1);
+  border: var(--bw-hair) solid var(--c-border);
+  border-radius: var(--r-3);
+  box-shadow: var(--shadow-1), var(--ring-inset);
+}
+
+.cg-panel__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: var(--bw-hair) solid var(--c-border);
+}
+
+.cg-panel__title {
+  margin: 0;
+  font-size: var(--fs-4);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-1);
+  letter-spacing: 0;
+}
+
+.cg-panel__note {
+  font-size: var(--fs-2);
+  color: var(--c-text-3);
+}
+
+.cg-panel__actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.cg-panel__body { padding: var(--sp-4); }
+.cg-panel__body[data-pad="none"] { padding: 0; }
+
+.cg-panel__foot {
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  border-top: var(--bw-hair) solid var(--c-border);
+  font-size: var(--fs-2);
+  color: var(--c-text-3);
+}
+
+/* An explanatory aside - used for "why is this unmeasurable", "why decoy
+   equals normal", and the deterministic-baseline footnote. */
+.cg-note {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-left: var(--bw-strong) solid var(--c-border-strong);
+  background: var(--c-surface-2);
+  border-radius: 0 var(--r-2) var(--r-2) 0;
+  font-size: var(--fs-3);
+  color: var(--c-text-2);
+}
+
+.cg-note[data-tone="unmeasurable"] {
+  border-left-color: var(--c-unmeasurable);
+  background: var(--c-unmeasurable-bg);
+}
+
+.cg-note[data-tone="control"] {
+  border-left-color: var(--c-retry);
+  background: var(--c-retry-bg);
+}
+
+.cg-note__icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--c-text-3);
+}
+
+/* --------------------------------------------------------------------------
+   4. Metric cards
+   -------------------------------------------------------------------------- */
+
+.cg-metrics {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.cg-metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--c-surface-1);
+  border: var(--bw-hair) solid var(--c-border);
+  border-radius: var(--r-2);
+  min-width: 0;
+}
+
+.cg-metric__label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.cg-metric__value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-7);
+  font-weight: var(--fw-semibold);
+  line-height: 1.05;
+  color: var(--c-text-1);
+}
+
+.cg-metric__unit {
+  font-size: var(--fs-3);
+  font-weight: var(--fw-regular);
+  color: var(--c-text-3);
+}
+
+.cg-metric__foot {
+  font-size: var(--fs-2);
+  color: var(--c-text-3);
+}
+
+/* Fidelity can be null. Null is not zero and must never look like zero: the
+   value slot goes neutral, italic and gets a reason line underneath. */
+.cg-metric[data-state="unmeasurable"] {
+  background: var(--c-unmeasurable-bg);
+  border-style: dashed;
+  border-color: var(--c-unmeasurable);
+}
+
+.cg-metric[data-state="unmeasurable"] .cg-metric__value {
+  color: var(--c-unmeasurable);
+  font-style: italic;
+  font-size: var(--fs-6);
+}
+
+.cg-metric[data-arm="end2end"] { border-top: var(--bw-strong) solid var(--c-arm-e2e); }
+.cg-metric[data-arm="wm-scaffold"] { border-top: var(--bw-strong) solid var(--c-arm-wm); }
+
+/* The one big readout on the overview: closest approach, or the headline
+   metric being compared. */
+.cg-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.cg-hero__value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-9);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  letter-spacing: var(--ls-display);
+  color: var(--c-text-1);
+}
+
+/* --------------------------------------------------------------------------
+   5. Micro bars (in metric cards and table cells)
+   -------------------------------------------------------------------------- */
+
+.cg-bar {
+  position: relative;
+  height: 8px;
+  border-radius: var(--r-1);
+  background: var(--c-surface-3);
+  overflow: hidden;
+}
+
+.cg-bar--tall { height: 12px; }
+
+.cg-bar__fill {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 0;
+  border-radius: var(--r-1);
+  background: var(--c-path, var(--c-arm-e2e));
+  transition: width var(--dur-4) var(--ease-out);
+}
+
+/* Deterministic baselines are rules on the scale, not another series. */
+.cg-bar__ref {
+  position: absolute;
+  inset-block: -2px;
+  width: 0;
+  border-left: var(--bw-hair) solid var(--c-ref-line);
+}
+
+.cg-bar[data-state="unmeasurable"] {
+  background: repeating-linear-gradient(135deg,
+    var(--c-unmeasurable-bg) 0, var(--c-unmeasurable-bg) 3px,
+    transparent 3px, transparent 7px);
+  box-shadow: inset 0 0 0 1px var(--c-unmeasurable);
+}
+
+.cg-bar[data-state="unmeasurable"] .cg-bar__fill { display: none; }
+
+/* Paired bars: one row per arm, stacked, with a 2px surface gap between. */
+.cg-barpair {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   6. Chips (outcome, control flags)
+   -------------------------------------------------------------------------- */
+
+.cg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 1px var(--sp-2) 1px var(--sp-1);
+  border: var(--bw-hair) solid currentColor;
+  border-radius: var(--r-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+  white-space: nowrap;
+  color: var(--c-text-3);
+}
+
+.cg-chip__icon {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+/* Outcome always ships icon + label + colour. Colour alone never carries it:
+   goal teal and oob red collapse toward each other under deuteranopia. */
+.cg-chip[data-outcome="goal"] { color: var(--c-goal); }
+.cg-chip[data-outcome="oob"] { color: var(--c-oob); }
+.cg-chip[data-outcome="timeout"] { color: var(--c-deadline); }
+
+.cg-chip[data-kind="retry"] {
+  color: var(--c-retry);
+  background: var(--c-retry-bg);
+}
+
+.cg-chip[data-kind="decoy"] {
+  color: var(--c-text-3);
+  border-style: dashed;
+}
+
+.cg-chip[data-kind="arm"][data-arm="end2end"] { color: var(--c-arm-e2e); }
+.cg-chip[data-kind="arm"][data-arm="wm-scaffold"] { color: var(--c-arm-wm); }
+
+/* --------------------------------------------------------------------------
+   7. Table
+   -------------------------------------------------------------------------- */
+
+.cg-tablewrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  contain: inline-size paint;
+  border-radius: 0 0 var(--r-3) var(--r-3);
+}
+
+.cg-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-3);
+}
+
+.cg-table th,
+.cg-table td {
+  padding: var(--sp-2) var(--sp-3);
+  text-align: left;
+  border-bottom: var(--bw-hair) solid var(--c-border);
+  vertical-align: middle;
+}
+
+.cg-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--c-surface-2);
+  color: var(--c-text-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-1);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cg-table td[data-type="num"],
+.cg-table th[data-type="num"] {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.cg-table td[data-type="bar"] { width: 168px; }
+
+/* Scorer field name under a translated column header: present for
+   traceability, never competing with the header itself. */
+.cg-th__sub {
+  display: block;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: var(--fw-regular, 400);
+  color: var(--c-text-3);
+  opacity: 0.75;
+}
+
+.cg-table tbody tr {
+  transition: background-color var(--dur-1) var(--ease-out);
+}
+
+.cg-table tbody tr:hover { background: var(--c-surface-2); }
+.cg-table tbody tr[aria-selected="true"] { background: var(--c-surface-3); }
+
+/* Scenario grouping: a hairline turns into a rule at each scenario break, so
+   the eye reads scenario blocks instead of 40 loose rows. */
+.cg-table tbody tr[data-group-start="true"] td {
+  border-top: var(--bw-hair) solid var(--c-border-strong);
+}
+
+.cg-table td[data-state="unmeasurable"] {
+  color: var(--c-unmeasurable);
+  font-style: italic;
+  /* The marker is short by construction (see numCell); keep it on one line so
+     it can never become the widest column in the table. */
+  white-space: nowrap;
+}
+
+.cg-table caption {
+  padding: var(--sp-2) var(--sp-4);
+  text-align: left;
+  font-size: var(--fs-2);
+  color: var(--c-text-3);
+}
+
+/* --------------------------------------------------------------------------
+   8. Arena
+   -------------------------------------------------------------------------- */
+
+.cg-stage {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: minmax(0, 1fr) var(--w-rail);
+  align-items: start;
+}
+
+.cg-arena {
+  position: relative;
+  width: 100%;
+  /* aspect-ratio is the intent; min-height is the floor, so a browser that
+     ignores the ratio gives the canvas a box to draw in rather than collapsing
+     it to nothing and rendering an invisible arena. */
+  min-height: 320px;
+  aspect-ratio: 1 / 1;
+  max-height: calc(100vh - var(--h-topbar) - var(--h-tabs) - var(--h-scrub) - var(--sp-8));
+  margin-inline: auto;
+  background: var(--c-arena);
+  border: var(--bw-hair) solid var(--c-border);
+  border-radius: var(--r-3);
+  overflow: hidden;
+}
+
+.cg-arena__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The arena viewBox is kept equal to its own pixel box (see spec/DESIGN.md),
+   so one user unit is one CSS pixel and every stroke token below is literal.
+   Nothing here needs vector-effect. */
+
+/* Layer styling. Geometry is written by script; every stroke, dash and colour
+   decision lives here. */
+.cg-layer-grid {
+  stroke: var(--c-grid);
+  stroke-width: var(--sw-grid);
+  fill: none;
+}
+
+.cg-layer-grid [data-major="true"] { stroke: var(--c-grid-major); }
+
+.cg-layer-bound {
+  stroke: var(--c-bounds);
+  stroke-width: var(--sw-bound);
+  stroke-dasharray: var(--dash-bound);
+  fill: none;
+  opacity: 0.75;
+}
+
+.cg-layer-wind {
+  stroke: var(--c-wind);
+  stroke-width: var(--sw-wind);
+  fill: none;
+}
+
+.cg-layer-wind [data-now="true"] { stroke: var(--c-wind-strong); }
+
+.cg-layer-goal { color: var(--c-goal); }
+.cg-layer-goal[data-hidden="true"] { color: var(--c-goal-hidden); }
+
+.cg-goal__disc {
+  fill: var(--c-heat-2);
+  stroke: currentColor;
+  stroke-width: var(--sw-craft);
+}
+
+.cg-goal__ring {
+  fill: none;
+  stroke: var(--c-heat-ring);
+  stroke-width: var(--sw-grid);
+}
+
+.cg-path {
+  fill: none;
+  stroke: var(--c-path);
+  stroke-width: var(--sw-path);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cg-path--future {
+  stroke: var(--c-path-trail);
+  stroke-width: var(--sw-path-future);
+  stroke-dasharray: var(--dash-future);
+}
+
+.cg-bead {
+  fill: var(--c-arena);
+  stroke: var(--c-path);
+  stroke-width: var(--sw-craft);
+}
+
+.cg-bead[data-state="active"] {
+  fill: var(--c-path);
+  stroke: var(--c-arena);
+}
+
+.cg-bead[data-parse="failed"] {
+  stroke-dasharray: var(--dash-error);
+}
+
+.cg-craft { color: var(--c-path); }
+
+.cg-flame {
+  color: var(--c-deadline);
+  opacity: 0.9;
+  transform-origin: center;
+}
+
+/* The ghost is the same hue as the path on purpose: it is that arm's belief
+   about itself. Form does the separating - hollow, dashed, dimmed. */
+.cg-ghost {
+  color: var(--c-ghost);
+  opacity: var(--c-ghost-alpha);
+  stroke-dasharray: var(--dash-ghost);
+}
+
+.cg-errline {
+  stroke: var(--c-error);
+  stroke-width: var(--sw-error);
+  stroke-dasharray: var(--dash-error);
+  fill: none;
+}
+
+.cg-errline__cap { fill: var(--c-error); stroke: none; }
+
+/* The truth marker: where the craft really was when the action latched. It is
+   this arm's own ground truth, so it keeps the arm colour and is told apart
+   from the ghost by being a filled-centre ring rather than a silhouette. */
+.cg-truth {
+  fill: var(--c-arena);
+  stroke: var(--c-path);
+  stroke-width: var(--sw-craft);
+}
+
+.cg-truth__core { fill: var(--c-path); stroke: none; }
+
+/* Action vectors from the craft. Solid = the latched action doing work right
+   now. Dashed = the action just returned, which does nothing for B more ticks.
+   Same hue: both belong to this arm. Form carries "already real" vs "not yet". */
+.cg-vector { color: var(--c-path); }
+
+.cg-vector[data-kind="commanded"] {
+  opacity: var(--c-ghost-alpha);
+  stroke-dasharray: var(--dash-ghost);
+}
+
+/* Decoy target: neutral by design. A false goal is not a data series. */
+.cg-decoy { color: var(--c-goal-hidden); }
+
+.cg-arena__label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-1);
+  fill: var(--c-text-3);
+  letter-spacing: var(--ls-label);
+}
+
+/* HUD: readouts pinned inside the arena, over the field but under nothing. */
+.cg-hud {
+  position: absolute;
+  z-index: var(--z-arena-hud);
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: color-mix(in srgb, var(--c-arena) 82%, transparent);
+  border: var(--bw-hair) solid var(--c-border);
+  border-radius: var(--r-2);
+  pointer-events: none;
+}
+
+@supports not (background: color-mix(in srgb, red 50%, blue)) {
+  .cg-hud { background: var(--c-surface-1); }
+}
+
+.cg-hud[data-corner="tl"] { top: var(--sp-3); left: var(--sp-3); }
+.cg-hud[data-corner="tr"] { top: var(--sp-3); right: var(--sp-3); }
+.cg-hud[data-corner="bl"] { bottom: var(--sp-3); left: var(--sp-3); }
+
+.cg-hud__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cg-hud__value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-4);
+  color: var(--c-text-1);
+}
+
+/* --------------------------------------------------------------------------
+   9. Instrument rail
+   -------------------------------------------------------------------------- */
+
+.cg-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.cg-readout {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-1) var(--sp-3);
+  align-items: baseline;
+  padding: var(--sp-3);
+  background: var(--c-surface-1);
+  border: var(--bw-hair) solid var(--c-border);
+  border-radius: var(--r-2);
+}
+
+.cg-readout__row {
+  display: contents;
+}
+
+.cg-readout dt {
+  font-family: var(--font-mono);
+  font-size: var(--fs-1);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+.cg-readout dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-3);
+  color: var(--c-text-1);
+  text-align: right;
+}
+
+/* A scenario setting shown inside a panel about the world: recessive, so it
+   never reads as a constant of the benchmark. */
+.cg-readout dd.cg-readout__varies { color: var(--c-text-2); }
+
+/* --------------------------------------------------------------------------
+   10. Transport: scrubber
+   -------------------------------------------------------------------------- */
+
+.cg-transport {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--h-scrub);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-surface-1);
+  border: var(--bw-hair) solid var(--c-border);
+  border-radius: var(--r-3);
+}
+
+.cg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 32px;
+  padding: 0 var(--sp-3);
+  background: var(--c-surface-2);
+  color: var(--c-text-2);
+  border: var(--bw-hair) solid var(--c-border-strong);
+  border-radius: var(--r-2);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease-out),
+    color var(--dur-1) var(--ease-out);
+}
+
+.cg-btn:hover { background: var(--c-surface-3); color: var(--c-text-1); }
+.cg-btn[aria-pressed="true"] {
+  background: var(--c-accent-quiet);
+  border-color: var(--c-accent);
+  color: var(--c-text-1);
+}
+.cg-btn[disabled] { opacity: 0.45; cursor: default; }
+
+.cg-btn__icon { width: 15px; height: 15px; flex: none; }
+.cg-btn--icon { padding: 0; width: 32px; }
+
+/* Segmented control - arm switch, language, theme. */
+.cg-seg {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--c-surface-2);
+  border: var(--bw-hair) solid var(--c-border);
+  border-radius: var(--r-2);
+  gap: 2px;
+}
+
+.cg-seg__btn {
+  padding: var(--sp-0) var(--sp-2);
+  min-height: 26px;
+  background: none;
+  border: 0;
+  border-radius: var(--r-1);
+  color: var(--c-text-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  cursor: pointer;
+  transition: background-color var(--dur-1) var(--ease-out),
+    color var(--dur-1) var(--ease-out);
+}
+
+.cg-seg__btn:hover { color: var(--c-text-1); }
+
+.cg-seg__btn[aria-pressed="true"] {
+  background: var(--c-surface-3);
+  color: var(--c-text-1);
+  box-shadow: var(--shadow-1);
+}
+
+.cg-seg__btn[data-arm="end2end"][aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--c-arm-e2e); }
+.cg-seg__btn[data-arm="wm-scaffold"][aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--c-arm-wm); }
+
+/* Track ------------------------------------------------------------------ */
+
+.cg-scrub {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 34px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.cg-scrub__track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 6px;
+  transform: translateY(-50%);
+  background: var(--c-surface-3);
+  border-radius: var(--r-1);
+  overflow: hidden;
+}
+
+.cg-scrub__played {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  background: var(--c-path, var(--c-arm-e2e));
+}
+
+/* The deliberation window: the B ticks during which the world keeps moving
+   under the previously latched action. This band is the whole point of the
+   benchmark, so it gets a hatch, not a tint. */
+.cg-scrub__delib {
+  position: absolute;
+  inset-block: 0;
+  background: var(--c-accent-quiet);
+  border-left: var(--bw-hair) solid var(--c-accent-line);
+  border-right: var(--bw-hair) solid var(--c-accent-line);
+}
+
+/* Decision points. One bead per cycle - episodes have 3 to 14 of them, so
+   they are individually clickable, not a dense rug. */
+.cg-scrub__cycle {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  transform: translateY(-50%) rotate(45deg);
+  background: var(--c-surface-1);
+  border: var(--bw-hair) solid var(--c-path, var(--c-arm-e2e));
+}
+
+.cg-scrub__cycle[data-parse="failed"] {
+  background: var(--c-retry-bg);
+  border-color: var(--c-retry);
+  border-style: dashed;
+}
+
+.cg-scrub__cycle[data-state="active"] {
+  background: var(--c-path, var(--c-arm-e2e));
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+}
+
+/* Terminal marks: where the run actually ended, and where the deadline was. */
+.cg-scrub__end {
+  position: absolute;
+  inset-block: 4px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--c-oob);
+}
+
+.cg-scrub__end[data-outcome="goal"] { background: var(--c-goal); }
+.cg-scrub__end[data-outcome="timeout"] { background: var(--c-deadline); }
+
+.cg-scrub__deadline {
+  position: absolute;
+  inset-block: 2px;
+  width: 0;
+  border-left: var(--bw-strong) dashed var(--c-deadline);
+}
+
+.cg-scrub__handle {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  transform: translateY(-50%);
+  background: var(--c-accent);
+  border: 2px solid var(--c-surface-1);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-1);
+}
+
+.cg-transport__clock {
+  flex: none;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-3);
+  color: var(--c-text-1);
+}
+
+/* --------------------------------------------------------------------------
+   11. Legend
+   -------------------------------------------------------------------------- */
+
+.cg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-2);
+  color: var(--c-text-2);
+}
+
+.cg-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.cg-swatch {
+  flex: none;
+  width: 18px;
+  height: 12px;
+  color: var(--c-text-3);
+}
+
+/* Swatch shapes mirror the mark they stand for, so the legend is readable in
+   greyscale: solid line, dashed line, disc, hatched band. */
+.cg-swatch[data-shape="line"] {
+  height: 0;
+  border-top: var(--sw-path) solid currentColor;
+}
+
+.cg-swatch[data-shape="dash"] {
+  height: 0;
+  border-top: var(--sw-ghost) dashed currentColor;
+}
+
+.cg-swatch[data-shape="disc"] {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: currentColor;
+}
+
+.cg-swatch[data-shape="ring"] {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--r-pill);
+  border: var(--bw-strong) solid currentColor;
+}
+
+.cg-swatch[data-shape="hatch"] {
+  background-image: var(--hatch-a);
+  border: var(--bw-hair) solid currentColor;
+  border-radius: var(--r-1);
+}
+
+.cg-swatch[data-arm="end2end"] { color: var(--c-arm-e2e); }
+.cg-swatch[data-arm="wm-scaffold"] { color: var(--c-arm-wm); }
+.cg-swatch[data-role="error"] { color: var(--c-error); }
+.cg-swatch[data-role="goal"] { color: var(--c-goal); }
+.cg-swatch[data-role="bounds"] { color: var(--c-bounds); }
+.cg-swatch[data-role="oob"] { color: var(--c-oob); }
+.cg-swatch[data-role="deadline"] { color: var(--c-deadline); }
+.cg-swatch[data-role="wind"] { color: var(--c-wind); }
+.cg-swatch[data-role="ref"] { color: var(--c-ref); }
+.cg-swatch[data-role="commanded"] { color: var(--c-commanded); }
+.cg-swatch[data-role="velocity"] { color: var(--c-velocity); }
+
+/* The caption rotation on tab 1 names one mark at a time; mark it here so the
+   sentence and the glyph in the picture are connected. */
+.cg-legend__item[data-active="true"] {
+  color: var(--c-text-1);
+  background: var(--c-surface-3);
+  border-radius: var(--r-1);
+}
+
+/* --------------------------------------------------------------------------
+   12. Charts (SVG written by script, styled here)
+   -------------------------------------------------------------------------- */
+
+.cg-chart { display: block; width: 100%; height: auto; }
+
+.cg-chart__grid {
+  stroke: var(--c-grid);
+  stroke-width: var(--sw-grid);
+  fill: none;
+}
+
+.cg-chart__axis {
+  stroke: var(--c-border-strong);
+  stroke-width: var(--sw-grid);
+  fill: none;
+}
+
+.cg-chart__tick {
+  font-family: var(--font-mono);
+  font-size: var(--fs-1);
+  fill: var(--c-text-3);
+}
+
+.cg-chart__series {
+  fill: none;
+  stroke: var(--c-path, var(--c-arm-e2e));
+  stroke-width: var(--sw-path);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cg-chart__band {
+  fill: var(--c-path-fill, var(--c-arm-e2e-fill));
+  stroke: none;
+}
+
+.cg-chart__point {
+  fill: var(--c-path, var(--c-arm-e2e));
+  stroke: var(--c-surface-1);
+  stroke-width: var(--bw-strong);
+}
+
+.cg-chart__ref {
+  stroke: var(--c-ref-line);
+  stroke-width: var(--sw-grid);
+  stroke-dasharray: var(--dash-deadline);
+  fill: none;
+}
+
+.cg-chart__deadline {
+  stroke: var(--c-deadline);
+  stroke-width: var(--sw-grid);
+  stroke-dasharray: var(--dash-deadline);
+  fill: none;
+}
+
+.cg-chart__label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  fill: var(--c-text-2);
+}
+
+.cg-chart__zero {
+  stroke: var(--c-border-strong);
+  stroke-width: var(--bw-strong);
+}
+
+/* Draw-in on first paint; disabled with the motion opt-out via --dur-4. */
+.cg-chart__series[data-animate="in"] {
+  stroke-dasharray: var(--draw-len, 1000);
+  stroke-dashoffset: var(--draw-len, 1000);
+  animation: cg-draw var(--dur-4) var(--ease-out) forwards;
+}
+
+@keyframes cg-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Paired comparison: two narrow columns, one per arm, with a 2px surface gap
+   so the fills never touch. */
+.cg-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  align-items: end;
+}
+
+.cg-pair__cell {
+  padding: var(--sp-2);
+  background: var(--c-surface-2);
+  border-radius: var(--r-1);
+}
+
+/* Normal vs decoy: identical numbers are the finding, so equality gets a
+   visible marker rather than being left for the reader to notice. */
+.cg-identical {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  color: var(--c-text-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+}
+
+.cg-identical__icon { width: 14px; height: 14px; }
+
+/* --------------------------------------------------------------------------
+   13. Raw model response
+   -------------------------------------------------------------------------- */
+
+.cg-raw {
+  border: var(--bw-hair) solid var(--c-border);
+  border-radius: var(--r-2);
+  background: var(--c-surface-2);
+}
+
+.cg-raw > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  color: var(--c-text-2);
+  list-style: none;
+}
+
+.cg-raw > summary::-webkit-details-marker { display: none; }
+
+.cg-raw__chevron {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.cg-raw[open] .cg-raw__chevron { transform: rotate(90deg); }
+
+.cg-raw__body {
+  max-height: 320px;
+  overflow: auto;
+  padding: var(--sp-3);
+  border-top: var(--bw-hair) solid var(--c-border);
+}
+
+.cg-raw pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  line-height: 1.55;
+  color: var(--c-text-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 2;
+}
+
+.cg-raw__stage {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: var(--bw-hair) dashed var(--c-border);
+}
+
+.cg-raw__stage:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
+/* --------------------------------------------------------------------------
+   14. Footer
+   -------------------------------------------------------------------------- */
+
+.cg-footer {
+  max-width: var(--w-content);
+  margin: 0 auto;
+  padding: var(--sp-5);
+  border-top: var(--bw-hair) solid var(--c-border);
+  font-size: var(--fs-2);
+  color: var(--c-text-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-5);
+}
+
+.cg-footer__item { display: inline-flex; gap: var(--sp-2); align-items: baseline; }
+
+/* Caveats about the data: one block, full width, one sentence per line. */
+.cg-footer__notes {
+  flex: 1 0 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  max-width: var(--w-measure, 72ch);
+}
+
+/* --------------------------------------------------------------------------
+   15. Tooltip
+   -------------------------------------------------------------------------- */
+
+.cg-tip {
+  position: fixed;
+  z-index: var(--z-tooltip);
+  max-width: 280px;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-surface-2);
+  border: var(--bw-hair) solid var(--c-border-strong);
+  border-radius: var(--r-2);
+  box-shadow: var(--shadow-2);
+  font-size: var(--fs-2);
+  color: var(--c-text-2);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease-out);
+}
+
+.cg-tip[data-state="open"] { opacity: 1; }
+
+.cg-tip__title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2);
+  color: var(--c-text-1);
+  margin-bottom: var(--sp-1);
+}
+
+.cg-tip__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   16. Responsive
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 1400px) {
+  .cg-stage { grid-template-columns: minmax(0, 1fr) var(--w-rail-narrow); }
+}
+
+@media (max-width: 1180px) {
+  .cg-stage { grid-template-columns: minmax(0, 1fr); }
+  .cg-arena { max-height: none; max-width: 760px; }
+  .cg-rail {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .cg-rail > * { flex: 1 1 260px; }
+  .cg-col-3 { grid-column: span 6; }
+  .cg-col-4 { grid-column: span 6; }
+  .cg-col-8 { grid-column: span 12; }
+}
+
+@media (max-width: 860px) {
+  .cg-main { padding: var(--sp-3); }
+  .cg-topbar { padding: 0 var(--sp-3); }
+  .cg-tabs { padding: 0 var(--sp-3); }
+  .cg-col-3,
+  .cg-col-4,
+  .cg-col-6 { grid-column: span 12; }
+  .cg-brand__sub { display: none; }
+  .cg-transport { flex-wrap: wrap; }
+  .cg-scrub { order: 3; flex-basis: 100%; }
+}
+
+@media (max-width: 600px) {
+  /* The full model identifier and run badge are repeated in the results note
+     and footer. Keeping them in the narrow top rail forces the whole document
+     wider than the viewport and clips the language/theme controls. */
+  #cg-model-chip,
+  #cg-run-chip,
+  #cg-keys-btn { display: none; }
+  .cg-topbar { gap: var(--sp-2); }
+  .cg-brand__name { font-size: var(--fs-3); }
+  .cg-topbar__tools { gap: var(--sp-1); }
+}
+
+/* --------------------------------------------------------------------------
+   17. Texture channel and print
+   -------------------------------------------------------------------------- */
+
+/* Opt-in secondary encoding: fills gain a directional hatch so the two arms
+   stay separable without colour. 45deg for end2end, 135deg for wm-scaffold.
+   The hatch is drawn in the surface colour, so it cuts grooves into the fill
+   instead of adding a second hue. */
+[data-texture="on"] .cg-bar__fill { color: var(--c-surface-1); }
+
+[data-texture="on"] .cg-bar__fill[data-arm="end2end"] {
+  background-image: var(--hatch-a);
+}
+
+[data-texture="on"] .cg-bar__fill[data-arm="wm-scaffold"] {
+  background-image: var(--hatch-b);
+}
+
+/* SVG fills take the pattern through fill="url(#cg-hatch-a)" instead. The two
+   <pattern> elements are defined in assets/sprites.svg, which is pasted into
+   the page once; the colour after the url() is the mandatory fallback, so an
+   unresolvable reference degrades to a solid fill instead of not rendering the
+   element at all. The attribute itself is written by the shell (applyTexture
+   in app.js) - CSS cannot set an attribute. */
+[data-texture="on"] .cg-chart__band[data-arm="end2end"] { fill: url(#cg-hatch-a) var(--c-arm-e2e); }
+[data-texture="on"] .cg-chart__band[data-arm="wm-scaffold"] { fill: url(#cg-hatch-b) var(--c-arm-wm); }
+
+@media print {
+  .cg-topbar,
+  .cg-tabs,
+  .cg-transport,
+  .cg-panel__actions {
+    display: none;
+  }
+
+  .cg-panelset { display: block; }
+
+  /* Paper has no disclosure triangle to click.  The panel is forced open from
+     script before printing (a CSS rule cannot reveal a closed <details>), so
+     here only the now-pointless summary and its frame are dropped. */
+  .cg-more { border: 0; background: transparent; }
+  .cg-more > summary { display: none; }
+  .cg-more__body { padding: 0; }
+
+  .cg-app,
+  .cg-main,
+  .cg-panel {
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .cg-panel {
+    break-inside: avoid;
+    border-color: var(--c-border-strong);
+  }
+
+  .cg-arena { break-inside: avoid; max-width: 620px; }
+  .cg-raw { display: none; }
+  .cg-raw[open] { display: block; }
+  .cg-raw__body { max-height: none; overflow: visible; }
+  .cg-table thead th { position: static; }
+}
+
+@media (forced-colors: active) {
+  .cg-panel,
+  .cg-metric,
+  .cg-chip,
+  .cg-btn {
+    border: 1px solid CanvasText;
+  }
+  .cg-chart__series,
+  .cg-path { forced-color-adjust: none; }
+}
+
+/* ==========================================================================
+   Disclosure - the long half of the explainer.  The first tab promises a
+   sixty-second read; everything past the core idea lives behind this.
+   ========================================================================== */
+.cg-more {
+  background: var(--c-surface-1);
+  border: var(--bw-hair) solid var(--c-border);
+  border-radius: var(--r-3);
+}
+
+.cg-more > summary {
+  cursor: pointer;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-3);
+  color: var(--c-text-2);
+  font-size: var(--fs-3);
+  font-weight: var(--fw-medium);
+  list-style-position: inside;
+}
+
+.cg-more > summary:hover { color: var(--c-text-1); }
+
+.cg-more[open] > summary {
+  border-bottom: var(--bw-hair) solid var(--c-border);
+  border-radius: var(--r-3) var(--r-3) 0 0;
+}
+
+.cg-more__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-4);
+}

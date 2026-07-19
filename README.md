@@ -154,6 +154,8 @@ never a score.
 - [`SPEC.md`](SPEC.md): normative benchmark and scoring specification.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): development and change-control rules.
 - [`CHANGELOG.md`](CHANGELOG.md): release history.
+- [`report/README.md`](report/README.md): build and audit the interactive offline M2 report.
+- [`MODEL_CONTRIBUTIONS.md`](MODEL_CONTRIBUTIONS.md): evidence-backed AI model contribution ledger.
 - [`CITATION.cff`](CITATION.cff): citation metadata.
 - [`SECURITY.md`](SECURITY.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 

@@ -1,0 +1,302 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="cg-sprites" aria-hidden="true" focusable="false">
+  <!--
+    DelibraShift / Windrift sprite sheet.
+
+    Paste this element once, directly after <body>. It renders nothing; it only
+    defines <symbol>s that <use> elements reference by id.
+
+    Contract
+      - No symbol sets stroke, stroke-width or fill on its outer group. All three
+        are inherited from the <use> (or its parent), so the single CSS rule
+        .cg-icon in assets/app.css controls colour and weight everywhere: it
+        sets fill none, stroke currentColor and the icon stroke-width token.
+        Shapes that must be filled opt out locally with
+        fill="currentColor" stroke="none"; that is the only exception.
+      - Craft, flame and ghost share one local frame: viewBox "-16 -10 32 20",
+        origin at the craft's centre of mass, nose pointing +X. Place them with
+            <g transform="translate(px,py) rotate(deg)">
+              <use href="#cg-craft" x="-16" y="-10" width="32" height="20"/>
+            </g>
+        where deg = atan2(-vy, vx) in degrees (screen y is already flipped).
+        Because the three share the frame, the flame lands on the nozzle and the
+        ghost lands on the silhouette with no per-sprite offsets.
+      - Interface icons use viewBox "0 0 24 24" and are drawn on a 1.5 stroke.
+      - The wind arrow uses viewBox "0 0 24 8" with its tail at x=0, so it can be
+        scaled along x by wind magnitude without moving its anchor.
+  -->
+
+  <!-- ====================================================================
+       Paint servers for the colour-independent encoding. app.css references
+       these two by id from [data-texture="on"], which the shell sets for
+       print, forced-colors and high-contrast; without them the rule resolved
+       to nothing and the fill vanished instead of hatching.
+       45 degrees for end2end, 135 degrees for wm-scaffold, so the two arms
+       stay separable when their colours print as the same grey.
+       ==================================================================== -->
+  <defs>
+    <pattern id="cg-hatch-a" width="6" height="6" patternUnits="userSpaceOnUse"
+             patternTransform="rotate(45)">
+      <rect width="6" height="6" style="fill:var(--c-surface-1)"/>
+      <line x1="0" y1="0" x2="0" y2="6" style="stroke:var(--c-text-2);stroke-width:1.4"/>
+    </pattern>
+    <pattern id="cg-hatch-b" width="6" height="6" patternUnits="userSpaceOnUse"
+             patternTransform="rotate(135)">
+      <rect width="6" height="6" style="fill:var(--c-surface-1)"/>
+      <line x1="0" y1="0" x2="0" y2="6" style="stroke:var(--c-text-2);stroke-width:1.4"/>
+    </pattern>
+  </defs>
+
+  <!-- ====================================================================
+       The craft. A small, friendly single-seat flyer seen from the side:
+       rounded fuselage, bubble canopy, porthole, swept ventral wing, tail
+       fin, engine bell. Not military - this thing is trying its best.
+       ==================================================================== -->
+  <symbol id="cg-craft" viewBox="-16 -10 32 20">
+    <g stroke-linejoin="round" stroke-linecap="round">
+      <path d="M 12.5 0
+               C 9 -4 3.5 -5.6 -2.5 -5.4
+               C -6.5 -5.2 -9 -3.8 -9.8 -2.6
+               L -9.8 2.6
+               C -9 3.8 -6.5 5.2 -2.5 5.4
+               C 3.5 5.6 9 4 12.5 0 Z"/>
+      <path d="M 7.2 -3.2
+               C 5.4 -4.6 2.6 -5.1 0.4 -4.9
+               L 1.2 -1.6
+               C 3.6 -1.8 5.8 -2.4 7.2 -3.2 Z"/>
+      <circle cx="-2.2" cy="0.2" r="1.7"/>
+      <path d="M 0.16 5.37 L -6.4 8.4 L 2.6 8.4 L 3.55 4.92"/>
+      <path d="M -5.69 -4.93 L -9.6 -8.6 L -12.2 -8.6 L -8.89 -3.52"/>
+      <path d="M -9.8 -2.6 L -12.6 -1.9 L -12.6 1.9 L -9.8 2.6"/>
+    </g>
+  </symbol>
+
+  <!-- Engine flame. Same frame as the craft, so it sits on the bell without an
+       offset. Scale it along x by thrust magnitude: transform="scale(k,1)" on a
+       wrapping <g> keeps the root attached to the nozzle. -->
+  <symbol id="cg-flame" viewBox="-16 -10 32 20">
+    <g stroke-linejoin="round" stroke-linecap="round">
+      <path d="M -12.5 -1.9
+               C -14.2 -1.5 -15.2 -0.8 -15.6 0
+               C -15.2 0.8 -14.2 1.5 -12.5 1.9 Z"/>
+      <path d="M -12.7 -0.9
+               C -13.5 -0.65 -14 -0.35 -14.3 0
+               C -14 0.35 -13.5 0.65 -12.7 0.9 Z"/>
+    </g>
+  </symbol>
+
+  <!-- The ghost: what the model predicted its own state would be. Same
+       silhouette, interior details dropped, so it reads as a claim rather than
+       a thing. The dash pattern comes from CSS (.cg-ghost), not from here. -->
+  <symbol id="cg-ghost" viewBox="-16 -10 32 20">
+    <g stroke-linejoin="round" stroke-linecap="round">
+      <path d="M 12.5 0
+               C 9 -4 3.5 -5.6 -2.5 -5.4
+               C -6.5 -5.2 -9 -3.8 -9.8 -2.6
+               L -9.8 2.6
+               C -9 3.8 -6.5 5.2 -2.5 5.4
+               C 3.5 5.6 9 4 12.5 0 Z"/>
+      <path d="M 0.16 5.37 L -6.4 8.4 L 2.6 8.4 L 3.55 4.92"/>
+      <path d="M -5.69 -4.93 L -9.6 -8.6 L -12.2 -8.6 L -8.89 -3.52"/>
+    </g>
+  </symbol>
+
+  <!-- Thinking. Shown over the craft during the deliberation window, while the
+       world keeps moving under the previously latched action. -->
+  <symbol id="cg-think" viewBox="0 0 24 24">
+    <g stroke-linejoin="round" stroke-linecap="round">
+      <path d="M 6.8 14.2
+               A 3.1 3.1 0 0 1 7.5 8.2
+               A 3.7 3.7 0 0 1 14.4 6.6
+               A 3.3 3.3 0 0 1 18.2 11.1
+               A 3.1 3.1 0 0 1 16.4 14.2 Z"/>
+      <circle cx="7.4" cy="17.9" r="1.3"/>
+      <circle cx="4.3" cy="20.8" r="0.9"/>
+    </g>
+  </symbol>
+
+  <!-- ====================================================================
+       World marks
+       ==================================================================== -->
+
+  <!-- Goal disc marker: outer radius ring, inner goal radius, crosshair ticks,
+       centre dot. Used dashed (via CSS) when goal_visible is false. -->
+  <symbol id="cg-goal" viewBox="0 0 24 24">
+    <g stroke-linecap="round">
+      <circle cx="12" cy="12" r="8.5"/>
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M 12 1.5 L 12 5 M 12 19 L 12 22.5 M 1.5 12 L 5 12 M 19 12 L 22.5 12"/>
+      <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+    </g>
+  </symbol>
+
+  <!-- Decoy goal: the same target, struck through. Used where the heat signal
+       was deliberately pointed at a false position. Drawn in the neutral
+       hidden-goal colour, never in a data hue - it is not a real target. -->
+  <symbol id="cg-goal-decoy" viewBox="0 0 24 24">
+    <g stroke-linecap="round">
+      <circle cx="12" cy="12" r="8.5"/>
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M 5.2 5.2 L 18.8 18.8"/>
+    </g>
+  </symbol>
+
+  <!-- Wind arrow, and the two action vectors. Tail anchored at x = 0, head at
+       x = 21, so a wrapping scale(k,1) stretches it from the tail without
+       moving the anchor. Mirror with scale(-1,1) for negative x. -->
+  <symbol id="cg-wind" viewBox="0 0 24 8">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 0.5 4 L 21 4"/>
+      <path d="M 21 4 L 16.5 1.4 M 21 4 L 16.5 6.6"/>
+    </g>
+  </symbol>
+
+  <!-- ====================================================================
+       Outcomes. Every outcome ships icon + label + colour; colour alone never
+       carries the distinction.
+       ==================================================================== -->
+
+  <!-- goal: the craft entered the disc -->
+  <symbol id="cg-out-goal" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="14" cy="10" r="6.5"/>
+      <circle cx="14" cy="10" r="1.7" fill="currentColor" stroke="none"/>
+      <path d="M 2.5 21.5 L 9.4 14.6"/>
+      <path d="M 9.4 14.6 L 5.3 15.1 M 9.4 14.6 L 8.9 18.7"/>
+    </g>
+  </symbol>
+
+  <!-- oob: the craft crossed the map boundary. The dominant ending in this run. -->
+  <symbol id="cg-out-oob" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 16.5 2.5 L 16.5 21.5"/>
+      <path d="M 2 5.5 C 8 7.5 13.5 12.5 20.5 20"/>
+      <path d="M 20.5 20 L 16.2 19.2 M 20.5 20 L 19.7 15.7"/>
+    </g>
+  </symbol>
+
+  <!-- timeout: the deadline tick arrived first -->
+  <symbol id="cg-out-timeout" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 7 3 L 17 3 M 7 21 L 17 21"/>
+      <path d="M 8.5 3 C 8.5 8 12 10.6 12 12 C 12 13.4 15.5 16 15.5 21"/>
+      <path d="M 15.5 3 C 15.5 8 12 10.6 12 12 C 12 13.4 8.5 16 8.5 21"/>
+    </g>
+  </symbol>
+
+  <!-- ====================================================================
+       Tab icons
+       ==================================================================== -->
+
+  <!-- overview: an instrument gauge -->
+  <symbol id="cg-tab-overview" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 3.5 15 A 8.5 8.5 0 0 1 20.5 15"/>
+      <path d="M 6.5 18.5 L 17.5 18.5"/>
+      <path d="M 12 15 L 17 9.6"/>
+      <circle cx="12" cy="15" r="1.4" fill="currentColor" stroke="none"/>
+    </g>
+  </symbol>
+
+  <!-- replay: transport play with a cue bar -->
+  <symbol id="cg-tab-replay" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 4.5 5.5 L 4.5 18.5"/>
+      <path d="M 9.5 6 L 19.5 12 L 9.5 18 Z"/>
+    </g>
+  </symbol>
+
+  <!-- scenarios: a table -->
+  <symbol id="cg-tab-table" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4.5" width="18" height="15" rx="1.5"/>
+      <path d="M 3 9.5 L 21 9.5 M 3 14.5 L 21 14.5 M 10 9.5 L 10 19.5"/>
+    </g>
+  </symbol>
+
+  <!-- prediction error over time: axes plus a rising curve -->
+  <symbol id="cg-tab-error" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 3.5 3.5 L 3.5 20.5 L 21 20.5"/>
+      <path d="M 5.5 17.5 C 9 17 10.5 9.5 13.5 8.5 C 16.5 7.5 18 6 20 5.2"/>
+    </g>
+  </symbol>
+
+  <!-- decoy pairs: two runs, identical result -->
+  <symbol id="cg-tab-decoy" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8.5" r="5"/>
+      <circle cx="16" cy="8.5" r="5"/>
+      <path d="M 6 17.5 L 18 17.5 M 6 21 L 18 21"/>
+    </g>
+  </symbol>
+
+  <!-- raw model response: braces -->
+  <symbol id="cg-tab-raw" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 9.5 3.5 C 7 3.5 8 10 5.5 12 C 8 14 7 20.5 9.5 20.5"/>
+      <path d="M 14.5 3.5 C 17 3.5 16 10 18.5 12 C 16 14 17 20.5 14.5 20.5"/>
+    </g>
+  </symbol>
+
+  <!-- ====================================================================
+       Transport and interface
+       ==================================================================== -->
+
+  <symbol id="cg-play" viewBox="0 0 24 24">
+    <path d="M 7.5 5 L 18.5 12 L 7.5 19 Z" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="cg-pause" viewBox="0 0 24 24">
+    <path d="M 9 5.5 L 9 18.5 M 15 5.5 L 15 18.5" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="cg-step" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 6 5.5 L 14.5 12 L 6 18.5 Z"/>
+      <path d="M 18 5.5 L 18 18.5"/>
+    </g>
+  </symbol>
+
+  <symbol id="cg-reset" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 12 3.5
+               A 8.5 8.5 0 0 1 20.5 12
+               A 8.5 8.5 0 0 1 12 20.5
+               A 8.5 8.5 0 0 1 3.5 12"/>
+      <path d="M 3.5 12 L 1.1 15.4 M 3.5 12 L 5.9 15.4"/>
+    </g>
+  </symbol>
+
+  <symbol id="cg-chevron" viewBox="0 0 24 24">
+    <path d="M 9 4.5 L 16.5 12 L 9 19.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="cg-info" viewBox="0 0 24 24">
+    <g stroke-linecap="round">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M 12 11 L 12 16.5"/>
+      <circle cx="12" cy="7.6" r="1.1" fill="currentColor" stroke="none"/>
+    </g>
+  </symbol>
+
+  <!-- equals: marks two runs whose numbers are byte-identical -->
+  <symbol id="cg-equals" viewBox="0 0 24 24">
+    <path d="M 4.5 9.5 L 19.5 9.5 M 4.5 14.5 L 19.5 14.5" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- clock: the deliberation budget B, in simulated ticks -->
+  <symbol id="cg-clock" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.5"/>
+      <path d="M 12 6.8 L 12 12 L 15.8 14.4"/>
+    </g>
+  </symbol>
+
+  <!-- theme toggle: half-lit disc, no words needed -->
+  <symbol id="cg-theme" viewBox="0 0 24 24">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8"/>
+      <path d="M 12 4 A 8 8 0 0 1 12 20 Z" fill="currentColor" stroke="none"/>
+    </g>
+  </symbol>
+</svg>

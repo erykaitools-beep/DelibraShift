@@ -1,0 +1,446 @@
+/* ==========================================================================
+   DelibraShift / Windrift viewer - design tokens
+   --------------------------------------------------------------------------
+   Single source of truth for colour, type, space, radius, elevation, motion
+   and arena drawing constants. Nothing in this file positions anything; see
+   assets/app.css for layout and components.
+
+   Themes
+     :root                      -> "cockpit" dark, the default
+     :root[data-theme="light"]  -> "print" light, for paper and bright rooms
+     @media print               -> forces the light theme regardless of toggle
+
+   Contrast (measured, not estimated - see spec/contrast_check.mjs):
+     dark  text-1 12.16:1  text-2 7.31:1  text-3 5.15:1  (worst surface)
+     light text-1 15.35:1  text-2 6.52:1  text-3 4.91:1  (worst surface)
+     arms  end2end vs wm-scaffold: OKLab dE 30.7 normal / 28.4 protan /
+           31.1 deutan (dark), 29.9 / 27.5 / 30.2 (light).
+
+   No external resources. System font stacks only.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* --- surfaces ---------------------------------------------------------
+     Neutrals are blue-slate, not grey: the page is an instrument panel lit
+     from behind, and the arena is the darkest thing on it - a window. */
+  --c-page: #080d12;
+  --c-surface-1: #111820;        /* panels, cards - the validated chart surface */
+  --c-surface-2: #18212b;        /* raised: table head, panel head, inputs */
+  --c-surface-3: #212d3a;        /* hover, selected row, pressed */
+  --c-arena: #050a0e;            /* the world window */
+  --c-arena-vignette: rgba(0, 0, 0, 0.55);
+
+  --c-border: #253240;           /* hairline between panels */
+  --c-border-strong: #38495b;    /* input outline, table rules */
+  --c-grid: #16222e;             /* arena grid, chart gridlines */
+  --c-grid-major: #1e2c3a;       /* every 5th arena gridline */
+
+  /* --- ink -------------------------------------------------------------- */
+  --c-text-1: #e9f0f6;           /* headings, values */
+  --c-text-2: #aabecf;           /* body, table cells */
+  --c-text-3: #88a0b4;           /* labels, axis ticks, captions */
+  --c-text-inverse: #060b10;     /* text on a filled accent */
+
+  /* --- chrome accent ----------------------------------------------------
+     Interactive affordance only: focus ring, active tab, links, scrubber
+     handle, selection. It NEVER encodes data, which is why it is allowed to
+     sit close to the blue arm under protanopia (dE 3.7). */
+  --c-accent: #ae86f0;
+  --c-accent-quiet: rgba(174, 134, 240, 0.16);
+  --c-accent-line: rgba(174, 134, 240, 0.45);
+  --c-focus: #ae86f0;
+
+  /* --- the two arms (categorical, deuteranopia-safe blue vs amber) ------- */
+  --c-arm-e2e: #3987e5;          /* end2end - one prompt, prediction + action */
+  --c-arm-wm: #c98500;           /* wm-scaffold - predict first, then act */
+  --c-arm-e2e-fill: rgba(57, 135, 229, 0.18);
+  --c-arm-wm-fill: rgba(201, 133, 0, 0.18);
+  --c-arm-e2e-soft: rgba(57, 135, 229, 0.32);
+  --c-arm-wm-soft: rgba(201, 133, 0, 0.32);
+
+  /* --- arena semantics --------------------------------------------------
+     --c-path and --c-ghost are aliases: an arena carrying [data-arm="..."]
+     repaints the flight path in that arm's colour (see the mapping at the
+     bottom of this file). The ghost is the SAME hue as the path on purpose -
+     it belongs to the same arm - and is told apart by form: hollow, dashed,
+     dimmed. Never by hue alone. */
+  --c-path: var(--c-arm-e2e);
+  --c-path-trail: rgba(233, 240, 246, 0.14);   /* pre-replay full-route hint */
+  --c-ghost: var(--c-path);
+  --c-ghost-alpha: 0.62;
+  --c-error: #cfd8e3;            /* prediction -> truth connector */
+  --c-goal: #1fb583;             /* goal disc, goal outcome, heat ramp anchor */
+  --c-goal-hidden: #7a8fa2;      /* goal marker when goal_visible = false */
+  --c-bounds: #55697e;           /* static map edge - geometry, not danger */
+  --c-oob: #ff766c;              /* the crossing itself + oob outcome chip */
+  --c-deadline: #b0524c;         /* deadline rule + timeout outcome */
+  --c-wind: #4c6884;             /* wind field arrows - deliberately recessive */
+  --c-wind-strong: #6a8aa8;      /* wind arrow at the current tick */
+  --c-crosshair: rgba(233, 240, 246, 0.28);
+  /* The two action vectors are the point of the arena picture, so they must not
+     differ by dash pattern and opacity alone: the freshly returned action gets
+     its own hue. Velocity is not a decision at all and stays neutral. */
+  --c-commanded: #ae86f0;
+  --c-velocity: rgba(233, 240, 246, 0.55);
+
+  /* Heat is a sequential single-hue field anchored on the goal colour:
+     more teal = closer to the goal. Never a rainbow. */
+  --c-heat-0: rgba(31, 181, 131, 0);
+  --c-heat-1: rgba(31, 181, 131, 0.06);
+  --c-heat-2: rgba(31, 181, 131, 0.13);
+  --c-heat-3: rgba(31, 181, 131, 0.22);
+  --c-heat-4: rgba(31, 181, 131, 0.34);
+  --c-heat-ring: rgba(31, 181, 131, 0.30);
+
+  /* --- deterministic reference marks (random / greedy / oracle) ----------
+     Baselines are not a fifth series; they are rules on the scale. */
+  --c-ref: #8199ad;
+  --c-ref-line: rgba(129, 153, 173, 0.55);
+
+  /* --- state ------------------------------------------------------------ */
+  --c-unmeasurable: #7a8fa2;     /* fidelity = null; NOT zero */
+  --c-unmeasurable-bg: rgba(122, 143, 162, 0.12);
+  --c-retry: #c98500;            /* format retry - control, not cognition */
+  --c-retry-bg: rgba(201, 133, 0, 0.14);
+
+  /* --- elevation --------------------------------------------------------
+     On dark, depth comes from a hairline ring plus a soft drop; glow is
+     reserved for the focused element so it stays meaningful. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.55);
+  --shadow-2: 0 8px 24px -10px rgba(0, 0, 0, 0.75), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-3: 0 18px 48px -18px rgba(0, 0, 0, 0.85);
+  --ring-inset: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --glow-focus: 0 0 0 2px var(--c-page), 0 0 0 4px var(--c-focus);
+
+  /* ======================================================================
+     Non-colour tokens - identical in both themes
+     ====================================================================== */
+
+  /* --- type -------------------------------------------------------------
+     Two roles, both system stacks. Sans carries prose. Mono is the
+     instrument face: every number, tick, coordinate, axis tick, table
+     column and raw model response is mono, so telemetry always looks like
+     telemetry. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
+    "DejaVu Sans Mono", "Liberation Mono", monospace;
+
+  --fs-1: 0.6875rem;   /* 11px - micro label, uppercase, tracked */
+  --fs-2: 0.75rem;     /* 12px - caption, axis tick, chip */
+  --fs-3: 0.8125rem;   /* 13px - table cell, dense UI */
+  --fs-4: 0.875rem;    /* 14px - secondary body */
+  --fs-5: 1rem;        /* 16px - body */
+  --fs-6: 1.25rem;     /* 20px - panel title */
+  --fs-7: 1.625rem;    /* 26px - section heading */
+  --fs-8: 2.25rem;     /* 36px - page heading */
+  --fs-9: 3.25rem;     /* 52px - hero readout */
+
+  --lh-tight: 1.14;
+  --lh-snug: 1.34;
+  --lh-body: 1.6;
+
+  --ls-label: 0.09em;  /* uppercase micro labels */
+  --ls-mono: 0.01em;
+  --ls-display: -0.015em;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* --- space (4px base) -------------------------------------------------- */
+  --sp-0: 2px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* --- radius -----------------------------------------------------------
+     Tight on purpose. Instruments have machined corners, not pill shapes. */
+  --r-1: 3px;          /* chips, swatches, inputs */
+  --r-2: 5px;          /* buttons, cards inside panels */
+  --r-3: 8px;          /* panels */
+  --r-pill: 999px;     /* only the scrubber handle and toggles */
+
+  /* --- borders ----------------------------------------------------------- */
+  --bw-hair: 1px;
+  --bw-strong: 2px;
+
+  /* --- motion -----------------------------------------------------------
+     Four durations, three easings. Replay uses --dur-beat per simulated
+     cycle so the eye can follow one decision at a time. */
+  --dur-1: 90ms;       /* micro: hover, swatch */
+  --dur-2: 180ms;      /* state: tab, chip, row */
+  --dur-3: 320ms;      /* panel: reveal, tab switch */
+  --dur-4: 520ms;      /* chart: series draw-in */
+  --dur-beat: 700ms;   /* one deliberation window during replay */
+  --ease-out: cubic-bezier(0.22, 0.68, 0.28, 1);
+  --ease-in-out: cubic-bezier(0.62, 0, 0.34, 1);
+  --ease-snap: cubic-bezier(0.2, 1.18, 0.42, 1);
+
+  /* --- layout ------------------------------------------------------------ */
+  --w-content: 1440px;      /* max content width */
+  --w-rail: 340px;          /* instrument rail beside the arena */
+  --w-rail-narrow: 288px;
+  --h-topbar: 56px;
+  --h-tabs: 44px;
+  --h-scrub: 56px;
+
+  /* --- z layers ---------------------------------------------------------- */
+  --z-arena-field: 1;
+  --z-arena-marks: 2;
+  --z-arena-hud: 3;
+  --z-sticky: 20;
+  --z-tooltip: 40;
+  --z-dialog: 60;
+
+  /* ======================================================================
+     Arena drawing constants
+     World is 0..100 m on both axes; y is flipped on screen (0 m at bottom).
+     ====================================================================== */
+  --arena-pad: 28px;              /* room for axis labels outside the world */
+  --arena-grid-step: 10;          /* metres between minor gridlines */
+  --arena-grid-major: 50;         /* metres between major gridlines */
+
+  --sw-icon: 1.5;                 /* inherited stroke-width for sprite icons */
+  --sw-craft: 1.5;                /* craft outline */
+  --sw-path: 2.5;                 /* flown trajectory */
+  --sw-path-future: 1.5;          /* not-yet-flown remainder */
+  --sw-ghost: 1.5;                /* predicted silhouette */
+  --sw-error: 1.5;                /* prediction -> truth connector */
+  --sw-wind: 1.25;
+  --sw-bound: 2;                  /* map boundary */
+  --sw-grid: 1;
+
+  --dash-ghost: 4 3.5;
+  --dash-error: 2.5 3;
+  --dash-future: 3 5;
+  --dash-deadline: 6 4;
+  --dash-bound: 5 4;
+
+  --craft-len: 30px;              /* on-screen length of the craft sprite */
+  --ghost-len: 30px;
+  --goal-r-min: 10px;             /* goal disc never smaller than this */
+  --bead-r: 4.5px;                /* decision-point bead on path and scrubber */
+  --bead-r-active: 7px;
+
+  /* --- accessibility texture (opt-in, print, forced-colors) --------------
+     One directional hatch used at 45deg and its 135deg mirror, so the two
+     arms remain separable without colour. Reached through [data-texture="on"],
+     which assets/app.js writes on the root element for print, forced-colors
+     and high-contrast - CSS cannot set an attribute, so no media query can
+     turn this on by itself. */
+  --hatch-a: repeating-linear-gradient(45deg,
+      currentColor 0, currentColor 1px, transparent 1px, transparent 5px);
+  --hatch-b: repeating-linear-gradient(135deg,
+      currentColor 0, currentColor 1px, transparent 1px, transparent 5px);
+}
+
+/* ==========================================================================
+   Light theme - "print". Same roles, re-stepped for a white surface, not an
+   inverted copy. Every value re-measured against #ffffff and #eef1f4.
+   ========================================================================== */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --c-page: #eef1f4;
+  --c-surface-1: #ffffff;
+  --c-surface-2: #f7f9fb;
+  --c-surface-3: #e8edf2;
+  --c-arena: #ffffff;
+  --c-arena-vignette: rgba(15, 23, 30, 0.05);
+
+  --c-border: #d6dde4;
+  --c-border-strong: #b3bec9;
+  --c-grid: #e3e8ee;
+  --c-grid-major: #ced7e0;
+
+  --c-text-1: #0f171e;
+  --c-text-2: #41556a;
+  --c-text-3: #546878;
+  --c-text-inverse: #ffffff;
+
+  --c-accent: #6b2fae;
+  --c-accent-quiet: rgba(107, 47, 174, 0.10);
+  --c-accent-line: rgba(107, 47, 174, 0.38);
+  --c-focus: #6b2fae;
+
+  --c-arm-e2e: #2a78d6;
+  --c-arm-wm: #b87400;
+  --c-arm-e2e-fill: rgba(42, 120, 214, 0.14);
+  --c-arm-wm-fill: rgba(184, 116, 0, 0.14);
+  --c-arm-e2e-soft: rgba(42, 120, 214, 0.30);
+  --c-arm-wm-soft: rgba(184, 116, 0, 0.30);
+
+  --c-path: var(--c-arm-e2e);
+  --c-path-trail: rgba(15, 23, 30, 0.16);
+  --c-ghost: var(--c-path);
+  --c-ghost-alpha: 0.7;
+  --c-error: #4a5b6d;
+  --c-goal: #10966d;
+  --c-goal-hidden: #7c8b98;
+  --c-bounds: #7a8b9b;
+  --c-oob: #b9322c;
+  --c-deadline: #7e2a23;
+  --c-wind: #7f97ac;
+  --c-wind-strong: #5d7488;
+  --c-crosshair: rgba(15, 23, 30, 0.30);
+  --c-commanded: #6b2fae;
+  --c-velocity: rgba(15, 23, 30, 0.50);
+
+  --c-heat-0: rgba(13, 133, 96, 0);
+  --c-heat-1: rgba(13, 133, 96, 0.05);
+  --c-heat-2: rgba(13, 133, 96, 0.11);
+  --c-heat-3: rgba(13, 133, 96, 0.19);
+  --c-heat-4: rgba(13, 133, 96, 0.30);
+  --c-heat-ring: rgba(13, 133, 96, 0.34);
+
+  --c-ref: #546878;
+  --c-ref-line: rgba(84, 104, 120, 0.55);
+
+  --c-unmeasurable: #6b7d8c;
+  --c-unmeasurable-bg: rgba(107, 125, 140, 0.10);
+  --c-retry: #b87400;
+  --c-retry-bg: rgba(184, 116, 0, 0.12);
+
+  --shadow-1: 0 1px 2px rgba(15, 23, 30, 0.08);
+  --shadow-2: 0 6px 18px -10px rgba(15, 23, 30, 0.28), 0 1px 2px rgba(15, 23, 30, 0.06);
+  --shadow-3: 0 16px 40px -18px rgba(15, 23, 30, 0.32);
+  --ring-inset: inset 0 0 0 1px rgba(15, 23, 30, 0.04);
+  --glow-focus: 0 0 0 2px var(--c-page), 0 0 0 4px var(--c-focus);
+}
+
+/* Print always uses the light theme, whatever the toggle says. The values are
+   repeated rather than aliased so this block wins on its own, with no
+   dependency on attribute state. */
+@media print {
+  :root,
+  :root[data-theme="dark"],
+  :root[data-theme="light"] {
+    color-scheme: light;
+
+    --c-page: #ffffff;
+    --c-surface-1: #ffffff;
+    --c-surface-2: #ffffff;
+    --c-surface-3: #f2f5f8;
+    --c-arena: #ffffff;
+    --c-arena-vignette: transparent;
+
+    --c-border: #b3bec9;
+    --c-border-strong: #8b98a5;
+    --c-grid: #dfe5eb;
+    --c-grid-major: #c3ccd5;
+
+    --c-text-1: #000000;
+    --c-text-2: #253544;
+    --c-text-3: #46586a;
+    --c-text-inverse: #ffffff;
+
+    --c-accent: #5a2699;
+    --c-accent-quiet: rgba(90, 38, 153, 0.08);
+    --c-accent-line: rgba(90, 38, 153, 0.4);
+    --c-focus: #5a2699;
+
+    --c-arm-e2e: #2a78d6;
+    --c-arm-wm: #a86800;
+    --c-arm-e2e-fill: rgba(42, 120, 214, 0.16);
+    --c-arm-wm-fill: rgba(168, 104, 0, 0.16);
+    --c-arm-e2e-soft: rgba(42, 120, 214, 0.34);
+    --c-arm-wm-soft: rgba(168, 104, 0, 0.34);
+
+    --c-path: var(--c-arm-e2e);
+    --c-path-trail: rgba(0, 0, 0, 0.2);
+    --c-ghost: var(--c-path);
+    --c-ghost-alpha: 0.75;
+    --c-error: #3d4c5c;
+    --c-goal: #0d8763;
+    --c-goal-hidden: #6b7986;
+    --c-bounds: #5d6d7c;
+    --c-oob: #b32e28;
+    --c-deadline: #7d2a24;
+    --c-wind: #8da0b0;
+    --c-wind-strong: #55697d;
+    --c-crosshair: rgba(0, 0, 0, 0.35);
+
+    --c-heat-0: rgba(11, 116, 84, 0);
+    --c-heat-1: rgba(11, 116, 84, 0.06);
+    --c-heat-2: rgba(11, 116, 84, 0.12);
+    --c-heat-3: rgba(11, 116, 84, 0.2);
+    --c-heat-4: rgba(11, 116, 84, 0.32);
+    --c-heat-ring: rgba(11, 116, 84, 0.4);
+
+    --c-ref: #46586a;
+    --c-ref-line: rgba(70, 88, 106, 0.6);
+
+    --c-unmeasurable: #5c6d7c;
+    --c-unmeasurable-bg: rgba(92, 109, 124, 0.1);
+    --c-retry: #a86800;
+    --c-retry-bg: rgba(168, 104, 0, 0.12);
+
+    --shadow-1: none;
+    --shadow-2: none;
+    --shadow-3: none;
+    --ring-inset: none;
+    --glow-focus: none;
+  }
+}
+
+/* ==========================================================================
+   Arm mapping. Put data-arm on any subtree - the arena, a chart, a table row,
+   a legend swatch - and the path/ghost aliases follow. This is the only place
+   arm colour is switched; no script should ever write a hex value.
+   ========================================================================== */
+[data-arm="end2end"] {
+  --c-path: var(--c-arm-e2e);
+  --c-path-fill: var(--c-arm-e2e-fill);
+  --c-path-soft: var(--c-arm-e2e-soft);
+  --hatch-arm: var(--hatch-a);
+}
+
+[data-arm="wm-scaffold"] {
+  --c-path: var(--c-arm-wm);
+  --c-path-fill: var(--c-arm-wm-fill);
+  --c-path-soft: var(--c-arm-wm-soft);
+  --hatch-arm: var(--hatch-b);
+}
+
+/* ==========================================================================
+   Motion opt-out. Durations collapse; nothing is removed, so state changes
+   still land - they just land immediately.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-1: 1ms;
+    --dur-2: 1ms;
+    --dur-3: 1ms;
+    --dur-4: 1ms;
+    --dur-beat: 1ms;
+  }
+}
+
+/* Forced-colors: hand every semantic role back to the system palette and let
+   the texture channel carry series identity. */
+@media (forced-colors: active) {
+  :root {
+    --c-text-1: CanvasText;
+    --c-text-2: CanvasText;
+    --c-text-3: GrayText;
+    --c-surface-1: Canvas;
+    --c-surface-2: Canvas;
+    --c-surface-3: Canvas;
+    --c-arena: Canvas;
+    --c-border: CanvasText;
+    --c-border-strong: CanvasText;
+    --c-accent: LinkText;
+    --c-focus: Highlight;
+    --c-arm-e2e: CanvasText;
+    --c-arm-wm: CanvasText;
+  }
+}

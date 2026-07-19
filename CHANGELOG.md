@@ -19,3 +19,6 @@ All notable changes to DelibraShift are documented here.
   labels, corrupt sidecars, duplicate ZIP members, and traversal paths.
 - Python 3.10 branch-coverage gate plus Python 3.12 compatibility testing and
   an installed-wheel release smoke.
+- Self-contained bilingual M2 report with an interactive simulated-tick arena,
+  matched-pair displays, independent replay audit, responsive browser smoke,
+  and evidence-backed model contribution disclosure.

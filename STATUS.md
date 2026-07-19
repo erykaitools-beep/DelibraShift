@@ -1,5 +1,18 @@
 # Status
 
+## 2026-07-19 — Offline M2 report integrated
+
+- Integrated the bilingual offline visualization under `report/`, reading the
+  canonical pack, 84 M2 logs and report directly without duplicating them.
+- Corrected heat evidence to require identical action sequences, restricted
+  fidelity comparisons to matched measurable cells, and exposed temporal `K`,
+  mean divergence weight and retry-free sensitivity support.
+- Added dependency-free JavaScript/DOM tests, independent 78-episode physics
+  replay, WCAG contrast checks, portable provenance and a dedicated CI job.
+- Real Chromium smoke now covers both arenas, results, lab, PL/EN switching and
+  a 390 px mobile viewport with no page-level horizontal scrolling.
+- Added `MODEL_CONTRIBUTIONS.md` for competition attribution.
+
 ## 2026-07-13 — Codex M0 implementation
 
 - Repository scaffold initialized with Python 3.10+ packaging, MIT license,
