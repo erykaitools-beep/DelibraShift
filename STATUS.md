@@ -196,3 +196,17 @@
 - Publication verification: 86 tests pass; wheel and sdist build successfully;
   a clean wheel installation runs the no-op demo; the core archive and official
   M2 report retain their published SHA-256 values.
+
+## 2026-07-19 — Pre-publication test hardening
+
+- Added a black-box release smoke test that builds and installs the wheel in an
+  isolated environment outside the source tree, verifies package contents and
+  all five console entry points, and runs `demo`, `run`, `pack`, `gates`, and
+  the guarded `ablate` path.
+- The installed `delibrashift-gates` command now pins the complete gate IV
+  payload to its published values in one dedicated Python 3.10 CI job. This
+  keeps the 76-second sampling-MPC calculation out of the fast version matrix.
+- Added ten resume rejection cases covering structural corruption and every
+  experiment identity field. Each asserts zero calls on the fresh adapter.
+- Verification: 96 fast tests pass; the isolated installed-wheel release smoke
+  passes; official M2 report and core archive SHA-256 values remain unchanged.

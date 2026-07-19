@@ -9,6 +9,7 @@ from delibrashift.bank import load_pack
 from delibrashift.demo import demo_scenario
 from delibrashift.experiment_cli import main as experiment_main
 from delibrashift.experiments import run_matched_pair, write_matched_pair_report
+from delibrashift.types import canonical_json
 
 
 class AdaptiveAdapter:
@@ -190,6 +191,87 @@ def test_resume_reuses_verified_logs_without_model_calls(tmp_path) -> None:
     )
     assert len(adapter.calls) == calls_after_first
     assert resumed == first
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    (
+        ("truncated", "incomplete episode summary"),
+        ("noncanonical", "non-canonical episode log"),
+        ("scenario_id", "resume manifest mismatch for scenario_id"),
+        ("agent", "resume manifest mismatch for agent"),
+        ("prompt_version", "resume manifest mismatch for prompt_version"),
+        ("pack_name", "resume manifest mismatch for pack_name"),
+        ("pack_version", "resume manifest mismatch for pack_version"),
+        ("host_class", "resume manifest mismatch for host_class"),
+        ("scenario_ids", "resume manifest mismatch for scenario_ids"),
+        ("terminal", "invalid terminal summary"),
+    ),
+)
+def test_resume_rejects_corrupt_or_mismatched_logs_before_model_calls(
+    tmp_path,
+    mutation,
+    message,
+) -> None:
+    config = replace(demo_scenario(), deadline_tick=80)
+    run_matched_pair(
+        (config,),
+        AdaptiveAdapter(),
+        repetitions=1,
+        pace_rpm=0.0,
+        log_dir=tmp_path,
+        pack_name="test-pack",
+        pack_version="1.2.3",
+        host_class="test-host",
+        include_temporal=False,
+        allow_underpowered=True,
+    )
+    path = tmp_path / f"{config.scenario_id}.r0.end2end.jsonl"
+    raw_lines = path.read_text(encoding="utf-8").splitlines()
+    payloads = [json.loads(line) for line in raw_lines]
+
+    if mutation == "truncated":
+        payloads.pop()
+    elif mutation == "noncanonical":
+        path.write_text(
+            json.dumps(payloads[0]) + "\n" + "\n".join(raw_lines[1:]) + "\n",
+            encoding="utf-8",
+        )
+    elif mutation == "terminal":
+        payloads[-1]["final_state"]["done"] = False
+    else:
+        replacements = {
+            "scenario_id": "other-scenario",
+            "agent": "end2end:other-model",
+            "prompt_version": "other-prompt",
+            "pack_name": "other-pack",
+            "pack_version": "9.9.9",
+            "host_class": "other-host",
+            "scenario_ids": ["other-scenario"],
+        }
+        payloads[0][mutation] = replacements[mutation]
+    if mutation != "noncanonical":
+        path.write_text(
+            "\n".join(canonical_json(payload) for payload in payloads) + "\n",
+            encoding="utf-8",
+        )
+
+    adapter = AdaptiveAdapter()
+    with pytest.raises(ValueError, match=message):
+        run_matched_pair(
+            (config,),
+            adapter,
+            repetitions=1,
+            pace_rpm=0.0,
+            log_dir=tmp_path,
+            pack_name="test-pack",
+            pack_version="1.2.3",
+            host_class="test-host",
+            include_temporal=False,
+            allow_underpowered=True,
+            resume=True,
+        )
+    assert adapter.calls == []
 
 
 def test_matched_pair_rejects_underpowered_or_probe_only_runs() -> None:

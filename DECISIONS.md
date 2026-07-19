@@ -862,3 +862,26 @@ Append-only FAB/COD history and the frozen core_v0 pack description retain the
 former working name as provenance. Official M2 logs and `report.json` are not
 rewritten; their published report SHA-256 remains
 `5ed6e76793684c9c7ef996ae58168ec57301afbcc615f4967c533e853f2506fa`.
+
+## COD-025 — Test the installed release and run gate IV once in CI
+
+Date: 2026-07-19
+
+The fast Python 3.10/3.12 matrix remains source-editable; its test execution
+requires neither credentials nor network access. After it passes, one Python
+3.10 release-smoke job builds the sdist and wheel, installs the wheel into an
+isolated environment, and runs all five public console scripts from outside
+the repository. The smoke test rejects wheels containing packs, results,
+tests, or the former import package.
+
+The sampling-MPC kill criterion takes about 76 seconds on the builder host.
+It therefore runs exactly once through the installed `delibrashift-gates`
+entry point instead of once per fast-test interpreter. Its complete gate IV
+payload is pinned to the published binary64 values. This preserves strong
+release coverage without turning every local test run into a multi-minute
+operation.
+
+Resume validation is adversarially tested for truncated, non-canonical, and
+terminally invalid logs plus mismatched scenario, adapter, prompt, pack,
+version, host, and scenario list. Every rejection must occur before the fresh
+adapter receives a model call.
