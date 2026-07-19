@@ -1,18 +1,23 @@
 # DelibraShift PLAN
 
-Owner: Codex (sole architect/builder since 2026-07-19). STATUS.md is the
-ground truth on progress. Historical Fable-authored entries remain attributed.
+Project owner and human operator: **Eryk Wyrębek**. Codex is the active
+technical builder/maintainer under human direction since 2026-07-19. STATUS.md
+is the ground truth on progress. Historical Fable-authored entries remain
+attributed.
+
 Working protocol: try pull --rebase before every commit; keep normative design
 changes and implementation decisions explicit in DECISIONS.md; preserve exact
-fixtures and gate results across refactors.
+fixtures and gate results across refactors; no remote publication or release
+without explicit human approval.
 
-## File & module ownership
+## File & module stewardship
 
-| Artifact | Owner |
+| Artifact | Stewardship |
 |---|---|
-| Entire repository | Codex |
+| Project ownership and final decisions | Eryk Wyrębek |
+| Active technical implementation and maintenance | Codex under Eryk's direction |
 | Historical `FAB-###` decisions and Fable review text | preserved attribution |
-| New decisions | `COD-###`, append-only |
+| New technical decisions | `COD-###`, append-only, subject to human approval |
 
 Contract-change rule: every semantic change to `types.py` bumps
 `SCHEMA_VERSION` and gets a COD entry. Fixture or pack changes require exact
@@ -82,7 +87,8 @@ test regeneration plus recorded gate impact.
 
 ### M3 — writeup + release
 - Paper skeleton per SPEC §11.2; funding one-pager (NLnet/NGI, NVIDIA
-  Inception); public GitHub release with seeds, packs, logs.
+  Inception); any public release requires an explicit licensing decision and
+  approval from Eryk Wyrębek.
 
 ## Risk register
 
