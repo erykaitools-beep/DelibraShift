@@ -6,8 +6,8 @@
   "driver": {
     "version": "0.2",
     "sha256": "31394d60e72a1f4e6967fd06a5074f87c7e0e9220155ab5e335e148175253348",
-    "git_revision": "878b43cac5cc9d9edfa571203c8d409861adad4a",
-    "source_tree_dirty": true
+    "git_revision": "7747518459f6c662e3650bc5a2112ad8c76ffb43",
+    "source_tree_dirty": false
   },
   "method": {
     "pack_name": "core_v0",
@@ -75,7 +75,7 @@
       "runs": [
         {
           "seed": 0,
-          "wall_clock_s_telemetry_only": 34.28902699332684,
+          "wall_clock_s_telemetry_only": 35.18347662873566,
           "action_parse_ok": true,
           "prediction_parse_ok": true,
           "example_echo": false,
@@ -96,17 +96,17 @@
           "ollama_response_metadata": {
             "done": true,
             "done_reason": "stop",
-            "total_duration": 34288182597,
-            "load_duration": 1858015537,
+            "total_duration": 35182438886,
+            "load_duration": 1872509483,
             "prompt_eval_count": 1287,
-            "prompt_eval_duration": 27555750100,
+            "prompt_eval_duration": 27698055450,
             "eval_count": 78,
-            "eval_duration": 4795021367
+            "eval_duration": 5534872972
           }
         },
         {
           "seed": 1,
-          "wall_clock_s_telemetry_only": 5.037113607861102,
+          "wall_clock_s_telemetry_only": 7.016263693571091,
           "action_parse_ok": true,
           "prediction_parse_ok": true,
           "example_echo": false,
@@ -127,17 +127,17 @@
           "ollama_response_metadata": {
             "done": true,
             "done_reason": "stop",
-            "total_duration": 5036017482,
-            "load_duration": 131975188,
+            "total_duration": 7014501394,
+            "load_duration": 192799037,
             "prompt_eval_count": 1287,
-            "prompt_eval_duration": 70640996,
+            "prompt_eval_duration": 74414031,
             "eval_count": 78,
-            "eval_duration": 4753746661
+            "eval_duration": 6641238358
           }
         },
         {
           "seed": 2,
-          "wall_clock_s_telemetry_only": 5.023323571309447,
+          "wall_clock_s_telemetry_only": 6.88324177172035,
           "action_parse_ok": true,
           "prediction_parse_ok": true,
           "example_echo": false,
@@ -158,12 +158,12 @@
           "ollama_response_metadata": {
             "done": true,
             "done_reason": "stop",
-            "total_duration": 5022411366,
-            "load_duration": 130039073,
+            "total_duration": 6881997417,
+            "load_duration": 172743258,
             "prompt_eval_count": 1287,
-            "prompt_eval_duration": 62254712,
+            "prompt_eval_duration": 74021454,
             "eval_count": 78,
-            "eval_duration": 4755637224
+            "eval_duration": 6530740651
           }
         }
       ]
@@ -184,7 +184,7 @@
       "runs": [
         {
           "seed": 0,
-          "wall_clock_s_telemetry_only": 48.68089290056378,
+          "wall_clock_s_telemetry_only": 90.15360631141812,
           "action_parse_ok": true,
           "prediction_parse_ok": true,
           "example_echo": false,
@@ -205,17 +205,17 @@
           "ollama_response_metadata": {
             "done": true,
             "done_reason": "stop",
-            "total_duration": 48679120478,
-            "load_duration": 2565260659,
+            "total_duration": 90152084978,
+            "load_duration": 3880329284,
             "prompt_eval_count": 1337,
-            "prompt_eval_duration": 33115943871,
+            "prompt_eval_duration": 68124457870,
             "eval_count": 146,
-            "eval_duration": 12814045671
+            "eval_duration": 17773554749
           }
         },
         {
           "seed": 1,
-          "wall_clock_s_telemetry_only": 46.63349069841206,
+          "wall_clock_s_telemetry_only": 85.55233117565513,
           "action_parse_ok": true,
           "prediction_parse_ok": true,
           "example_echo": false,
@@ -236,17 +236,17 @@
           "ollama_response_metadata": {
             "done": true,
             "done_reason": "stop",
-            "total_duration": 46631725080,
-            "load_duration": 310063024,
+            "total_duration": 85551007189,
+            "load_duration": 538574791,
             "prompt_eval_count": 1337,
-            "prompt_eval_duration": 33348848178,
+            "prompt_eval_duration": 66760427868,
             "eval_count": 146,
-            "eval_duration": 12843845916
+            "eval_duration": 18016103721
           }
         },
         {
           "seed": 2,
-          "wall_clock_s_telemetry_only": 46.68850990012288,
+          "wall_clock_s_telemetry_only": 85.05646630562842,
           "action_parse_ok": true,
           "prediction_parse_ok": true,
           "example_echo": false,
@@ -267,12 +267,12 @@
           "ollama_response_metadata": {
             "done": true,
             "done_reason": "stop",
-            "total_duration": 46686773748,
-            "load_duration": 292235465,
+            "total_duration": 85054380571,
+            "load_duration": 477278257,
             "prompt_eval_count": 1337,
-            "prompt_eval_duration": 33350867314,
+            "prompt_eval_duration": 65841804162,
             "eval_count": 146,
-            "eval_duration": 12918127965
+            "eval_duration": 18491144867
           }
         }
       ]
