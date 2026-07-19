@@ -5,6 +5,7 @@ from dataclasses import replace
 
 import pytest
 
+from chronogym.bank import load_pack
 from chronogym.demo import demo_scenario
 from chronogym.experiment_cli import main as experiment_main
 from chronogym.experiments import run_matched_pair, write_matched_pair_report
@@ -17,7 +18,13 @@ class AdaptiveAdapter:
         self.calls = []
 
     def complete(self, prompt, *, max_tokens=512, temperature=0.0, seed=None):
-        if "STAGE 1" in prompt:
+        if "FORMAT CONTROL" in prompt:
+            stage = "format-control"
+            reply = prompt.strip().splitlines()[-1]
+        elif "WORLD-MODEL CONTROL" in prompt:
+            stage = "forced-choice-control"
+            reply = '{"choice":"A"}'
+        elif "STAGE 1" in prompt:
             stage = "prediction"
             reply = (
                 '{"prediction":{"pos_x_m":20,"pos_y_m":65,'
@@ -64,8 +71,16 @@ def test_matched_pair_uses_same_model_seeds_and_writes_auditable_logs(tmp_path) 
     assert report.pack_version == "0.0.1"
     assert report.end2end_prompt_version == "1.0"
     assert report.scaffold_prompt_version == "wm-scaffold-1.0"
+    assert report.format_probe_prompt_version == "probe-format-1.0"
+    assert report.choice_probe_prompt_version == "probe-choice-1.0"
+    assert report.feedback_reference_agent == "greedy"
     assert report.excluded_probe_ids == ("excluded-probe",)
     assert len(report.episodes) == 4
+    assert len(report.probe_episodes) == 2
+    assert all(probe.probe_kind == "format" for probe in report.probe_episodes)
+    assert all(probe.n_trials > 0 for probe in report.probe_episodes)
+    assert all(probe.n_trials == probe.n_parsed for probe in report.probe_episodes)
+    assert all(summary.n_pairs == 0 for summary in report.feedback_summaries)
     assert {episode.arm for episode in report.episodes} == {
         "end2end",
         "wm-scaffold",
@@ -77,7 +92,7 @@ def test_matched_pair_uses_same_model_seeds_and_writes_auditable_logs(tmp_path) 
     seed_one = [stage for seed, stage in adapter.calls if seed == 1]
     assert seed_zero[0] == "end2end"
     assert seed_one[0] == "prediction"
-    assert len(list((tmp_path / "logs").glob("*.jsonl"))) == 4
+    assert len(list((tmp_path / "logs").glob("*.jsonl"))) == 6
     end2end = [episode for episode in report.episodes if episode.arm == "end2end"]
     scaffold = [episode for episode in report.episodes if episode.arm == "wm-scaffold"]
     assert [episode.outcome for episode in end2end] == [
@@ -93,6 +108,61 @@ def test_matched_pair_uses_same_model_seeds_and_writes_auditable_logs(tmp_path) 
     payload = json.loads(report_path.read_text(encoding="utf-8"))
     assert payload["repetitions"] == 2
     assert payload["summaries"][0]["arm"] == "end2end"
+    assert payload["probe_episodes"][0]["n_trials"] > 0
+
+
+def test_masked_pairs_publish_feedback_rows_and_reference_band(tmp_path) -> None:
+    config = next(
+        item for item in load_pack("packs/core_v0") if item.scenario_id == "g007a"
+    )
+    report = run_matched_pair(
+        (config,),
+        AdaptiveAdapter(),
+        repetitions=1,
+        pace_rpm=0.0,
+        log_dir=tmp_path,
+        include_temporal=False,
+        allow_underpowered=True,
+    )
+    assert len(report.episodes) == 2
+    assert len(report.feedback_episodes) == 2
+    assert all(row.normal_outcome == row.decoy_outcome for row in report.feedback_episodes)
+    assert all(row.outcome_delta == 0.0 for row in report.feedback_episodes)
+    assert all(row.decoy_log_path is not None for row in report.feedback_episodes)
+    assert all(summary.n_pairs == 1 for summary in report.feedback_summaries)
+    assert all(summary.feedback_raw == 0.0 for summary in report.feedback_summaries)
+    assert all(summary.feedback_use == 0.5 for summary in report.feedback_summaries)
+    assert all(
+        summary.feedback_band == 0.6787945559352755
+        for summary in report.feedback_summaries
+    )
+    assert all(
+        summary.feedback_band_terms == (0.6787945559352755,)
+        for summary in report.feedback_summaries
+    )
+
+
+def test_forced_choice_probe_is_a_separate_control_with_trial_counts() -> None:
+    pack = load_pack("packs/core_v0")
+    config = next(item for item in pack if item.scenario_id == "g001")
+    probe = next(item for item in pack if item.scenario_id == "g009")
+    report = run_matched_pair(
+        (config, probe),
+        AdaptiveAdapter(),
+        repetitions=1,
+        pace_rpm=0.0,
+        include_temporal=False,
+        allow_underpowered=True,
+    )
+    assert len(report.episodes) == 2
+    assert len(report.probe_episodes) == 1
+    control = report.probe_episodes[0]
+    assert control.probe_kind == "forced_choice"
+    assert control.choice_parse_rate == 1.0
+    assert control.choice_accuracy is not None
+    assert control.n_trials == control.n_parsed
+    assert control.n_trials > 0
+    assert control.json_parse_rate is None
 
 
 def test_matched_pair_rejects_underpowered_or_probe_only_runs() -> None:

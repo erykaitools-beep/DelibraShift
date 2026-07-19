@@ -780,3 +780,24 @@ carry adapter, host, pack, prompt versions, coverage/parse/support fields,
 mean+range, and log paths. The CLI requires `--execute` before constructing a
 NIM adapter, preventing accidental paid runs. NIM is currently unconfigured,
 so this decision records implementation readiness, not an LLM result.
+
+## COD-021 — Keep feedback pairs and probe controls outside matched axes
+
+Date: 2026-07-19
+
+The official M2 runner now completes the diagnostic report without changing
+the frozen treatment prompts. Every arm/repetition/masked-scenario cell runs
+the normal episode followed immediately by a fresh same-seed decoy-heat
+episode. The decoy uses SPEC §4.3's deterministic goal, has its own canonical
+log, and contributes only to a published paired outcome delta. Normalized
+feedback-use reuses the registered deterministic greedy band, including all
+per-scenario band terms; a sub-threshold band still yields `None` rather than
+an invented score.
+
+`probe:*` scenarios remain excluded from both treatment arms and their axis
+summaries. They now run once per repetition afterward as shared-model
+`control` rows using the frozen probe prompts. Each row publishes parsed and
+total trial counts, parse rate, probe-specific metrics, wall telemetry,
+transport retries, and its log path. This preserves the probe-exclusion rule
+while preventing an experiment report from silently omitting the controls.
+No contract, fixture, pack, or prompt bytes changed.

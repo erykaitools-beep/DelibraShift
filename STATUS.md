@@ -138,3 +138,18 @@
 - Verification: 82 tests pass with no skips or expected failures.
 - Real dracarys execution has not started because NIM configuration is unset.
   M2 remains in progress pending feedback/probe report rows and the real run.
+
+## 2026-07-19 — M2 phase 2 diagnostic report
+
+- Added per-arm, per-repetition normal/decoy heat pairs on all masked-goal
+  scenarios, separate decoy logs, raw deltas, deterministic greedy reference
+  band terms, and normalized feedback-use summaries.
+- Added shared-model format and forced-choice control runs outside both
+  treatment arms. Every control row includes parse rate, parsed/total trial
+  counts, probe-specific metrics, telemetry, retry count, prompt version, and
+  canonical log path.
+- The frozen END2END, WM-SCAFFOLD, format, and forced-choice prompt bytes are
+  unchanged. No schema, fixture, or core-pack change was required.
+- Verification: 84 tests pass with no skips or expected failures.
+- Real dracarys execution remains pending NIM configuration and explicit
+  `--execute`; no external call or LLM result has been produced.

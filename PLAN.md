@@ -72,7 +72,7 @@ test regeneration plus recorded gate impact.
   harness pacing + transport retry, matched-pair runner, alternating arm
   order, rep-derived seeds, canonical logs/report, retry-free sensitivity
   slice, and explicit external-call acknowledgement (`chronogym-ablate`).
-- [ ] Add paired decoy-heat feedback rows and separately reported probe-control
+- [x] Add paired decoy-heat feedback rows and separately reported probe-control
   rows to the experiment report.
 - [ ] Run END2END vs WM-SCAFFOLD on dracarys after NIM configuration exists;
   ≥3 reps, publish null/negative result unchanged.

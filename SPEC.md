@@ -769,8 +769,23 @@ arms, passes `seed=rep_index` to every call, and alternates which arm runs first
 by repetition+scenario parity to reduce service-drift order bias. At 40 RPM the
 minimum call-start interval is 1.5 s. Transport failures receive up to two
 harness retries with 1 s then 2 s backoff; neither pacing nor retry advances
-simulated time. Probe-tagged scenarios are excluded from matched axis
-aggregates and reported explicitly as excluded controls.
+simulated time.
+
+For every masked-goal scenario, each arm also runs a fresh same-seed episode
+with the deterministic §4.3 decoy goal immediately after its normal episode.
+The report publishes each normal/decoy outcome and delta, the deterministic
+greedy reference band and its per-scenario terms, the number of pairs, and the
+normalized feedback-use value (or `None` below `FEEDBACK_MIN_BAND`). Decoy
+episodes have separate canonical logs and never enter the ordinary axis
+summaries.
+
+Probe-tagged scenarios are excluded from both treatment arms and all matched
+axis aggregates. Instead, each probe is run once per repetition through one
+shared-model `control` agent after the matched grid. Format and forced-choice
+rows retain their independently frozen prompt versions and always publish
+`n_trials`, `n_parsed`, parse rate, wall-time telemetry, transport retries,
+and their probe-specific metrics. They are controls on interpretation, not a
+third treatment arm.
 
 **Full-system MARIA** runs as a separate, clearly labeled **CONFOUNDED**
 datapoint (different prompts, memory, planning stack) — never the treatment

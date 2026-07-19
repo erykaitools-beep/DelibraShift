@@ -99,6 +99,9 @@ The same adapter/model can be run as frozen END2END `1.0` or the 131-line,
 two-stage `wm-scaffold-1.0`. The runner shares pacing, alternates arm order,
 passes repetition-derived seeds, writes per-episode canonical logs, and reports
 a sensitivity slice excluding every cycle retried in either scaffold stage.
+Masked scenarios additionally receive paired deterministic decoy-heat runs;
+format and forced-choice scenarios are emitted as separate shared-model
+control rows with parse rates and trial counts, never as treatment scores.
 
 External calls require an explicit acknowledgement:
 

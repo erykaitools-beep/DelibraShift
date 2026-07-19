@@ -58,8 +58,8 @@ Resolved in the 2026-07-19 solo self-review: probe prompts are frozen as
 archive sidecar convention is accepted into SPEC 9.1. Fable is retired from
 the active workflow; new design and implementation decisions use COD entries.
 
-M2 open execution items: add paired decoy-heat feedback rows and separate
-probe-control rows to the matched report, then run ≥3 repetitions when NIM is
-configured. As of 2026-07-19 `NIM_MODEL`, `NIM_BASE_URL`, and
+M2's runner now includes paired decoy-heat feedback rows and separate
+probe-control rows. The remaining execution item is the ≥3-repetition run
+when NIM is configured. As of 2026-07-19 `NIM_MODEL`, `NIM_BASE_URL`, and
 `NVIDIA_API_KEY` are unset; no external model call or LLM result has occurred.
 MARIA remains read-only and outside the treatment pair.

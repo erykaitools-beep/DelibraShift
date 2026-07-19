@@ -26,8 +26,11 @@ from .gates import (
 from .experiments import (
     AblationEpisode,
     ArmSummary,
+    FeedbackEpisode,
+    FeedbackSummary,
     MatchedPairReport,
     MetricRange,
+    ProbeEpisode,
     run_matched_pair,
     write_matched_pair_report,
 )
@@ -89,6 +92,8 @@ __all__ = [
     "Adapter",
     "AgentReply",
     "ArmSummary",
+    "FeedbackEpisode",
+    "FeedbackSummary",
     "EpisodeScores",
     "GroundTruthState",
     "CHOICE_PROBE_PROMPT_VERSION",
@@ -108,6 +113,7 @@ __all__ = [
     "PackArchive",
     "PackScores",
     "Prediction",
+    "ProbeEpisode",
     "PredictionFidelityScore",
     "ReproducibilityGate",
     "TemporalAnticipationScore",

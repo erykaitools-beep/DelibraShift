@@ -7,11 +7,19 @@ from pathlib import Path
 import platform
 from typing import Iterable
 
+from .agents import GreedyAgent
+from .gates import decoy_goal, score_feedback_use
 from .harness import PROMPT_VERSION, HarnessAgent, TransportPacer
+from .probes import (
+    CHOICE_PROBE_PROMPT_VERSION,
+    FORMAT_PROBE_PROMPT_VERSION,
+    score_forced_choice_probe,
+    score_format_probe,
+)
 from .runner import run_episode
 from .scaffold import SCAFFOLD_PROMPT_VERSION, WMScaffoldAgent
 from .scoring import score_episode, score_prediction_fidelity, score_temporal_anticipation
-from .types import Adapter, ScenarioConfig, canonical_json
+from .types import FEEDBACK_MIN_BAND, Adapter, ScenarioConfig, canonical_json
 
 
 @dataclass(frozen=True)
@@ -61,6 +69,49 @@ class ArmSummary:
 
 
 @dataclass(frozen=True)
+class FeedbackEpisode:
+    arm: str
+    repetition: int
+    scenario_id: str
+    normal_outcome: float
+    decoy_outcome: float
+    outcome_delta: float
+    wall_clock_ms_telemetry_only: float
+    transport_retries: int
+    decoy_log_path: str | None
+
+
+@dataclass(frozen=True)
+class FeedbackSummary:
+    arm: str
+    feedback_use: float | None
+    feedback_raw: float | None
+    feedback_band: float | None
+    feedback_band_terms: tuple[float, ...]
+    n_pairs: int
+
+
+@dataclass(frozen=True)
+class ProbeEpisode:
+    probe_kind: str
+    repetition: int
+    scenario_id: str
+    json_parse_rate: float | None
+    identity_fidelity: float | None
+    engage_fidelity: float | None
+    identity_better: int | None
+    engage_better: int | None
+    ties: int | None
+    choice_accuracy: float | None
+    choice_parse_rate: float | None
+    n_trials: int
+    n_parsed: int
+    wall_clock_ms_telemetry_only: float
+    transport_retries: int
+    log_path: str | None
+
+
+@dataclass(frozen=True)
 class MatchedPairReport:
     adapter_name: str
     host_class: str
@@ -68,11 +119,17 @@ class MatchedPairReport:
     pack_version: str | None
     end2end_prompt_version: str
     scaffold_prompt_version: str
+    format_probe_prompt_version: str
+    choice_probe_prompt_version: str
+    feedback_reference_agent: str
     repetitions: int
     scenario_ids: tuple[str, ...]
     excluded_probe_ids: tuple[str, ...]
     episodes: tuple[AblationEpisode, ...]
     summaries: tuple[ArmSummary, ...]
+    feedback_episodes: tuple[FeedbackEpisode, ...]
+    feedback_summaries: tuple[FeedbackSummary, ...]
+    probe_episodes: tuple[ProbeEpisode, ...]
 
 
 def _range(values: Iterable[float | None]) -> MetricRange:
@@ -112,6 +169,53 @@ def _summarize(arm: str, episodes: list[AblationEpisode]) -> ArmSummary:
     )
 
 
+def _agent_for_arm(
+    arm: str,
+    adapter: Adapter,
+    repetition: int,
+    pacer: TransportPacer,
+) -> HarnessAgent:
+    if arm == "end2end":
+        return HarnessAgent(
+            adapter,
+            repetition=repetition,
+            transport_pacer=pacer,
+            arm_name=arm,
+        )
+    if arm == "wm-scaffold":
+        return WMScaffoldAgent(
+            adapter,
+            repetition=repetition,
+            transport_pacer=pacer,
+        )
+    raise ValueError(f"unknown experiment arm: {arm}")
+
+
+def _summarize_feedback(
+    arm: str,
+    episodes: list[FeedbackEpisode],
+    band: float | None,
+    band_terms: tuple[float, ...],
+) -> FeedbackSummary:
+    selected = [episode for episode in episodes if episode.arm == arm]
+    raw = (
+        sum(episode.outcome_delta for episode in selected) / len(selected)
+        if selected
+        else None
+    )
+    feedback_use = None
+    if raw is not None and band is not None and band >= FEEDBACK_MIN_BAND:
+        feedback_use = 0.5 + 0.5 * max(-1.0, min(1.0, raw / band))
+    return FeedbackSummary(
+        arm=arm,
+        feedback_use=feedback_use,
+        feedback_raw=raw,
+        feedback_band=band,
+        feedback_band_terms=band_terms,
+        n_pairs=len(selected),
+    )
+
+
 def run_matched_pair(
     scenarios: Iterable[ScenarioConfig],
     adapter: Adapter,
@@ -131,11 +235,12 @@ def run_matched_pair(
     if pace_rpm < 0.0:
         raise ValueError("pace_rpm must be non-negative")
     all_configs = tuple(scenarios)
-    excluded = tuple(
-        config.scenario_id
+    probe_configs = tuple(
+        config
         for config in all_configs
         if any(tag.startswith("probe:") for tag in config.axis_tags)
     )
+    excluded = tuple(config.scenario_id for config in probe_configs)
     configs = tuple(
         config
         for config in all_configs
@@ -149,7 +254,12 @@ def run_matched_pair(
     pacer = TransportPacer(60.0 / pace_rpm if pace_rpm else 0.0)
     resolved_host = host_class or platform.machine() or "unknown"
     scenario_ids = tuple(config.scenario_id for config in configs)
+    masked_configs = tuple(config for config in configs if not config.goal_visible)
+    reference = score_feedback_use(masked_configs, GreedyAgent)
+    feedback_band_terms = tuple(reference.feedback_band_terms or ())
     episodes: list[AblationEpisode] = []
+    feedback_episodes: list[FeedbackEpisode] = []
+    probe_episodes: list[ProbeEpisode] = []
 
     for repetition in range(repetitions):
         for config_index, config in enumerate(configs):
@@ -157,19 +267,7 @@ def run_matched_pair(
             if (repetition + config_index) % 2:
                 arms = tuple(reversed(arms))
             for arm in arms:
-                if arm == "end2end":
-                    agent = HarnessAgent(
-                        adapter,
-                        repetition=repetition,
-                        transport_pacer=pacer,
-                        arm_name=arm,
-                    )
-                else:
-                    agent = WMScaffoldAgent(
-                        adapter,
-                        repetition=repetition,
-                        transport_pacer=pacer,
-                    )
+                agent = _agent_for_arm(arm, adapter, repetition, pacer)
                 result = run_episode(
                     config,
                     agent,
@@ -232,6 +330,117 @@ def run_matched_pair(
                         log_path=log_path,
                     )
                 )
+                if not config.goal_visible:
+                    decoy_agent = _agent_for_arm(arm, adapter, repetition, pacer)
+                    decoy_result = run_episode(
+                        config,
+                        decoy_agent,
+                        pack_name=pack_name,
+                        pack_version=pack_version,
+                        host_class=resolved_host,
+                        scenario_ids=scenario_ids,
+                        heat_goal_m=decoy_goal(config),
+                    )
+                    decoy_log_path = None
+                    if destination is not None:
+                        path = destination / (
+                            f"{config.scenario_id}.r{repetition}.{arm}.decoy.jsonl"
+                        )
+                        path.write_bytes(decoy_result.log_bytes)
+                        decoy_log_path = str(path)
+                    decoy_outcome = score_episode(
+                        config,
+                        decoy_result,
+                        include_temporal=False,
+                    ).outcome
+                    feedback_episodes.append(
+                        FeedbackEpisode(
+                            arm=arm,
+                            repetition=repetition,
+                            scenario_id=config.scenario_id,
+                            normal_outcome=scores.outcome,
+                            decoy_outcome=decoy_outcome,
+                            outcome_delta=scores.outcome - decoy_outcome,
+                            wall_clock_ms_telemetry_only=(
+                                decoy_result.wall_clock_ms_telemetry_only
+                            ),
+                            transport_retries=decoy_result.transport_retries,
+                            decoy_log_path=decoy_log_path,
+                        )
+                    )
+
+    for repetition in range(repetitions):
+        for config in probe_configs:
+            tags = set(config.axis_tags)
+            probe_kind = "format" if "probe:format" in tags else "forced_choice"
+            agent = HarnessAgent(
+                adapter,
+                repetition=repetition,
+                probe_config=config,
+                transport_pacer=pacer,
+                arm_name="control",
+            )
+            result = run_episode(
+                config,
+                agent,
+                pack_name=pack_name,
+                pack_version=pack_version,
+                host_class=resolved_host,
+                scenario_ids=excluded,
+            )
+            log_path = None
+            if destination is not None:
+                path = destination / f"{config.scenario_id}.r{repetition}.control.jsonl"
+                path.write_bytes(result.log_bytes)
+                log_path = str(path)
+            if probe_kind == "format":
+                score = score_format_probe(result.records)
+                probe_episodes.append(
+                    ProbeEpisode(
+                        probe_kind=probe_kind,
+                        repetition=repetition,
+                        scenario_id=config.scenario_id,
+                        json_parse_rate=score.json_parse_rate,
+                        identity_fidelity=score.identity_fidelity,
+                        engage_fidelity=score.engage_fidelity,
+                        identity_better=score.identity_better,
+                        engage_better=score.engage_better,
+                        ties=score.ties,
+                        choice_accuracy=None,
+                        choice_parse_rate=None,
+                        n_trials=score.n_trials,
+                        n_parsed=score.n_parsed,
+                        wall_clock_ms_telemetry_only=(
+                            result.wall_clock_ms_telemetry_only
+                        ),
+                        transport_retries=result.transport_retries,
+                        log_path=log_path,
+                    )
+                )
+            else:
+                score = score_forced_choice_probe(config, result.records)
+                probe_episodes.append(
+                    ProbeEpisode(
+                        probe_kind=probe_kind,
+                        repetition=repetition,
+                        scenario_id=config.scenario_id,
+                        json_parse_rate=None,
+                        identity_fidelity=None,
+                        engage_fidelity=None,
+                        identity_better=None,
+                        engage_better=None,
+                        ties=None,
+                        choice_accuracy=score.choice_accuracy,
+                        choice_parse_rate=score.choice_parse_rate,
+                        n_trials=score.n_trials,
+                        n_parsed=score.n_parsed,
+                        wall_clock_ms_telemetry_only=(
+                            result.wall_clock_ms_telemetry_only
+                        ),
+                        transport_retries=result.transport_retries,
+                        log_path=log_path,
+                    )
+                )
     return MatchedPairReport(
         adapter_name=adapter.name,
         host_class=resolved_host,
@@ -239,6 +448,9 @@ def run_matched_pair(
         pack_version=pack_version,
         end2end_prompt_version=PROMPT_VERSION,
         scaffold_prompt_version=SCAFFOLD_PROMPT_VERSION,
+        format_probe_prompt_version=FORMAT_PROBE_PROMPT_VERSION,
+        choice_probe_prompt_version=CHOICE_PROBE_PROMPT_VERSION,
+        feedback_reference_agent="greedy",
         repetitions=repetitions,
         scenario_ids=scenario_ids,
         excluded_probe_ids=excluded,
@@ -246,6 +458,17 @@ def run_matched_pair(
         summaries=tuple(
             _summarize(arm, episodes) for arm in ("end2end", "wm-scaffold")
         ),
+        feedback_episodes=tuple(feedback_episodes),
+        feedback_summaries=tuple(
+            _summarize_feedback(
+                arm,
+                feedback_episodes,
+                reference.feedback_band,
+                feedback_band_terms,
+            )
+            for arm in ("end2end", "wm-scaffold")
+        ),
+        probe_episodes=tuple(probe_episodes),
     )
 
 
