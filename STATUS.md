@@ -122,3 +122,19 @@
 - Verification: 72 tests pass with no skips or expected failures.
 - M1.5 is complete. The next milestone is M2's END2END vs WM-SCAFFOLD matched
   pair; no LLM experiment has been launched by this administrative transition.
+
+## 2026-07-19 — M2 phase 1 implementation
+
+- Added the 131-line WM-SCAFFOLD treatment arm: prediction-only call followed
+  by an action-only call containing only the model's own predicted engage-time
+  state. The scaffold never receives a simulator target or oracle value.
+- Added shared 40-RPM pacing, harness-owned transport retry/backoff, rep-derived
+  seeds, alternating arm order, canonical per-episode logs, report metadata,
+  mean/range summaries, divergence support, and the retry-free sensitivity
+  slice required by SPEC §8.
+- Frozen scaffold prompt set as `wm-scaffold-1.0` with full stage hashes and CI
+  enforcement of the `<150` line rule.
+- Added `chronogym-ablate`; it refuses paid/external calls without `--execute`.
+- Verification: 82 tests pass with no skips or expected failures.
+- Real dracarys execution has not started because NIM configuration is unset.
+  M2 remains in progress pending feedback/probe report rows and the real run.

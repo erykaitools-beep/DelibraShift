@@ -757,3 +757,26 @@ IDs legitimately vary prompt bytes. Any template-byte change requires a
 version bump. COD-017's deterministic stored ZIP and canonical sidecar format
 is accepted into SPEC 9.1. This closes M1.5; the next implementation milestone
 is M2's matched architecture ablation.
+
+## COD-020 — Freeze the M2 treatment and make external execution explicit
+
+Date: 2026-07-19
+
+WM-SCAFFOLD is implemented in 131 lines and frozen as `wm-scaffold-1.0`.
+Stage-1 and canonical stage-2 prompt hashes are
+`6730b9775c9ae77d55f1caa488556928442d95817d76976e2cc7da9bae1d774c`
+and `110c51845ea9a07d054ce87e5247ac657a4bf6ef7c80a31bd88ab165d2284935`.
+Stage 2 receives the Observation plus the model's own parsed stage-1 state,
+never the prediction target or simulator. A terminal stage-1 parse failure is
+represented as null and stage 2 still runs; action failure retains the normal
+no-op fallback. Retry counts sum across stages so any retried stage excludes
+the cycle from the pre-registered sensitivity slice.
+
+Both arms share the exact adapter instance and pacer. Call seeds equal the
+repetition index, arm-first order alternates by repetition+scenario parity,
+and 40 RPM means a 1.5 s minimum start interval. Transport retry is
+harness-owned (two retries, 1 s then 2 s backoff) and telemetry-only. Reports
+carry adapter, host, pack, prompt versions, coverage/parse/support fields,
+mean+range, and log paths. The CLI requires `--execute` before constructing a
+NIM adapter, preventing accidental paid runs. NIM is currently unconfigured,
+so this decision records implementation readiness, not an LLM result.

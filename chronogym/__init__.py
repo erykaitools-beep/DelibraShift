@@ -4,7 +4,15 @@ from .adapters import NIMAdapter, OllamaAdapter
 from .archive import PackArchive, build_pack_archive, verify_pack_archive
 from .bank import PackError, load_pack, load_pack_metadata
 from .clock import WindowAdvance, advance_deliberation, latch_action
-from .harness import HarnessAgent, parse_choice_reply, parse_reply, render_prompt
+from .harness import (
+    HarnessAgent,
+    TransportPacer,
+    parse_action_reply,
+    parse_choice_reply,
+    parse_prediction_reply,
+    parse_reply,
+    render_prompt,
+)
 from .gates import (
     KillCriterionGate,
     MatchedStateGate,
@@ -14,6 +22,14 @@ from .gates import (
     matched_state_gate,
     reproducibility_gate,
     score_feedback_use,
+)
+from .experiments import (
+    AblationEpisode,
+    ArmSummary,
+    MatchedPairReport,
+    MetricRange,
+    run_matched_pair,
+    write_matched_pair_report,
 )
 from .oracle import (
     LeadGreedyAgent,
@@ -41,6 +57,12 @@ from .scoring import (
     score_prediction_fidelity,
     score_temporal_anticipation,
 )
+from .scaffold import (
+    SCAFFOLD_PROMPT_VERSION,
+    WMScaffoldAgent,
+    render_action_prompt,
+    render_prediction_prompt,
+)
 from .types import (
     NOOP_ACTION,
     SCHEMA_VERSION,
@@ -63,8 +85,10 @@ __all__ = [
     "OllamaAdapter",
     "SCHEMA_VERSION",
     "Action",
+    "AblationEpisode",
     "Adapter",
     "AgentReply",
+    "ArmSummary",
     "EpisodeScores",
     "GroundTruthState",
     "CHOICE_PROBE_PROMPT_VERSION",
@@ -74,6 +98,8 @@ __all__ = [
     "FormatProbeScore",
     "KillCriterionGate",
     "MatchedStateGate",
+    "MatchedPairReport",
+    "MetricRange",
     "Observation",
     "OracleAgent",
     "LeadGreedyAgent",
@@ -85,9 +111,12 @@ __all__ = [
     "PredictionFidelityScore",
     "ReproducibilityGate",
     "TemporalAnticipationScore",
+    "TransportPacer",
+    "SCAFFOLD_PROMPT_VERSION",
     "ScenarioConfig",
     "WindComponent",
     "WindowAdvance",
+    "WMScaffoldAgent",
     "advance_deliberation",
     "advance_ticks",
     "build_observation",
@@ -101,9 +130,13 @@ __all__ = [
     "latch_action",
     "matched_state_gate",
     "parse_reply",
+    "parse_action_reply",
     "parse_choice_reply",
+    "parse_prediction_reply",
     "oracle_action",
     "render_prompt",
+    "render_action_prompt",
+    "render_prediction_prompt",
     "render_forced_choice_prompt",
     "render_format_probe_prompt",
     "reproducibility_gate",
@@ -114,7 +147,9 @@ __all__ = [
     "score_feedback_use",
     "score_forced_choice_probe",
     "score_format_probe",
+    "run_matched_pair",
     "step",
     "verify_pack_archive",
+    "write_matched_pair_report",
     "HarnessAgent",
 ]

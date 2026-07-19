@@ -6,7 +6,7 @@ import json
 import math
 import re
 import time
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 
 from .types import (
     ACTION_FIELDS,
@@ -34,6 +34,23 @@ from .probes import (
 
 PROMPT_VERSION = "1.0"
 MAX_PARSE_RETRIES = 2
+
+
+@dataclass
+class TransportPacer:
+    """Shared start-to-start call pacing; wall time remains telemetry only."""
+
+    min_interval_s: float = 0.0
+    _last_call_started: float | None = None
+
+    def wait(self) -> None:
+        now = time.monotonic()
+        if self._last_call_started is not None:
+            remaining = self.min_interval_s - (now - self._last_call_started)
+            if remaining > 0.0:
+                time.sleep(remaining)
+                now = time.monotonic()
+        self._last_call_started = now
 
 
 def render_prompt(observation: Observation) -> str:
@@ -185,6 +202,39 @@ def parse_reply(
     )
 
 
+def parse_prediction_reply(raw_text: str, *, parse_retries: int = 0) -> AgentReply:
+    """Parse the WM-SCAFFOLD prediction-only stage."""
+    payload = _decode_payload(raw_text, required_keys={REPLY_KEY_PREDICTION})
+    prediction_payload = payload.get(REPLY_KEY_PREDICTION)
+    try:
+        if not isinstance(prediction_payload, dict):
+            raise ValueError("prediction must be an object")
+        values = {
+            field: _finite_number(prediction_payload[field])
+            for field in PREDICTION_FIELDS
+        }
+        prediction = Prediction(**values)
+        failed = False
+    except (KeyError, ValueError):
+        prediction = None
+        failed = True
+    return AgentReply(
+        action=NOOP_ACTION,
+        prediction=prediction,
+        parse_retries=parse_retries,
+        prediction_parse_failed=failed,
+    )
+
+
+def parse_action_reply(raw_text: str, *, parse_retries: int = 0) -> AgentReply:
+    """Parse the WM-SCAFFOLD action-only stage."""
+    return parse_reply(
+        raw_text,
+        parse_retries=parse_retries,
+        prediction_requested=False,
+    )
+
+
 def parse_choice_reply(raw_text: str, *, parse_retries: int = 0) -> AgentReply:
     payload = _decode_payload(raw_text, required_keys={REPLY_KEY_CHOICE})
     choice = payload.get(REPLY_KEY_CHOICE)
@@ -211,11 +261,17 @@ class HarnessAgent:
         max_parse_retries: int = 2,
         prediction_requested: bool = True,
         probe_config: ScenarioConfig | None = None,
+        transport_pacer: TransportPacer | None = None,
+        max_transport_retries: int = 2,
+        transport_backoff_s: float = 1.0,
+        arm_name: str | None = None,
     ) -> None:
         if max_parse_retries < 0:
             raise ValueError("max_parse_retries must be non-negative")
         if repetition < 0:
             raise ValueError("repetition must be non-negative")
+        if max_transport_retries < 0 or transport_backoff_s < 0.0:
+            raise ValueError("transport retry settings must be non-negative")
         self.adapter = adapter
         self.repetition = repetition
         self.max_parse_retries = max_parse_retries
@@ -236,12 +292,32 @@ class HarnessAgent:
             "forced_choice": CHOICE_PROBE_PROMPT_VERSION,
             "format": FORMAT_PROBE_PROMPT_VERSION,
         }.get(self.probe_kind, PROMPT_VERSION)
-        self.name = adapter.name
+        self.name = f"{adapter.name}:{arm_name}" if arm_name else adapter.name
+        self.transport_pacer = transport_pacer or TransportPacer()
+        self.max_transport_retries = max_transport_retries
+        self.transport_backoff_s = transport_backoff_s
         self.wall_clock_ms_telemetry_only = 0.0
         self.transport_retries = 0
         self.last_raw_completion: str | None = None
         self.last_raw_completions: tuple[str, ...] = ()
         self.last_wall_clock_ms = 0.0
+
+    def _complete(self, prompt: str) -> str:
+        for retry in range(self.max_transport_retries + 1):
+            self.transport_pacer.wait()
+            try:
+                return self.adapter.complete(
+                    prompt,
+                    max_tokens=512,
+                    temperature=0.0,
+                    seed=self.repetition,
+                )
+            except Exception:
+                if retry == self.max_transport_retries:
+                    raise
+                self.transport_retries += 1
+                time.sleep(self.transport_backoff_s * (2**retry))
+        raise AssertionError("unreachable transport retry state")
 
     def act(self, observation: Observation) -> AgentReply:
         if (
@@ -273,12 +349,7 @@ class HarnessAgent:
                             "Replace it with only the required JSON object containing "
                             "all finite numeric fields.\n"
                         )
-                raw = self.adapter.complete(
-                    retry_prompt,
-                    max_tokens=512,
-                    temperature=0.0,
-                    seed=self.repetition,
-                )
+                raw = self._complete(retry_prompt)
                 raw_completions.append(raw)
                 self.last_raw_completion = raw
                 try:

@@ -68,9 +68,17 @@ test regeneration plus recorded gate impact.
   CI, archive convention accepted (COD-019).
 
 ### M2 — the ablation
-- Matched pair END2END vs WM-SCAFFOLD (SPEC §8) on dracarys; MARIA as
-  labeled CONFOUNDED datapoint (read-only integration — do NOT touch the
-  Maria repo/services); README quickstart (install → run → table in <10 min).
+- [x] Phase 1 implementation: 131-line WM-SCAFFOLD, frozen two-stage prompts,
+  harness pacing + transport retry, matched-pair runner, alternating arm
+  order, rep-derived seeds, canonical logs/report, retry-free sensitivity
+  slice, and explicit external-call acknowledgement (`chronogym-ablate`).
+- [ ] Add paired decoy-heat feedback rows and separately reported probe-control
+  rows to the experiment report.
+- [ ] Run END2END vs WM-SCAFFOLD on dracarys after NIM configuration exists;
+  ≥3 reps, publish null/negative result unchanged.
+- [ ] MARIA as labeled CONFOUNDED datapoint (read-only integration — do NOT
+  touch the Maria repo/services); README quickstart (install → run → table in
+  <10 min).
 
 ### M3 — writeup + release
 - Paper skeleton per SPEC §11.2; funding one-pager (NLnet/NGI, NVIDIA

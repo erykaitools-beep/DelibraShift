@@ -748,6 +748,30 @@ telemetry will show the difference and is reported as telemetry):
      labeled as "your predicted state at engage time".
   The scaffold never touches the true simulator (no oracle leakage).
 
+The treatment prompt set is frozen as `wm-scaffold-1.0`. On the canonical
+g001 cycle-0 Observation with `episode_id="prompt-freeze"`, the stage-1
+prompt SHA-256 is
+`6730b9775c9ae77d55f1caa488556928442d95817d76976e2cc7da9bae1d774c`.
+For the same Observation and canonical own prediction `(1,2,3,4)`, stage 2 is
+`110c51845ea9a07d054ce87e5247ac657a4bf6ef7c80a31bd88ab165d2284935`.
+The implementation is 131 lines and CI enforces the `<150` constraint.
+
+Each stage independently uses the §7.3 parse-retry ladder. If stage 1 remains
+invalid, stage 2 still runs with `Your predicted state ...: null`; this keeps
+action-format attribution observable rather than silently forcing a no-op. If
+stage 2 remains invalid, the ordinary no-op action fallback applies. The cycle
+`parse_retries` is the sum across stages, so the sensitivity slice excludes a
+cycle retried in either stage. Raw completions are logged in stage order
+(prediction attempts, then action attempts).
+
+The official runner shares one adapter and one start-to-start pacer across
+arms, passes `seed=rep_index` to every call, and alternates which arm runs first
+by repetition+scenario parity to reduce service-drift order bias. At 40 RPM the
+minimum call-start interval is 1.5 s. Transport failures receive up to two
+harness retries with 1 s then 2 s backoff; neither pacing nor retry advances
+simulated time. Probe-tagged scenarios are excluded from matched axis
+aggregates and reported explicitly as excluded controls.
+
 **Full-system MARIA** runs as a separate, clearly labeled **CONFOUNDED**
 datapoint (different prompts, memory, planning stack) — never the treatment
 arm. Maria's repo/services are read-only subjects (brief §7).

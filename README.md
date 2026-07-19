@@ -93,6 +93,25 @@ chronogym-pack packs/core_v0 --output-dir dist
 The archive preserves the local pack layout, uses fixed ZIP metadata, and
 includes per-member hashes in addition to the archive hash.
 
+### M2 matched architecture ablation
+
+The same adapter/model can be run as frozen END2END `1.0` or the 131-line,
+two-stage `wm-scaffold-1.0`. The runner shares pacing, alternates arm order,
+passes repetition-derived seeds, writes per-episode canonical logs, and reports
+a sensitivity slice excluding every cycle retried in either scaffold stage.
+
+External calls require an explicit acknowledgement:
+
+```bash
+chronogym-ablate packs/core_v0 --execute \
+  --repetitions 3 --pace-rpm 40 \
+  --log-dir results/m2/logs --report results/m2/report.json
+```
+
+Without `--execute`, the command exits before constructing the NIM adapter.
+Current repository tables remain deterministic baseline references; no
+dracarys result is claimed until a configured endpoint completes the run.
+
 Reproducibility is a hard requirement: physics is a pure function of scenario,
 state, held action, and simulated time delta. Same-seed baseline runs produce
 byte-identical JSONL logs on the same host. Wall-clock latency is telemetry,
