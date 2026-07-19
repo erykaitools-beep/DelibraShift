@@ -47,5 +47,5 @@ def test_documented_cod_decision_count_matches_ledger() -> None:
     contributions = (ROOT / "MODEL_CONTRIBUTIONS.md").read_text(encoding="utf-8")
     count = len(re.findall(r"^## COD-\d{3}", decisions, flags=re.MULTILINE))
 
-    assert count == 31
+    assert count == 32
     assert f"recorded {count} `COD-###` decisions" in contributions

@@ -87,6 +87,7 @@ class OllamaAdapter:
         model: str | None = None,
         *,
         base_url: str | None = None,
+        think: bool = False,
         timeout_s: float = 120.0,
     ) -> None:
         self.model = model or os.getenv("OLLAMA_MODEL", "llama3.1:8b")
@@ -95,8 +96,14 @@ class OllamaAdapter:
             "http://localhost:11434",
         )
         self.base_url = configured_url.rstrip("/")
+        # Qwen-family reasoning models enable a separate thinking stream by
+        # default.  The benchmark scores only the strict JSON reply, so hidden
+        # reasoning must not consume the complete 512-token response budget.
+        self.think = think
         self.timeout_s = timeout_s
-        self.name = f"ollama:{self.model}"
+        think_label = str(self.think).lower()
+        self.name = f"ollama:{self.model}:think={think_label}"
+        self.last_response_metadata: dict[str, object] = {}
 
     def complete(
         self,
@@ -119,6 +126,7 @@ class OllamaAdapter:
                     "model": self.model,
                     "messages": [{"role": "user", "content": prompt}],
                     "stream": False,
+                    "think": self.think,
                     "options": options,
                 }
             ).encode("utf-8"),
@@ -127,6 +135,20 @@ class OllamaAdapter:
         )
         with urllib.request.urlopen(request, timeout=self.timeout_s) as response:
             body = json.load(response)
+        self.last_response_metadata = {
+            key: body[key]
+            for key in (
+                "done",
+                "done_reason",
+                "total_duration",
+                "load_duration",
+                "prompt_eval_count",
+                "prompt_eval_duration",
+                "eval_count",
+                "eval_duration",
+            )
+            if key in body
+        }
         try:
             content = body["message"]["content"]
         except (KeyError, TypeError) as error:

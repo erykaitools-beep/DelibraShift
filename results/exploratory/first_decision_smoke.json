@@ -1,0 +1,123 @@
+{
+  "schema_version": "exploratory-first-decision-0.1",
+  "data_date": "2026-07-19",
+  "official_snapshot": false,
+  "evidence_status": "partial_pilot",
+  "method": {
+    "pack_name": "core_v0",
+    "pack_version": "0.1.1",
+    "log_schema_version": "0.2.1",
+    "scenario_id": "g001",
+    "cycle": 0,
+    "arm": "end2end",
+    "prompt_version": "1.0",
+    "temperature": 0.0,
+    "seed": 0,
+    "max_tokens": 512,
+    "max_parse_retries": 0,
+    "ollama_think": false,
+    "prompt_sha256": null,
+    "timeout_s": null,
+    "provenance_caveat": "The pilot driver and exact rendered prompt bytes were not retained. Use the tracked repeat driver for auditable follow-up runs."
+  },
+  "host": {
+    "class": "x86_64",
+    "cpu": "AMD Ryzen 5 7430U with Radeon Graphics",
+    "logical_cpus": 12,
+    "gpu": null,
+    "ollama_version": "0.16.3",
+    "wall_clock_caveat": "Shared CPU and Ollama service; timings are telemetry only and are not comparable model scores."
+  },
+  "target_at_engage": {
+    "tick": 20,
+    "pos_x_m": 21.634217445260198,
+    "pos_y_m": 67.375,
+    "vel_x_mps": 2.9881011374801663,
+    "vel_y_mps": -5.0
+  },
+  "persistence_floor": {
+    "cycle0_raw_fidelity": 0.04680198578360569,
+    "position_error_m": 3.0921338357827866
+  },
+  "metric_definitions": {
+    "cycle0_raw_fidelity": "exp(-mean normalized L1 error across x, y, vx, vy) for this single prediction; not the episode-level metric",
+    "position_error_m": "Euclidean distance in the x-y plane at the engage tick",
+    "example_echo": "True when every predicted state field is within two registered tolerances of the numeric example embedded in the prompt",
+    "digest": "Ollama model-manifest SHA-256 reported by the local /api/tags endpoint"
+  },
+  "models": [
+    {
+      "model": "qwen3:1.7b",
+      "digest": "8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+      "wall_clock_s": 6.93,
+      "action_parse_ok": true,
+      "prediction_parse_ok": true,
+      "example_echo": true,
+      "action": {"accel_x_mps2": -6.0, "accel_y_mps2": -3.0},
+      "prediction": {"pos_x_m": 7.5, "pos_y_m": 12.25, "vel_x_mps": -4.5, "vel_y_mps": 2.75},
+      "cycle0_raw_fidelity": 6.696073328754127e-10,
+      "position_error_m": 56.90818682570986,
+      "raw_content": "{\"prediction\": {\"pos_x_m\": 7.5, \"pos_y_m\": 12.25, \"vel_x_mps\": -4.5, \"vel_y_mps\": 2.75}, \"action\": {\"accel_x_mps2\": -6.0, \"accel_y_mps2\": -3.0}}",
+      "note": null
+    },
+    {
+      "model": "qwen2.5:3b",
+      "digest": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+      "wall_clock_s": 68.54,
+      "action_parse_ok": true,
+      "prediction_parse_ok": true,
+      "example_echo": false,
+      "action": {"accel_x_mps2": -3.0, "accel_y_mps2": -2.0},
+      "prediction": {"pos_x_m": 18.95, "pos_y_m": 49.5, "vel_x_mps": -7.5, "vel_y_mps": 6.25},
+      "cycle0_raw_fidelity": 0.000025563892643981104,
+      "position_error_m": 18.075415577337058,
+      "raw_content": "{\"prediction\": {\"pos_x_m\": 18.95, \"pos_y_m\": 49.5, \"vel_x_mps\": -7.5, \"vel_y_mps\": 6.25}, \"action\": {\"accel_x_mps2\": -3.0, \"accel_y_mps2\": -2.0}}"
+    },
+    {
+      "model": "qwen3:8b",
+      "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+      "wall_clock_s": 403.26,
+      "action_parse_ok": true,
+      "prediction_parse_ok": true,
+      "example_echo": false,
+      "action": {"accel_x_mps2": 0.0, "accel_y_mps2": 0.0},
+      "prediction": {"pos_x_m": 20.0, "pos_y_m": 70.0, "vel_x_mps": 0.0, "vel_y_mps": 0.0},
+      "cycle0_raw_fidelity": 0.04680198578360569,
+      "position_error_m": 3.0921338357827866,
+      "raw_content": "{\"prediction\": {\"pos_x_m\": 20.0, \"pos_y_m\": 70.0, \"vel_x_mps\": 0.0, \"vel_y_mps\": 0.0}, \"action\": {\"accel_x_mps2\": 0.0, \"accel_y_mps2\": 0.0}}",
+      "note": "Prediction exactly equals the observed state and therefore ties the registered persistence floor."
+    },
+    {
+      "model": "gemma3:4b",
+      "digest": "a2af6cc3eb7fa8be8504abaf9b04e88f17a119ec3f04a3addf55f92841195f5a",
+      "wall_clock_s": 43.65,
+      "action_parse_ok": true,
+      "prediction_parse_ok": true,
+      "example_echo": false,
+      "action": {"accel_x_mps2": 0.0, "accel_y_mps2": 0.0},
+      "prediction": {"pos_x_m": 18.385, "pos_y_m": 77.046, "vel_x_mps": -4.334, "vel_y_mps": 2.648},
+      "cycle0_raw_fidelity": 0.0009372320580792824,
+      "position_error_m": 10.20223774505296,
+      "raw_content": "```json\n{\"prediction\": {\"pos_x_m\": 18.385, \"pos_y_m\": 77.046, \"vel_x_mps\": -4.334, \"vel_y_mps\": 2.648}, \"action\": {\"accel_x_mps2\": 0.0, \"accel_y_mps2\": 0.0}}\n```"
+    }
+  ],
+  "unverifiable_observations": [
+    {
+      "model": "llama3.1:8b",
+      "digest": "46e0c10c039e019119339687c3c1757cc81b9da49709a3b3924863ba87ca666e",
+      "wall_clock_s": 201.88,
+      "driver_recorded_outcome": "parse failure",
+      "raw_content": null,
+      "reason_unverifiable": "The pilot driver did not retain the raw response, so the claimed failure cannot be independently replayed."
+    },
+    {
+      "model": "qwen3:1.7b",
+      "digest": "8f68893c685c3ddff2aa3fffce2aa60a30bb2da65ca488b61fff134a4d1730e7",
+      "wall_clock_s": 40.92,
+      "condition": "ollama_think=true",
+      "driver_recorded_outcome": "empty final content after response budget",
+      "raw_content": null,
+      "reason_unverifiable": "The reasoning stream and done_reason were not retained; this is transport telemetry, not a scored result."
+    }
+  ]
+}

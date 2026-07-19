@@ -72,6 +72,10 @@ The NIM transport is configured externally with `NIM_MODEL`, `NIM_BASE_URL`,
 and optionally `NVIDIA_API_KEY`. The Ollama transport defaults to
 `llama3.1:8b` at `http://localhost:11434`. Adapters remain transport-only:
 prompt construction, parsing, retry accounting, and pacing stay in the harness.
+Ollama thinking is disabled by default so a separate reasoning stream cannot
+consume the strict-JSON response budget; exploratory callers may opt in with
+`OllamaAdapter(..., think=True)` and must record that as a different transport
+condition.
 
 External model calls require explicit acknowledgement and are not needed to
 verify the published result.

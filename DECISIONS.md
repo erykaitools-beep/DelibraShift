@@ -1024,3 +1024,28 @@ the viewer replaces both its claim title and body with neutral provisional
 copy. The real-browser smoke accepts either build-selected initial language and
 then exercises both PL and EN, so the Polish CI artifact and English judge path
 share the same gate.
+
+## COD-032 — Isolate exploratory local-model runs and freeze thinking mode
+
+Date: 2026-07-19
+
+Additional local-model checks live under `results/exploratory` and are never
+merged into the official M2 snapshot or its claims. A first-decision screen is
+explicitly a transport, format, example-echo, and prediction sanity check; it
+is not a model ranking and cannot substitute for the registered three-
+repetition matched-pair design.
+
+Ollama thinking is disabled by default in the transport. Thinking-capable
+models otherwise place reasoning in a separate response field and can consume
+the entire 512-token budget before emitting the strict JSON content scored by
+the harness. Opting back into thinking is allowed only as a separately named
+transport condition. Model digests, raw content when retained, host limits,
+and wall-clock caveats accompany exploratory evidence.
+
+The auditable follow-up uses a tracked driver and a dedicated Ollama server
+process on the shared CPU host. `qwen2.5:3b` and `gemma3:4b` each produced three
+valid, byte-identical raw replies across seeds 0, 1, and 2 for the frozen
+`g001` cycle-0 prompt. Neither raw single-cycle prediction beat the registered
+persistence floor. These observations demonstrate transport compatibility and
+within-condition repeatability only; they do not amend, extend, or replicate
+the official M2 architecture comparison.
