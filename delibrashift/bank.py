@@ -1,4 +1,4 @@
-"""Strict local-directory loader for external ChronoGym test packs."""
+"""Strict local-directory loader for external DelibraShift test packs."""
 
 from __future__ import annotations
 

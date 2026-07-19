@@ -1,27 +1,31 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "chronogym"
-version = "0.0.0"
+name = "delibrashift"
+version = "0.1.0"
 description = "A deliberation-aware benchmark for diagnosing agent cognition"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
-authors = [{ name = "ChronoGym contributors" }]
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "DelibraShift contributors" }]
 dependencies = []
 
 [project.scripts]
-chronogym-demo = "chronogym.demo:main"
-chronogym-run = "chronogym.cli:main"
-chronogym-gates = "chronogym.gate_cli:main"
-chronogym-pack = "chronogym.archive_cli:main"
-chronogym-ablate = "chronogym.experiment_cli:main"
+delibrashift-demo = "delibrashift.demo:main"
+delibrashift-run = "delibrashift.cli:main"
+delibrashift-gates = "delibrashift.gate_cli:main"
+delibrashift-pack = "delibrashift.archive_cli:main"
+delibrashift-ablate = "delibrashift.experiment_cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["build>=1.2", "pytest>=8"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["delibrashift*"]

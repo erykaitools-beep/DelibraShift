@@ -842,3 +842,23 @@ Both arms had feedback-use 0.5 with raw normal-minus-decoy outcome 0.0 over
 0.60/0.70/0.80 by repetition (mean 0.70). The treatment therefore improved
 format compliance and coverage but harmed anticipation and outcome. Per the
 pre-registration, this negative architecture result is published unchanged.
+
+## COD-024 — Adopt DelibraShift as the public project and package name
+
+Date: 2026-07-19
+
+The project owner selected **DelibraShift** after an exact-name web, GitHub,
+and PyPI availability check. The tagline is “The world moves while agents
+think.” The name directly describes the benchmark mechanism: world state
+shifts during agent deliberation.
+
+The distribution and import package become `delibrashift`; console scripts use
+the `delibrashift-*` prefix. This is the first public package version, 0.1.0,
+so no compatibility alias is carried for the unpublished old import path.
+`SCHEMA_VERSION` remains 0.2.1 because names and import paths do not alter any
+contract field or semantics.
+
+Append-only FAB/COD history and the frozen core_v0 pack description retain the
+former working name as provenance. Official M2 logs and `report.json` are not
+rewritten; their published report SHA-256 remains
+`5ed6e76793684c9c7ef996ae58168ec57301afbcc615f4967c533e853f2506fa`.

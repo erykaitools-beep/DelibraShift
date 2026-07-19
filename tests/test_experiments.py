@@ -5,10 +5,10 @@ from dataclasses import replace
 
 import pytest
 
-from chronogym.bank import load_pack
-from chronogym.demo import demo_scenario
-from chronogym.experiment_cli import main as experiment_main
-from chronogym.experiments import run_matched_pair, write_matched_pair_report
+from delibrashift.bank import load_pack
+from delibrashift.demo import demo_scenario
+from delibrashift.experiment_cli import main as experiment_main
+from delibrashift.experiments import run_matched_pair, write_matched_pair_report
 
 
 class AdaptiveAdapter:

@@ -1,8 +1,8 @@
-# ChronoGym SPEC v0.2.2
+# DelibraShift SPEC v0.2.2
 
 Owner: Codex (sole architect/builder since 2026-07-19). Normative unless
 marked *informative*. Historical Fable contributions retain attribution. The
-executable contract is `chronogym/types.py` (schema version 0.2.1); where prose
+executable contract is `delibrashift/types.py` (schema version 0.2.1); where prose
 and `types.py` disagree, `types.py` wins and the disagreement is a bug to log
 in DECISIONS.md.
 
@@ -21,7 +21,7 @@ decoy-goal feedback ablation (FAB-020).
 
 ### 1.1 The one sentence (locked, FAB-016; supersedes FAB-001)
 
-> **ChronoGym is the first open benchmark that scores temporal anticipation
+> **DelibraShift is the first open benchmark that scores temporal anticipation
 > as an explicit diagnostic axis — comparing each engaged action against
 > engage-time versus observed-time oracles under a seed-fixed *simulated*
 > deliberation budget in a never-pausing world — and that decomposes agent
@@ -836,7 +836,7 @@ Scenario file = `ScenarioConfig` fields verbatim (JSON object;
 invariants (`__post_init__`: forecast ≥ B, start in bounds and outside the
 goal disc, positive dt, deadline ≥ 1) are enforced at load time — the loader
 may add checks but never fewer (FAB-026).
-Loader API (builder-owned): `chronogym.bank.load_pack(path) -> list[ScenarioConfig]`.
+Loader API (builder-owned): `delibrashift.bank.load_pack(path) -> list[ScenarioConfig]`.
 Downloadable packs (M1.5): deterministic stored ZIP of the same layout plus a
 canonical JSON sidecar manifest. ZIP members are in manifest order, rooted at
 the pack name, stored uncompressed, timestamped `1980-01-01 00:00:00`, and
@@ -908,7 +908,7 @@ validity floors, fidelity-vs-outcome scatter (do good predictors win?).
 
 1. The deliberation gap: agents are scored as if the world waits.
 2. Related work (§12 table + clock lineage).
-3. ChronoGym: contract, clock (RULE A), axes & probes, scoring.
+3. DelibraShift: contract, clock (RULE A), axes & probes, scoring.
 4. Reproducibility design (RULE B).
 5. Baselines + kill criterion results (RULE C), incl. the v0.1→v0.2
    red-team retune as a worked example of the gate doing its job.
@@ -922,14 +922,14 @@ validity floors, fidelity-vs-outcome scatter (do good predictors win?).
 
 ## 12. Related work and wedges (informative; verified round 1, FAB-016)
 
-| Benchmark | What it scores | Wedge (what ChronoGym adds) |
+| Benchmark | What it scores | Wedge (what DelibraShift adds) |
 |---|---|---|
-| Real-Time Reasoning Gym (Wen et al., Stanford SALT-NLP, 2025; arXiv:2511.04898) | LLM agents in never-pausing Freeway/Snake/Overcooked; environment steps every N generated tokens (hardware-agnostic token clock) | scores OUTCOME only under thinking cost — no anticipation metric, no prediction axis, no probes, no hot/cold, no matched-pair ablation; cost scales with verbosity, conflating token count with cognition, whereas ChronoGym's fixed B isolates delay *compensation* |
+| Real-Time Reasoning Gym (Wen et al., Stanford SALT-NLP, 2025; arXiv:2511.04898) | LLM agents in never-pausing Freeway/Snake/Overcooked; environment steps every N generated tokens (hardware-agnostic token clock) | scores OUTCOME only under thinking cost — no anticipation metric, no prediction axis, no probes, no hot/cold, no matched-pair ablation; cost scales with verbosity, conflating token count with cognition, whereas DelibraShift's fixed B isolates delay *compensation* |
 | Gaia2 / ARE (Meta Superintelligence Labs, ICLR 2026; arXiv:2602.11964; platform arXiv:2509.17158) | 1,120 scenarios, asynchronous event-driven world with seeded simulated time flowing while the agent reasons; time-sensitive tasks | thinking cost is wall-clock ("generation time" mode; hardware-unfair) or zero ("instant" mode); no fixed simulated budget; no anticipation/prediction axes |
 | BALROG (Paglieri et al., ICLR 2025; arXiv:2411.13543) | agentic LLM/VLM gameplay outcomes (BabyAI, Crafter, TextWorld, Baba Is AI, MiniHack, NetHack) | agent-paced (world waits per step); no deliberation cost; outcome-centric |
-| AutumnBench / WorldTest (Warrier et al., Basis & MIT, 2025; arXiv:2510.19788) | world-model learning in 43 grid worlds, 129 tasks: masked-frame prediction, planning, change detection | agent-paced interaction (world pauses); no temporal-anticipation axis; 19/43 environments stochastic vs ChronoGym's byte-identical determinism |
+| AutumnBench / WorldTest (Warrier et al., Basis & MIT, 2025; arXiv:2510.19788) | world-model learning in 43 grid worlds, 129 tasks: masked-frame prediction, planning, change detection | agent-paced interaction (world pauses); no temporal-anticipation axis; 19/43 environments stochastic vs DelibraShift's byte-identical determinism |
 | WorldPrediction (Chen et al., Meta FAIR & HKUST, 2025; arXiv:2506.04363) | video-based world modeling + procedural planning via discriminative choice | passive/discriminative; no closed loop; no deliberation budget |
-| ByteSized32-SP ("Can LMs Serve as Text-Based World Simulators?", Wang et al., ACL 2024; arXiv:2406.06485) | LLM next-state simulation accuracy over text-game transitions | no acting agent, no clock; ChronoGym's fidelity axis is the closed-loop, deliberation-coupled version (R-WoM, arXiv:2510.11892, is a *method* in this space, cited in prose, not a benchmark) |
+| ByteSized32-SP ("Can LMs Serve as Text-Based World Simulators?", Wang et al., ACL 2024; arXiv:2406.06485) | LLM next-state simulation accuracy over text-game transitions | no acting agent, no clock; DelibraShift's fidelity axis is the closed-loop, deliberation-coupled version (R-WoM, arXiv:2510.11892, is a *method* in this space, cited in prose, not a benchmark) |
 | EnvSimBench (2026; arXiv:2605.07247) | LLM-as-environment-simulator fidelity (167 tool environments, LLM-free grading) | no acting agent; no time pressure |
 | APB (2026; arXiv:2606.04874) | 4,209 cases, 22 domains: holistic + feedback-conditioned step-wise planning + robustness | static plan grading; no execution clock at all; diagnostic axes are planning-internal, none temporal |
 | SIMMER (2026; arXiv:2606.14574) | latent failures in executable plans via symbolic kitchen world model | turn-based symbolic execution; no continuous dynamics; no deliberation cost |
@@ -944,7 +944,7 @@ and SC2LE's `step_mul` (Vinyals et al. 2017; arXiv:1708.04782) — the latter
 literally a seed-reproducible sim-tick budget in a moving world, scored on
 outcome only. VideoGameBench (arXiv:2505.18134) runs wall-clock real-time and
 its Lite variant pauses during inference, explicitly acknowledging the latency
-confound ChronoGym's simulated budget removes. ChronoGym's contribution is
+confound DelibraShift's simulated budget removes. DelibraShift's contribution is
 not this clock; it is SCORING anticipation of the delay as an isolated,
 probe-controlled diagnostic axis with counterfactual oracles.
 
@@ -956,7 +956,7 @@ SC2LE); (2) always-multi-factor + graded hot/cold; (3) matched-pair
 predict-then-act ablation on the same base model, with the full agent system
 as an explicitly confounded extra datapoint. Complementarity note: RTR-Gym
 charges *variable* thinking length (measuring "manage your verbosity");
-ChronoGym fixes B (measuring "compensate for known delay") — the two
+DelibraShift fixes B (measuring "compensate for known delay") — the two
 questions are orthogonal and both needed.
 
 ---

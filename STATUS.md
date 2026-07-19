@@ -28,7 +28,7 @@
   review; no results are being claimed from the draft prompt.
 - Added the registered greedy reactive baseline and a transport-only,
   environment-configured OpenAI-compatible NIM adapter.
-- Added `chronogym-run` for an end-to-end prediction-scored loop over any valid
+- Added `delibrashift-run` for an end-to-end prediction-scored loop over any valid
   local pack, with optional canonical per-episode logs.
 - Oracle/stale-reactor remain pending because SPEC §4.2 does not yet pin the
   initial MPC sampling distribution and exact elite-refit procedure; the
@@ -64,7 +64,7 @@
 - Froze the already-reviewed standard prompt as version `1.0` without changing
   its template, and migrated log assertions to schema `0.2.1`.
 - Added executable full-pack reproducibility, matched-state, feedback-band,
-  and kill-criterion gates plus the `chronogym-gates` command.
+  and kill-criterion gates plus the `delibrashift-gates` command.
 - Official builder run: gate (i) passed (SHA-256
   `6a964c34e3168b034f8c8be8b592ab513f9b975aff098439cde743fb1aa289ea`);
   gate (ii) passed at `0.4549931514 -> 0.4331712122 -> 0.3748602486`;
@@ -102,7 +102,7 @@
   choice accuracy/parse rate, format parse/fidelity scores, and mandatory trial
   counts. Probe actions remain forced to no-op.
 - Added deterministic downloadable pack ZIPs with a canonical SHA-256 sidecar,
-  per-member hashes, verifier, and `chronogym-pack` CLI.
+  per-member hashes, verifier, and `delibrashift-pack` CLI.
 - Added the first deterministic baseline table to README. It is explicitly not
   an LLM result table.
 - Builder implementation is complete; the two probe draft prompts and archive
@@ -134,7 +134,7 @@
   slice required by SPEC §8.
 - Frozen scaffold prompt set as `wm-scaffold-1.0` with full stage hashes and CI
   enforcement of the `<150` line rule.
-- Added `chronogym-ablate`; it refuses paid/external calls without `--execute`.
+- Added `delibrashift-ablate`; it refuses paid/external calls without `--execute`.
 - Verification: 82 tests pass with no skips or expected failures.
 - Real dracarys execution has not started because NIM configuration is unset.
   M2 remains in progress pending feedback/probe report rows and the real run.
@@ -182,3 +182,17 @@
 - The negative matched-architecture result is recorded unchanged in COD-023
   and README. Remaining M2 work is the separately labeled, read-only MARIA
   confounded datapoint and quickstart polish.
+
+## 2026-07-19 — Project renamed to DelibraShift
+
+- Adopted the public name DelibraShift with the tagline “The world moves while
+  agents think.” The distribution/import name is `delibrashift`; all five CLI
+  entry points now use the `delibrashift-*` prefix.
+- Historical append-only decisions and the frozen core-pack description retain
+  the former name for provenance. Official M2 log/report bytes are untouched;
+  report SHA-256 remains unchanged.
+- First public package version is `0.1.0`. Package discovery is explicitly
+  limited to `delibrashift*`, preventing packs/results from entering wheels.
+- Publication verification: 86 tests pass; wheel and sdist build successfully;
+  a clean wheel installation runs the no-op demo; the core archive and official
+  M2 report retain their published SHA-256 values.

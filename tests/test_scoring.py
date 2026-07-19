@@ -3,16 +3,16 @@ from __future__ import annotations
 from dataclasses import replace
 import math
 
-from chronogym.agents import NoOpAgent
-from chronogym.demo import demo_scenario
-from chronogym.runner import run_episode
-from chronogym.scoring import (
+from delibrashift.agents import NoOpAgent
+from delibrashift.demo import demo_scenario
+from delibrashift.runner import run_episode
+from delibrashift.scoring import (
     score_prediction_fidelity,
     score_outcome,
     score_episode,
     score_temporal_anticipation,
 )
-from chronogym.types import Action, AgentReply, NOOP_ACTION, ScenarioConfig
+from delibrashift.types import Action, AgentReply, NOOP_ACTION, ScenarioConfig
 
 
 def test_prediction_score_matches_each_valid_cycle_and_persistence_floor() -> None:
@@ -97,7 +97,7 @@ def test_temporal_score_uses_engage_vs_observed_oracle_margin(monkeypatch) -> No
     def fake_oracle(config, state, *, cycle, variant):
         return Action(10.0, 0.0) if variant == 0 else Action(0.0, 0.0)
 
-    monkeypatch.setattr("chronogym.scoring.oracle_action", fake_oracle)
+    monkeypatch.setattr("delibrashift.scoring.oracle_action", fake_oracle)
     score = score_temporal_anticipation(config, (record,))
     assert score.temporal_anticipation == 2.0 / 3.0
     assert score.mean_divergence_weight == 1.0 / 3.0

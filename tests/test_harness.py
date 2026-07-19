@@ -4,16 +4,16 @@ from dataclasses import replace
 
 import pytest
 
-from chronogym.demo import demo_scenario
-from chronogym.harness import (
+from delibrashift.demo import demo_scenario
+from delibrashift.harness import (
     HarnessAgent,
     parse_choice_reply,
     parse_reply,
     render_prompt,
 )
-from chronogym.runner import run_episode
-from chronogym.types import NOOP_ACTION
-from chronogym.world import build_observation, initial_state
+from delibrashift.runner import run_episode
+from delibrashift.types import NOOP_ACTION
+from delibrashift.world import build_observation, initial_state
 
 
 class StubAdapter:

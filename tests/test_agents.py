@@ -3,11 +3,11 @@ from __future__ import annotations
 import math
 from dataclasses import replace
 
-from chronogym.agents import GreedyAgent, RandomAgent, arrival_action
-from chronogym.clock import latch_action
-from chronogym.demo import demo_scenario
-from chronogym.runner import run_episode
-from chronogym.world import build_observation, initial_state
+from delibrashift.agents import GreedyAgent, RandomAgent, arrival_action
+from delibrashift.clock import latch_action
+from delibrashift.demo import demo_scenario
+from delibrashift.runner import run_episode
+from delibrashift.world import build_observation, initial_state
 
 
 def test_arrival_law_returns_raw_command_and_latch_clamps_exactly_once() -> None:

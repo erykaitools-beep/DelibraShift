@@ -1,4 +1,4 @@
-# ChronoGym PLAN
+# DelibraShift PLAN
 
 Owner: Codex (sole architect/builder since 2026-07-19). STATUS.md is the
 ground truth on progress. Historical Fable-authored entries remain attributed.
@@ -22,7 +22,7 @@ test regeneration plus recorded gate impact.
 
 ### M0 — contract + stub (DONE 2026-07-13)
 - [x] Repo scaffold (Codex, `93b18c2`)
-- [x] `chronogym/types.py` v0.1 committed (Fable, `70df480`)
+- [x] `delibrashift/types.py` v0.1 committed (Fable, `70df480`)
 - [x] SPEC.md v0.1 + PLAN.md + golden fixture `tests/fixtures/golden_g001.json` (Fable)
 - [x] Codex: pure world transition + RULE-A window loop + Observation
       builder + random/no-op agents + canonical JSONL demo + fixture and
@@ -33,7 +33,7 @@ test regeneration plus recorded gate impact.
 
 ### M1 — one scored loop + one real adapter (DONE 2026-07-14)
 - [x] Codex: fidelity scorer draft, strict pack loader, draft prompt+parser,
-      NIM adapter, greedy v0.1, `chronogym-run` CLI (`1379c87`, `5ed12e1`,
+      NIM adapter, greedy v0.1, `delibrashift-run` CLI (`1379c87`, `5ed12e1`,
       `27ead02`) — pre-v0.2; migration list in REVIEW.md round 1.
 - [x] Codex: migrate to contract 0.2.0 (`1ca3d14`); oracle per §4.2.1.
 - [x] Fable: core pack v0 (`packs/core_v0`, 11 scenarios); golden ORACLE
@@ -46,7 +46,7 @@ test regeneration plus recorded gate impact.
   probe numbers and edges binary64-exact.
 - [x] Codex: round 2.1 items landed (`af333bf`) — CRN + H-pin (6/6 oracle
   rows exact), gradient searcher + decoys exact, executable gates +
-  `chronogym-gates`, official runs: gates (i)/(ii)/(iv) PASS (COD-015);
+  `delibrashift-gates`, official runs: gates (i)/(ii)/(iv) PASS (COD-015);
   prompt frozen v1.0 (blessed, REVIEW round 2.2).
 - [x] Codex: FAB-038 de-clamp, exact masked fixture, final all-green gate
   table (`d56f41c`, COD-016).
@@ -71,7 +71,7 @@ test regeneration plus recorded gate impact.
 - [x] Phase 1 implementation: 131-line WM-SCAFFOLD, frozen two-stage prompts,
   harness pacing + transport retry, matched-pair runner, alternating arm
   order, rep-derived seeds, canonical logs/report, retry-free sensitivity
-  slice, and explicit external-call acknowledgement (`chronogym-ablate`).
+  slice, and explicit external-call acknowledgement (`delibrashift-ablate`).
 - [x] Add paired decoy-heat feedback rows and separately reported probe-control
   rows to the experiment report.
 - [x] Run END2END vs WM-SCAFFOLD on dracarys after NIM configuration exists;

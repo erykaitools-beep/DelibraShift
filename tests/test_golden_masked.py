@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from chronogym.agents import GreedyAgent
-from chronogym.bank import load_pack
-from chronogym.gates import decoy_goal, score_feedback_use
-from chronogym.runner import run_episode
+from delibrashift.agents import GreedyAgent
+from delibrashift.bank import load_pack
+from delibrashift.gates import decoy_goal, score_feedback_use
+from delibrashift.runner import run_episode
 
 
 FIXTURE = json.loads(

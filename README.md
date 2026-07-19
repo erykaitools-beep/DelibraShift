@@ -1,17 +1,20 @@
-# ChronoGym
+# DelibraShift
 
-ChronoGym is an open, deliberation-aware benchmark for diagnosing agent
+**The world moves while agents think.**
+
+DelibraShift is an open, deliberation-aware benchmark for diagnosing agent
 cognition in deterministic simulated worlds. Its first world couples gravity,
 time-varying lateral wind, steering, and a deadline while exposing a graded
 hot/cold signal.
 
-The M0 world stub is runnable. It uses a fixed simulated deliberation budget:
-the craft keeps moving under its previously latched action while an agent
-chooses the next action. Host latency never advances or scores the world.
+Unlike agent benchmarks that pause between decisions, DelibraShift advances
+the world by a fixed simulated deliberation budget while the agent thinks. The
+previous action remains latched until the new action engages. Host latency is
+recorded as infrastructure telemetry but never advances or scores the world.
 
-## Development
+## Quickstart
 
-ChronoGym targets Python 3.10+ and keeps the CPU-only simulation dependency
+DelibraShift targets Python 3.10+ and keeps the CPU-only simulation dependency
 free:
 
 ```bash
@@ -24,7 +27,7 @@ pytest
 Run the deterministic random baseline and optionally retain its canonical log:
 
 ```bash
-chronogym-demo --agent random --log episode.jsonl
+delibrashift-demo --agent random --log episode.jsonl
 ```
 
 Greedy and no-op baselines are available with `--agent greedy` and
@@ -35,7 +38,7 @@ outcome.
 Run a baseline over an external local test pack in manifest order:
 
 ```bash
-chronogym-run /path/to/pack --agent random --log-dir logs
+delibrashift-run /path/to/pack --agent random --log-dir logs
 ```
 
 The strict loader rejects schema mismatches, unknown fields, duplicate JSON
@@ -61,7 +64,7 @@ Evaluate the executable pack gates (the sampling-MPC kill criterion is the
 CPU-heavy part):
 
 ```bash
-chronogym-gates packs/core_v0
+delibrashift-gates packs/core_v0
 ```
 
 This reports full-pack byte reproducibility, the matched-state budget probe,
@@ -87,7 +90,7 @@ not LLM results.
 Build the downloadable pack ZIP and canonical SHA-256 sidecar manifest:
 
 ```bash
-chronogym-pack packs/core_v0 --output-dir dist
+delibrashift-pack packs/core_v0 --output-dir dist
 ```
 
 The archive preserves the local pack layout, uses fixed ZIP metadata, and
@@ -106,7 +109,7 @@ control rows with parse rates and trial counts, never as treatment scores.
 External calls require an explicit acknowledgement:
 
 ```bash
-chronogym-ablate packs/core_v0 --execute \
+delibrashift-ablate packs/core_v0 --execute \
   --repetitions 3 --pace-rpm 40 \
   --log-dir results/m2/logs --report results/m2/report.json
 ```
@@ -145,6 +148,14 @@ Reproducibility is a hard requirement: physics is a pure function of scenario,
 state, held action, and simulated time delta. Same-seed baseline runs produce
 byte-identical JSONL logs on the same host. Wall-clock latency is telemetry,
 never a score.
+
+## Project documentation
+
+- [`SPEC.md`](SPEC.md): normative benchmark and scoring specification.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md): development and change-control rules.
+- [`CHANGELOG.md`](CHANGELOG.md): release history.
+- [`CITATION.cff`](CITATION.cff): citation metadata.
+- [`SECURITY.md`](SECURITY.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
 
 ## Status
 

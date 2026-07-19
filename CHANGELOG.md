@@ -1,0 +1,17 @@
+# Changelog
+
+All notable changes to DelibraShift are documented here.
+
+## 0.1.0 — 2026-07-19
+
+- Initial public release of the deterministic Windrift world and external
+  `core_v0` scenario pack.
+- Fixed simulated deliberation clock, graded hot/cold feedback, canonical
+  JSONL logs, golden fixtures, and executable validity gates.
+- Random, greedy, stale-reactor, lead-greedy, and sampling-MPC oracle
+  baselines.
+- Transport-only NVIDIA NIM and Ollama adapters with harness-owned prompts,
+  parsing, pacing, and retries.
+- END2END versus WM-SCAFFOLD matched ablation with 84 published Dracarys logs,
+  probe controls, paired decoy heat, and a canonical report.
+- Strict verified resume for interrupted external runs.

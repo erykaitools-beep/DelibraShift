@@ -4,8 +4,8 @@ import json
 from dataclasses import replace
 from pathlib import Path
 
-from chronogym.clock import advance_deliberation, latch_action
-from chronogym.types import (
+from delibrashift.clock import advance_deliberation, latch_action
+from delibrashift.types import (
     Action,
     OUTCOME_GOAL,
     OUTCOME_OOB,
@@ -18,7 +18,7 @@ from chronogym.types import (
     prediction_fidelity,
     wind_x_at,
 )
-from chronogym.world import build_observation, initial_state, step
+from delibrashift.world import build_observation, initial_state, step
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "golden_g001.json"

@@ -4,17 +4,17 @@ import hashlib
 import json
 from pathlib import Path
 
-from chronogym.bank import load_pack
-from chronogym.demo import demo_scenario
-from chronogym.harness import HarnessAgent, TransportPacer
-from chronogym.runner import run_episode
-from chronogym.scaffold import (
+from delibrashift.bank import load_pack
+from delibrashift.demo import demo_scenario
+from delibrashift.harness import HarnessAgent, TransportPacer
+from delibrashift.runner import run_episode
+from delibrashift.scaffold import (
     WMScaffoldAgent,
     render_action_prompt,
     render_prediction_prompt,
 )
-from chronogym.types import Prediction
-from chronogym.world import build_observation, initial_state
+from delibrashift.types import Prediction
+from delibrashift.world import build_observation, initial_state
 
 
 PREDICTION = (
@@ -91,8 +91,8 @@ def test_action_prompt_contains_only_observation_and_agents_prediction() -> None
 def test_shared_pacer_and_transport_retry_are_harness_owned(monkeypatch) -> None:
     sleeps = []
     times = iter((0.0, 0.25, 1.5))
-    monkeypatch.setattr("chronogym.harness.time.monotonic", lambda: next(times))
-    monkeypatch.setattr("chronogym.harness.time.sleep", sleeps.append)
+    monkeypatch.setattr("delibrashift.harness.time.monotonic", lambda: next(times))
+    monkeypatch.setattr("delibrashift.harness.time.sleep", sleeps.append)
     pacer = TransportPacer(min_interval_s=1.5)
     adapter = StubAdapter([ACTION, ACTION])
     agent = HarnessAgent(adapter, prediction_requested=False, transport_pacer=pacer)
@@ -101,8 +101,8 @@ def test_shared_pacer_and_transport_retry_are_harness_owned(monkeypatch) -> None
     assert sleeps == [1.25]
 
     retry_sleeps = []
-    monkeypatch.setattr("chronogym.harness.time.monotonic", lambda: 2.0)
-    monkeypatch.setattr("chronogym.harness.time.sleep", retry_sleeps.append)
+    monkeypatch.setattr("delibrashift.harness.time.monotonic", lambda: 2.0)
+    monkeypatch.setattr("delibrashift.harness.time.sleep", retry_sleeps.append)
     retry_adapter = StubAdapter([RuntimeError("temporary"), ACTION])
     retry_agent = HarnessAgent(
         retry_adapter,
@@ -123,7 +123,7 @@ def test_scaffold_episode_consumes_one_sim_window_per_two_model_calls() -> None:
 
 
 def test_scaffold_stays_small_and_frozen_prompt_hashes_are_exact() -> None:
-    source = Path(__file__).parents[1] / "chronogym" / "scaffold.py"
+    source = Path(__file__).parents[1] / "delibrashift" / "scaffold.py"
     assert len(source.read_text(encoding="utf-8").splitlines()) < 150
     config = next(
         config

@@ -204,7 +204,7 @@ Reviewed Codex's scaffold. Verdict: **clean, accepted.**
 Requests for the next builder pass (non-blocking):
 
 1. After reading `types.py` (`70df480`), re-export the public names from
-   `chronogym/__init__.py` (your file).
+   `delibrashift/__init__.py` (your file).
 2. When implementing SPEC §2.3, keep the integrator in a pure module (your
    NOTES.md already proposes this — agreed) and build the golden-fixture test
    against `tests/fixtures/golden_g001.json` with EXACT float equality.

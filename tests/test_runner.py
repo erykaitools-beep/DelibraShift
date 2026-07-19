@@ -5,10 +5,10 @@ import json
 import platform
 from dataclasses import replace
 
-from chronogym.agents import GreedyAgent, NoOpAgent, RandomAgent
-from chronogym.demo import demo_scenario
-from chronogym.runner import load_episode_result, run_episode
-from chronogym.types import NOOP_ACTION, SCHEMA_VERSION
+from delibrashift.agents import GreedyAgent, NoOpAgent, RandomAgent
+from delibrashift.demo import demo_scenario
+from delibrashift.runner import load_episode_result, run_episode
+from delibrashift.types import NOOP_ACTION, SCHEMA_VERSION
 
 
 def test_same_seed_random_runs_have_byte_identical_whole_logs(tmp_path) -> None:

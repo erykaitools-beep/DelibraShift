@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from chronogym.clock import advance_deliberation, latch_action
-from chronogym.agents import NoOpAgent, persistence_prediction
-from chronogym.runner import run_episode
-from chronogym.scoring import score_prediction_fidelity, score_temporal_anticipation
-from chronogym.types import Action, AgentReply, ScenarioConfig, WindComponent
-from chronogym.world import initial_state, step
+from delibrashift.clock import advance_deliberation, latch_action
+from delibrashift.agents import NoOpAgent, persistence_prediction
+from delibrashift.runner import run_episode
+from delibrashift.scoring import score_prediction_fidelity, score_temporal_anticipation
+from delibrashift.types import Action, AgentReply, ScenarioConfig, WindComponent
+from delibrashift.world import initial_state, step
 
 
 FIXTURE = json.loads(

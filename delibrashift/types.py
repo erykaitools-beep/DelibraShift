@@ -1,4 +1,4 @@
-"""ChronoGym schema contract, v0.2 (Project Brief section 3).
+"""DelibraShift schema contract, v0.2 (Project Brief section 3).
 
 This module is THE CONTRACT: the single source of truth for every data shape
 that crosses a boundary between the world, the harness, the scorers, the

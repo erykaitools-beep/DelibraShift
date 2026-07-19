@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import zipfile
 
-from chronogym.archive import build_pack_archive, verify_pack_archive
+from delibrashift.archive import build_pack_archive, verify_pack_archive
 
 
 PACK = Path(__file__).parents[1] / "packs" / "core_v0"

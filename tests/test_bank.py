@@ -5,9 +5,9 @@ from dataclasses import asdict
 
 import pytest
 
-from chronogym.bank import PackError, load_pack
-from chronogym.demo import demo_scenario
-from chronogym.types import SCHEMA_VERSION
+from delibrashift.bank import PackError, load_pack
+from delibrashift.demo import demo_scenario
+from delibrashift.types import SCHEMA_VERSION
 
 
 def write_json(path, payload) -> None:

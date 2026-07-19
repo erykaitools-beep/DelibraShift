@@ -5,10 +5,10 @@ import math
 from dataclasses import replace
 from pathlib import Path
 
-from chronogym.demo import demo_scenario
-from chronogym.oracle import LeadGreedyAgent, oracle_action
-from chronogym.types import GroundTruthState, ScenarioConfig, WindComponent
-from chronogym.world import build_observation, initial_state
+from delibrashift.demo import demo_scenario
+from delibrashift.oracle import LeadGreedyAgent, oracle_action
+from delibrashift.types import GroundTruthState, ScenarioConfig, WindComponent
+from delibrashift.world import build_observation, initial_state
 
 
 def golden_scenario() -> tuple[dict, ScenarioConfig]:
@@ -64,7 +64,7 @@ def test_golden_oracle_rows_are_binary64_exact() -> None:
         )
     )
     pack_root = Path(__file__).parents[1] / "packs" / "core_v0"
-    from chronogym.bank import load_pack
+    from delibrashift.bank import load_pack
 
     scenarios = {config.scenario_id: config for config in load_pack(pack_root)}
     for row in fixture["rows"]:

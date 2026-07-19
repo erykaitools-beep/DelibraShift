@@ -1,4 +1,4 @@
-"""Build a deterministic downloadable ChronoGym pack."""
+"""Build a deterministic downloadable DelibraShift pack."""
 
 from __future__ import annotations
 

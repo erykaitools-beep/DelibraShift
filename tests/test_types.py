@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from chronogym.types import canonical_json
+from delibrashift.types import canonical_json
 
 
 def test_canonical_json_normalizes_negative_zero_recursively() -> None:

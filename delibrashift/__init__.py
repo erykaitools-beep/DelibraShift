@@ -1,4 +1,4 @@
-"""ChronoGym's public schema and deterministic Windrift primitives."""
+"""DelibraShift's public schema and deterministic Windrift primitives."""
 
 from .adapters import NIMAdapter, OllamaAdapter
 from .archive import PackArchive, build_pack_archive, verify_pack_archive

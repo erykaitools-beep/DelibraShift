@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from chronogym.bank import load_pack
-from chronogym.harness import HarnessAgent
-from chronogym.probes import (
+from delibrashift.bank import load_pack
+from delibrashift.harness import HarnessAgent
+from delibrashift.probes import (
     CHOICE_PROBE_PROMPT_VERSION,
     FORMAT_PROBE_PROMPT_VERSION,
     forced_choice_candidates,
@@ -17,9 +17,9 @@ from chronogym.probes import (
     score_forced_choice_probe,
     score_format_probe,
 )
-from chronogym.runner import run_episode
-from chronogym.types import Action, AgentReply
-from chronogym.world import build_observation, initial_state
+from delibrashift.runner import run_episode
+from delibrashift.types import Action, AgentReply
+from delibrashift.world import build_observation, initial_state
 
 
 PACK = {

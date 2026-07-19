@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from dataclasses import asdict
 
-from chronogym.cli import main
-from chronogym.demo import demo_scenario
-from chronogym.types import SCHEMA_VERSION
+from delibrashift.cli import main
+from delibrashift.demo import demo_scenario
+from delibrashift.types import SCHEMA_VERSION
 
 
 def test_pack_cli_runs_scored_loop_and_writes_canonical_log(tmp_path, capsys) -> None:

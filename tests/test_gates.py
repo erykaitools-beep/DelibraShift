@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from chronogym.bank import load_pack
-from chronogym.gates import matched_state_gate, reproducibility_gate
+from delibrashift.bank import load_pack
+from delibrashift.gates import matched_state_gate, reproducibility_gate
 
 
 PACK = load_pack(Path(__file__).parents[1] / "packs" / "core_v0")

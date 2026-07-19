@@ -6,7 +6,7 @@ import urllib.request
 
 import pytest
 
-from chronogym.adapters import NIMAdapter, OllamaAdapter
+from delibrashift.adapters import NIMAdapter, OllamaAdapter
 
 
 class Response(io.BytesIO):

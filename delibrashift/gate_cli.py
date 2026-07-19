@@ -1,4 +1,4 @@
-"""Evaluate ChronoGym's executable M1 pack gates."""
+"""Evaluate DelibraShift's executable M1 pack gates."""
 
 from __future__ import annotations
 
