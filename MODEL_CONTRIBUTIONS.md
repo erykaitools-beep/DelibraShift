@@ -86,7 +86,10 @@ Verified work:
 - independently audited the Opus visualization, corrected semantic errors,
   added matched-pair, temporal-support, and no-retry displays, removed private
   paths, and integrated the report into the canonical repository;
-- recorded 31 `COD-###` decisions including visualization integration and the
+- built the auditable local-Ollama multi-model screen, added transport-condition
+  identity for thinking mode, retained model/prompt/driver hashes and raw
+  responses, and added replay tests without changing the official M2 result;
+- recorded 32 `COD-###` decisions including visualization integration and the
   cross-platform judge-path audit.
 
 Git evidence: commits authored `Codex Chief Builder`, beginning with `93b18c2`;

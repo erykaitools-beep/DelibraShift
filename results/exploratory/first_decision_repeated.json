@@ -1,0 +1,281 @@
+{
+  "schema_version": "exploratory-first-decision-0.2",
+  "data_date_utc": "2026-07-19",
+  "official_snapshot": false,
+  "evidence_status": "auditable_exploratory_screen",
+  "driver": {
+    "version": "0.2",
+    "sha256": "31394d60e72a1f4e6967fd06a5074f87c7e0e9220155ab5e335e148175253348",
+    "git_revision": "7747518459f6c662e3650bc5a2112ad8c76ffb43",
+    "source_tree_dirty": false
+  },
+  "method": {
+    "pack_name": "core_v0",
+    "pack_version": "0.1.1",
+    "log_schema_version": "0.2.1",
+    "scenario_id": "g001",
+    "cycle": 0,
+    "arm": "end2end",
+    "prompt_version": "1.0",
+    "prompt_sha256": "370572330a39464afc58b8a78a0591e0457fa3c72faf369b2bb04551d7d709b3",
+    "temperature": 0.0,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "max_tokens": 512,
+    "max_parse_retries": 0,
+    "max_transport_retries": 0,
+    "ollama_think": false,
+    "timeout_s": 900.0,
+    "ollama_base_url": "http://127.0.0.1:11435",
+    "dedicated_server_process": true
+  },
+  "host": {
+    "system": "Linux",
+    "release": "5.15.0-174-generic",
+    "machine": "x86_64",
+    "python": "3.10.12",
+    "logical_cpus": 12,
+    "ram_bytes": 33039912960,
+    "ollama_version": "0.16.3",
+    "wall_clock_caveat": "Dedicated Ollama server process on a shared CPU-only host; timings are telemetry only and are not comparable model scores."
+  },
+  "target_at_engage": {
+    "tick": 20,
+    "pos_x_m": 21.634217445260198,
+    "pos_y_m": 67.375,
+    "vel_x_mps": 2.9881011374801663,
+    "vel_y_mps": -5.0
+  },
+  "persistence_floor": {
+    "cycle0_raw_fidelity": 0.04680198578360569,
+    "position_error_m": 3.0921338357827866
+  },
+  "metric_definitions": {
+    "cycle0_raw_fidelity": "exp(-mean normalized L1 error across x, y, vx, vy) for this single prediction; not the episode-level metric",
+    "position_error_m": "Euclidean distance in the x-y plane at engage tick",
+    "example_echo": "True when every predicted state field is within two registered tolerances of the numeric example embedded in the prompt"
+  },
+  "models": [
+    {
+      "model": "qwen2.5:3b",
+      "ollama_manifest_digest_sha256": "357c53fb659c5076de1d65ccb0b397446227b71a42be9d1603d46168015c9e4b",
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "qwen2",
+        "families": [
+          "qwen2"
+        ],
+        "parameter_size": "3.1B",
+        "quantization_level": "Q4_K_M"
+      },
+      "runs": [
+        {
+          "seed": 0,
+          "wall_clock_s_telemetry_only": 35.18347662873566,
+          "action_parse_ok": true,
+          "prediction_parse_ok": true,
+          "example_echo": false,
+          "action": {
+            "accel_x_mps2": -3.0,
+            "accel_y_mps2": -1.5
+          },
+          "prediction": {
+            "pos_x_m": 18.95,
+            "pos_y_m": 48.95,
+            "vel_x_mps": -7.5,
+            "vel_y_mps": 6.25
+          },
+          "cycle0_raw_fidelity": 2.2279810558869215e-05,
+          "position_error_m": 18.61949645649525,
+          "raw_content": "{\"prediction\": {\"pos_x_m\": 18.95, \"pos_y_m\": 48.95, \"vel_x_mps\": -7.5, \"vel_y_mps\": 6.25}, \"action\": {\"accel_x_mps2\": -3.0, \"accel_y_mps2\": -1.5}}",
+          "raw_content_sha256": "b0e89d8eee9bcd91020b55d54e5500bbcee2b75eba8d9362f095756d09e203a0",
+          "ollama_response_metadata": {
+            "done": true,
+            "done_reason": "stop",
+            "total_duration": 35182438886,
+            "load_duration": 1872509483,
+            "prompt_eval_count": 1287,
+            "prompt_eval_duration": 27698055450,
+            "eval_count": 78,
+            "eval_duration": 5534872972
+          }
+        },
+        {
+          "seed": 1,
+          "wall_clock_s_telemetry_only": 7.016263693571091,
+          "action_parse_ok": true,
+          "prediction_parse_ok": true,
+          "example_echo": false,
+          "action": {
+            "accel_x_mps2": -3.0,
+            "accel_y_mps2": -1.5
+          },
+          "prediction": {
+            "pos_x_m": 18.95,
+            "pos_y_m": 48.95,
+            "vel_x_mps": -7.5,
+            "vel_y_mps": 6.25
+          },
+          "cycle0_raw_fidelity": 2.2279810558869215e-05,
+          "position_error_m": 18.61949645649525,
+          "raw_content": "{\"prediction\": {\"pos_x_m\": 18.95, \"pos_y_m\": 48.95, \"vel_x_mps\": -7.5, \"vel_y_mps\": 6.25}, \"action\": {\"accel_x_mps2\": -3.0, \"accel_y_mps2\": -1.5}}",
+          "raw_content_sha256": "b0e89d8eee9bcd91020b55d54e5500bbcee2b75eba8d9362f095756d09e203a0",
+          "ollama_response_metadata": {
+            "done": true,
+            "done_reason": "stop",
+            "total_duration": 7014501394,
+            "load_duration": 192799037,
+            "prompt_eval_count": 1287,
+            "prompt_eval_duration": 74414031,
+            "eval_count": 78,
+            "eval_duration": 6641238358
+          }
+        },
+        {
+          "seed": 2,
+          "wall_clock_s_telemetry_only": 6.88324177172035,
+          "action_parse_ok": true,
+          "prediction_parse_ok": true,
+          "example_echo": false,
+          "action": {
+            "accel_x_mps2": -3.0,
+            "accel_y_mps2": -1.5
+          },
+          "prediction": {
+            "pos_x_m": 18.95,
+            "pos_y_m": 48.95,
+            "vel_x_mps": -7.5,
+            "vel_y_mps": 6.25
+          },
+          "cycle0_raw_fidelity": 2.2279810558869215e-05,
+          "position_error_m": 18.61949645649525,
+          "raw_content": "{\"prediction\": {\"pos_x_m\": 18.95, \"pos_y_m\": 48.95, \"vel_x_mps\": -7.5, \"vel_y_mps\": 6.25}, \"action\": {\"accel_x_mps2\": -3.0, \"accel_y_mps2\": -1.5}}",
+          "raw_content_sha256": "b0e89d8eee9bcd91020b55d54e5500bbcee2b75eba8d9362f095756d09e203a0",
+          "ollama_response_metadata": {
+            "done": true,
+            "done_reason": "stop",
+            "total_duration": 6881997417,
+            "load_duration": 172743258,
+            "prompt_eval_count": 1287,
+            "prompt_eval_duration": 74021454,
+            "eval_count": 78,
+            "eval_duration": 6530740651
+          }
+        }
+      ]
+    },
+    {
+      "model": "gemma3:4b",
+      "ollama_manifest_digest_sha256": "a2af6cc3eb7fa8be8504abaf9b04e88f17a119ec3f04a3addf55f92841195f5a",
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "gemma3",
+        "families": [
+          "gemma3"
+        ],
+        "parameter_size": "4.3B",
+        "quantization_level": "Q4_K_M"
+      },
+      "runs": [
+        {
+          "seed": 0,
+          "wall_clock_s_telemetry_only": 90.15360631141812,
+          "action_parse_ok": true,
+          "prediction_parse_ok": true,
+          "example_echo": false,
+          "action": {
+            "accel_x_mps2": 0.0,
+            "accel_y_mps2": 0.0
+          },
+          "prediction": {
+            "pos_x_m": 18.387503881121106,
+            "pos_y_m": 77.63779944954891,
+            "vel_x_mps": -4.434204937249907,
+            "vel_y_mps": 2.885020502100838
+          },
+          "cycle0_raw_fidelity": 0.0007434493652362036,
+          "position_error_m": 10.764116383114136,
+          "raw_content": "```json\n{\"prediction\": {\"pos_x_m\": 18.387503881121107, \"pos_y_m\": 77.637799449548902, \"vel_x_mps\": -4.434204937249907, \"vel_y_mps\": 2.885020502100838}, \"action\": {\"accel_x_mps2\": 0.0, \"accel_y_mps2\": 0.0}}\n```",
+          "raw_content_sha256": "dd0f2bc20262f4a151290b0de6f96f48a96e84599b08b114828a9502321f9f6c",
+          "ollama_response_metadata": {
+            "done": true,
+            "done_reason": "stop",
+            "total_duration": 90152084978,
+            "load_duration": 3880329284,
+            "prompt_eval_count": 1337,
+            "prompt_eval_duration": 68124457870,
+            "eval_count": 146,
+            "eval_duration": 17773554749
+          }
+        },
+        {
+          "seed": 1,
+          "wall_clock_s_telemetry_only": 85.55233117565513,
+          "action_parse_ok": true,
+          "prediction_parse_ok": true,
+          "example_echo": false,
+          "action": {
+            "accel_x_mps2": 0.0,
+            "accel_y_mps2": 0.0
+          },
+          "prediction": {
+            "pos_x_m": 18.387503881121106,
+            "pos_y_m": 77.63779944954891,
+            "vel_x_mps": -4.434204937249907,
+            "vel_y_mps": 2.885020502100838
+          },
+          "cycle0_raw_fidelity": 0.0007434493652362036,
+          "position_error_m": 10.764116383114136,
+          "raw_content": "```json\n{\"prediction\": {\"pos_x_m\": 18.387503881121107, \"pos_y_m\": 77.637799449548902, \"vel_x_mps\": -4.434204937249907, \"vel_y_mps\": 2.885020502100838}, \"action\": {\"accel_x_mps2\": 0.0, \"accel_y_mps2\": 0.0}}\n```",
+          "raw_content_sha256": "dd0f2bc20262f4a151290b0de6f96f48a96e84599b08b114828a9502321f9f6c",
+          "ollama_response_metadata": {
+            "done": true,
+            "done_reason": "stop",
+            "total_duration": 85551007189,
+            "load_duration": 538574791,
+            "prompt_eval_count": 1337,
+            "prompt_eval_duration": 66760427868,
+            "eval_count": 146,
+            "eval_duration": 18016103721
+          }
+        },
+        {
+          "seed": 2,
+          "wall_clock_s_telemetry_only": 85.05646630562842,
+          "action_parse_ok": true,
+          "prediction_parse_ok": true,
+          "example_echo": false,
+          "action": {
+            "accel_x_mps2": 0.0,
+            "accel_y_mps2": 0.0
+          },
+          "prediction": {
+            "pos_x_m": 18.387503881121106,
+            "pos_y_m": 77.63779944954891,
+            "vel_x_mps": -4.434204937249907,
+            "vel_y_mps": 2.885020502100838
+          },
+          "cycle0_raw_fidelity": 0.0007434493652362036,
+          "position_error_m": 10.764116383114136,
+          "raw_content": "```json\n{\"prediction\": {\"pos_x_m\": 18.387503881121107, \"pos_y_m\": 77.637799449548902, \"vel_x_mps\": -4.434204937249907, \"vel_y_mps\": 2.885020502100838}, \"action\": {\"accel_x_mps2\": 0.0, \"accel_y_mps2\": 0.0}}\n```",
+          "raw_content_sha256": "dd0f2bc20262f4a151290b0de6f96f48a96e84599b08b114828a9502321f9f6c",
+          "ollama_response_metadata": {
+            "done": true,
+            "done_reason": "stop",
+            "total_duration": 85054380571,
+            "load_duration": 477278257,
+            "prompt_eval_count": 1337,
+            "prompt_eval_duration": 65841804162,
+            "eval_count": 146,
+            "eval_duration": 18491144867
+          }
+        }
+      ]
+    }
+  ]
+}

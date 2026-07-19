@@ -76,7 +76,10 @@ def test_ollama_adapter_uses_native_chat_shape(monkeypatch) -> None:
     def fake_urlopen(request, timeout):
         captured["request"] = request
         captured["timeout"] = timeout
-        return Response(b'{"message":{"role":"assistant","content":"ok"}}')
+        return Response(
+            b'{"message":{"role":"assistant","content":"ok"},'
+            b'"done":true,"done_reason":"stop","eval_count":7}'
+        )
 
     monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
     adapter = OllamaAdapter(
@@ -92,8 +95,36 @@ def test_ollama_adapter_uses_native_chat_shape(monkeypatch) -> None:
         "model": "llama3.1:8b",
         "messages": [{"role": "user", "content": "rendered"}],
         "stream": False,
+        "think": False,
         "options": {"temperature": 0.2, "num_predict": 17, "seed": 4},
     }
+    assert adapter.last_response_metadata == {
+        "done": True,
+        "done_reason": "stop",
+        "eval_count": 7,
+    }
+
+
+def test_ollama_adapter_can_enable_model_thinking_explicitly(monkeypatch) -> None:
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["payload"] = json.loads(request.data)
+        return Response(b'{"message":{"role":"assistant","content":"ok"}}')
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+
+    adapter = OllamaAdapter("qwen3:1.7b", think=True)
+    assert adapter.complete("prompt") == "ok"
+    assert captured["payload"]["think"] is True
+    assert adapter.name == "ollama:qwen3:1.7b:think=true"
+
+
+def test_ollama_adapter_names_thinking_disabled_as_distinct_condition() -> None:
+    assert (
+        OllamaAdapter("qwen3:1.7b", think=False).name
+        == "ollama:qwen3:1.7b:think=false"
+    )
 
 
 def test_ollama_adapter_rejects_malformed_response(monkeypatch) -> None:
