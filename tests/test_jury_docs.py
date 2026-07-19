@@ -57,3 +57,14 @@ def test_documented_cod_decision_count_matches_ledger() -> None:
 
     assert count == 34
     assert f"recorded {count} `COD-###` decisions" in contributions
+
+
+def test_readme_discloses_codex_usage_and_build_session() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "## How Codex and GPT-5.6 were used" in readme
+    assert "019f5c9b-5d49-7560-a73f-99cd95665e04" in readme
+    assert "CODEX 5.6-SOL, Chief Builder" in readme
+    assert "primary builder and integration agent" in readme
+    assert "MODEL_CONTRIBUTIONS.md" in readme
+    assert "under human direction" in readme
