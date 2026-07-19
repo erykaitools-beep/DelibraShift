@@ -257,6 +257,14 @@ def read_text(path: Path, label: str) -> str:
         raise BuildError(f"{label}: not valid UTF-8 -> {path} ({exc})") from exc
 
 
+def write_utf8_lf(path: Path, text: str) -> int:
+    """Write text as deterministic UTF-8 bytes with LF line endings."""
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    data = normalized.encode("utf-8")
+    path.write_bytes(data)
+    return len(data)
+
+
 def node_check(source: str, label: str) -> tuple[bool, str]:
     """Parse ``source`` with ``node --check`` (fed through stdin)."""
     if NODE is None:
@@ -471,11 +479,18 @@ def import_extract():
     return extract
 
 
-def run_extraction(extract, logs_dir: Path, packs_dir: Path, report_path: Path) -> None:
+def run_extraction(
+    extract,
+    logs_dir: Path,
+    packs_dir: Path,
+    report_path: Path,
+    provenance_path: Path,
+) -> None:
     """Point extract.py at the chosen inputs and let it rebuild the bundle."""
     extract.LOGS_DIR = logs_dir
     extract.PACKS_DIR = packs_dir
     extract.REPORT_PATH = report_path
+    extract.PROVENANCE_PATH = provenance_path
     extract.OUT_PATH = BUNDLE_PATH
     code = extract.main()
     if code != 0:
@@ -744,6 +759,39 @@ def validate(
         "none of " + ", ".join(repr(token) for token in FORBIDDEN_TOKENS) if not hits else f"found: {hits}",
     )
 
+    stale_legal_copy = [
+        phrase
+        for phrase in ("MIT licence", "Licencja MIT", "Open benchmark", "Otwarty benchmark")
+        if phrase.lower() in lowered
+    ]
+    validator.add(
+        not stale_legal_copy,
+        "legal provenance",
+        "current private-evaluation terms embedded"
+        if not stale_legal_copy
+        else f"superseded copy found: {stale_legal_copy}",
+    )
+
+    css_source = "\n".join(
+        payloads[name]["text"] for name in ("TOKENS_CSS", "APP_CSS")
+    )
+    css_without_comments = re.sub(r"/\*.*?\*/", "", css_source, flags=re.DOTALL)
+    css_urls = [
+        match.strip().strip('"\'')
+        for match in re.findall(r"url\(([^)]*)\)", css_without_comments, flags=re.IGNORECASE)
+    ]
+    unsafe_css_urls = [
+        value for value in css_urls
+        if not (value.startswith("#") or value.lower().startswith("data:"))
+    ]
+    validator.add(
+        not unsafe_css_urls,
+        "CSS references",
+        f"{len(css_urls)} url() references, all embedded fragments/data"
+        if not unsafe_css_urls
+        else f"external or empty CSS url() values: {unsafe_css_urls}",
+    )
+
     start, end, island = find_bundle_island(text)
     urls = [(match.start(), match.group(0)) for match in re.finditer(r"https?://[^\s\"'<>)\\]*", text)]
     outside = [url for offset, url in urls if not (start <= offset < end)]
@@ -864,8 +912,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--report",
         type=Path,
-        default=DEFAULT_REPORT,
-        help=f"run report written at the end of the experiment (default: {DEFAULT_REPORT})",
+        default=None,
+        help=(
+            "run report written at the end of the experiment "
+            f"(default: {DEFAULT_REPORT} for canonical logs; sibling report.json "
+            "for --logs-dir)"
+        ),
     )
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help=f"output file (default: {DEFAULT_OUT})")
     parser.add_argument("--lang", choices=LANGS, default="pl", help="build-time default UI language (default: pl)")
@@ -893,6 +945,16 @@ def resolve_logs_dir(requested: Path | None) -> tuple[Path, str]:
     raise BuildError(f"no logs found in {DEFAULT_LOGS}")
 
 
+def resolve_report_path(requested_report: Path | None, requested_logs: Path | None) -> Path:
+    """Keep custom logs away from the canonical closing report by default."""
+    if requested_report is not None:
+        return requested_report.expanduser().resolve()
+    if requested_logs is None:
+        return DEFAULT_REPORT
+    logs = requested_logs.expanduser().resolve()
+    return logs / "report.json" if (logs / "logs").is_dir() else logs.parent / "report.json"
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     built_at = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M:%S%z")
@@ -908,7 +970,7 @@ def main(argv: list[str] | None = None) -> int:
     packs_dir = args.packs_dir.expanduser().resolve()
     if not (packs_dir / "pack.json").is_file():
         raise BuildError(f"--packs-dir has no pack.json: {packs_dir}")
-    report_path = args.report.expanduser().resolve()
+    report_path = resolve_report_path(args.report, args.logs_dir)
     report_present = report_path.is_file()
 
     # Reusing a bundle means the logs it was built from are the ones the count
@@ -972,7 +1034,13 @@ def main(argv: list[str] | None = None) -> int:
     else:
         if args.skip_extract:
             say("  --skip-extract given but data/bundle.json is missing -> extracting anyway")
-        run_extraction(extract, read_dir, packs_dir, report_path)
+        run_extraction(
+            extract,
+            read_dir,
+            packs_dir,
+            report_path,
+            logs_dir.parent / "provenance.json",
+        )
         SOURCES_PATH.write_text(
             json.dumps(
                 {
@@ -1008,8 +1076,8 @@ def main(argv: list[str] | None = None) -> int:
     # ---- 4. write --------------------------------------------------------
     head("[4/5] WRITE")
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(document, encoding="utf-8")
-    say(f"  {out_path}  {mb(len(document.encode()))}")
+    written_bytes = write_utf8_lf(out_path, document)
+    say(f"  {out_path}  {mb(written_bytes)}")
 
     # ---- 5. validation ---------------------------------------------------
     head("[5/5] VALIDATION")

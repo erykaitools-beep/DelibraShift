@@ -4,7 +4,7 @@ All notable changes to DelibraShift are documented here.
 
 ## 0.1.0 — 2026-07-19
 
-- Initial public release of the deterministic Windrift world and external
+- Initial competition-evaluation release of the deterministic Windrift world and external
   `core_v0` scenario pack.
 - Fixed simulated deliberation clock, graded hot/cold feedback, canonical
   JSONL logs, golden fixtures, and executable validity gates.

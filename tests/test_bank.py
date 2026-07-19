@@ -8,6 +8,7 @@ import pytest
 from delibrashift.bank import PackError, load_pack, load_pack_metadata
 from delibrashift.demo import demo_scenario
 from delibrashift.types import SCHEMA_VERSION
+from _symlink_contract import symlink_or_skip
 
 
 def write_json(path, payload) -> None:
@@ -96,7 +97,7 @@ def test_rejects_scenario_symlink_escape(tmp_path) -> None:
         encoding="utf-8",
     )
     (root / "scenarios" / "demo.json").unlink()
-    (root / "scenarios" / "demo.json").symlink_to(outside)
+    symlink_or_skip(root / "scenarios" / "demo.json", outside)
     with pytest.raises(PackError, match="escapes pack directory"):
         load_pack(root)
 

@@ -133,8 +133,15 @@ mean same-scenario, same-repetition WM-SCAFFOLD minus END2END difference.
 
 The scaffold improved structured-output reliability and prediction coverage,
 but reduced temporal anticipation on every one of 21 paired visible cells and
-reduced mean outcome. Both arms showed no measurable use of hot/cold feedback.
-The negative architecture result is published unchanged.
+reduced mean outcome. Across the 18 matched heat pairs, both arms produced
+identical harness-resolved effective actions (accepted parses or no-op
+fallbacks) and zero mean outcome effect under the signal swap. Predictions
+differed in every pair and parse/retry paths differed in 7 pairs, so the
+finding is limited to control and outcome; it is not a claim about the whole
+reply or internal model processing. Outcome effects were mixed across cells:
+WM-SCAFFOLD was higher in 16/30, lower in 11/30, and tied in 3/30; the reported
+`−0.079` is a mean effect, not a universal loss. The negative mean architecture
+result is published unchanged.
 
 The complete canonical report and 84 logs are in [`results/m2`](results/m2).
 Report SHA-256:

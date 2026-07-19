@@ -9,6 +9,8 @@ description = "A deliberation-aware benchmark for diagnosing agent cognition"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Eryk Wyrębek" }]
+license = "LicenseRef-Proprietary"
+license-files = ["LICENSE"]
 dependencies = []
 
 [project.scripts]

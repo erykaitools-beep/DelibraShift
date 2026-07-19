@@ -1,7 +1,11 @@
-"""Independent audit: recompute trajectories and scores from raw logs.
+"""Independent audit of physics replay, outcome, parse rates, and coverage.
 
 Physics is reimplemented here on purpose (SPEC 2.3), so the check does not
 inherit any bug from extract.py or from the delibrashift package.
+
+This audit does not independently recompute prediction fidelity, temporal
+anticipation, divergence weights, or the feedback reference band; those retain
+their executable-contract and golden-fixture gates.
 """
 
 import json
@@ -160,7 +164,10 @@ def main(keys):
               f"reason={ep['scores']['fidelity_invalid_reason']}")
         for p in problems:
             print("      !", p)
-    print(f"\n{len(keys) - bad}/{len(keys)} episodes verified independently")
+    print(
+        f"\n{len(keys) - bad}/{len(keys)} episodes: independent physics, outcome, "
+        "parse-rate, and coverage checks passed"
+    )
     return 1 if bad else 0
 
 

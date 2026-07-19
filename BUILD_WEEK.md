@@ -31,8 +31,8 @@ name, and made final product and publication decisions.
 AI-assisted work is documented in `MODEL_CONTRIBUTIONS.md`:
 
 - FABLE 5: scientific architecture, contract, fixtures, and reviews;
-- OpenAI Codex using GPT-5.6: implementation, experiments, hardening, audit,
-  and repository integration;
+- OpenAI Codex (operator-provided label GPT-5.6; project role CODEX 5.6-SOL):
+  implementation, experiments, hardening, audit, and repository integration;
 - Opus 4.8: original bilingual visualization and communication layer.
 
 The model evaluated in M2 is experimental subject data, not a project builder.

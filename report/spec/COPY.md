@@ -149,7 +149,7 @@ hover, on focus, or in a legend drawer.
 | Wiatr | `arena.legend.wind` | `arena.caption.wind` | Strzałka wiatru pokazuje boczny podmuch w tym tyknięciu; model zna go z prognozy z wyprzedzeniem. |
 | Pasek deadline | `arena.legend.deadline` | `arena.caption.deadline` | Pasek czasu odmierza tyknięcia do limitu; po jego wyczerpaniu lot kończy się bez wyniku. |
 | Akcja zatrzaśnięta | `arena.legend.held` | `arena.caption.held` | Wektor zatrzaśnięty to akcja, która pracuje w tej chwili - wymyślona B tyknięć temu. |
-| Akcja zwrócona | `arena.legend.commanded` | `arena.caption.commanded` | Wektor zwrócony to świeża decyzja modelu; zacznie działać dopiero za B tyknięć. |
+| Efektywna akcja harnessu | `arena.legend.commanded` | `arena.caption.commanded` | To poprawnie odczytana akcja albo no-op po błędzie formatu; jeśli lot trwa, zacznie działać dopiero za B tyknięć. |
 
 Drawing note for the arena author: the ghost, the truth marker and the error
 line are the whole point of the picture. If only three glyphs survive a
@@ -167,9 +167,9 @@ string.
 
 | Key | Claim | Evidence it rests on |
 |---|---|---|
-| `finding.decoy.*` | The model ignores the hot/cold signal | Every masked scenario pair (g007a, g007b, g007c, both arms) produced an identical action sequence and an identical closest approach under true heat and decoy heat. |
+| `finding.decoy.*` | No effective-control or outcome change was observed under the hot/cold swap | All 18 masked scenario pairs (g007a, g007b, g007c, both arms, three repetitions) produced identical harness-resolved action sequences and outcomes under true and decoy heat. These sequences include no-op fallbacks after parse failure. Predictions and parse/retry paths differed, so this must not be generalized to the whole reply or internal processing. |
 | `finding.format.*` | Retry differences are formatting, not cognition | The single-prompt arm retries a large share of cycles; the two-stage arm's action stage parses far more reliably, while its prediction stage still fails. |
-| `finding.scaffold.*` | Scaffolding does not improve flying in this run | Structured-output reliability and coverage improve, while paired temporal anticipation and mean outcome decrease. |
+| `finding.scaffold.*` | Scaffolding does not improve mean outcome in this run | Structured-output reliability and coverage improve, while paired temporal anticipation and mean outcome decrease. Outcome deltas are mixed across cells (16 better, 11 worse, 3 tied for WM-SCAFFOLD), so the claim is about the mean only. |
 | `finding.oob.*` | Almost everything ends out of bounds | Flights close after a handful of decision cycles; `goal` occurs only in the g007b end2end pair. |
 | `finding.floor.*` | Prediction sits just above the persistence floor | Fidelity is well above the nothing-changes floor, but far below what the supplied numbers permit. |
 | `finding.caveat` | Scope guard, always visible | One run, one model. Not a ranking. |
@@ -214,8 +214,11 @@ Reason keys map one-to-one onto the values the scorer emits:
 versions (`1.0`, `wm-scaffold-1.0`, `probe-format-1.0`, `probe-choice-1.0`),
 pack name and version, log schema version, host class, and the data date. Three
 standing notes accompany it: `footer.frozen_note` (prompts are hash-pinned),
-`footer.determinism_note` (byte-identical logs), and `footer.offline_note`
-(this page never touches the network).
+`footer.determinism_note` (deterministic physics, scoring, and local baselines on
+the documented host; external model replies may vary), and `footer.offline_note`
+(this page never touches the network). `footer.license` carries the current
+copyright holder and private-evaluation status; it must agree with the root
+`LICENSE` and must never retain a superseded licence label.
 
 ---
 

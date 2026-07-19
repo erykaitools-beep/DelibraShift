@@ -1,6 +1,7 @@
 # Contributing to DelibraShift
 
-Thanks for helping improve an open, reproducible agent benchmark.
+Thanks for helping improve a reproducible agent benchmark. This repository is
+currently private and available only under the evaluation terms in `LICENSE`.
 
 ## Development setup
 

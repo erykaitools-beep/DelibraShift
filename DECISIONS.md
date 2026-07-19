@@ -962,3 +962,65 @@ The builder now resolves `node` with the platform execution path and fails
 closed with an explicit error if it is absent. No fallback skips JavaScript
 syntax or in-engine validation. This makes the documented Linux/macOS judge
 path and GitHub runner use the selected Node installation consistently.
+
+## COD-030 — Make the judge path portable and provenance-stable
+
+Date: 2026-07-19
+
+The official report must not change its scientific or legal meaning when a
+judge clones the repository on another host. Report output is therefore
+written as explicit UTF-8 with LF newlines, exact binary64 fixture equality is
+limited to the normative CPython 3.10/Linux/x86_64 runtime, and symlink tests
+skip only when the host cannot create the required link. Other runtimes retain
+the documented 8-ULP semantic guard.
+
+The report now carries the current private-evaluation rights statement instead
+of the superseded MIT label. CI and unit tests reject stale licence/open-source
+copy, pin the official data date independently of filesystem mtimes, and verify
+the canonical 84-log count plus aggregate-report SHA-256. Extraction also
+rejects mixed host, model, pack, schema, prompt, seed, or scenario identities
+before presenting a combined snapshot. A completed
+three-repetition run no longer emits a caveat that describes it as an in-flight
+snapshot. External model replies are not claimed to be byte-deterministic, and
+heat-pair findings describe observed behavior rather than unobservable
+internal processing. CI now opens the built artifact in real headless Chromium,
+blocks network traffic, and exercises its tabs, language and theme controls,
+painted canvas, legal footer, and mobile overflow behavior.
+
+## COD-031 — Bound result claims to independently verified observables
+
+Date: 2026-07-19
+
+Two fresh-context Codex red-teams independently reviewed scientific copy and
+release behavior. The decoy comparison is now stated in terms of
+harness-resolved effective actions, which include no-op fallbacks after parse
+failure. In the official 18 pairs those actions and flight outcomes match, but
+predictions differ in 18/18 and parse/retry paths differ in 7/18; no claim is
+made about the whole reply, internal processing, or whether raw model text
+ignored the heat channel.
+
+Outcome reporting is similarly limited to its mean: WM-SCAFFOLD is higher in
+16 of 30 paired cells, lower in 11, and tied in 3 despite a negative mean
+delta. Whiskers are descriptive min-max ranges over measured scenario by
+repetition cells, not uncertainty intervals. The independent replay audit is
+named for the physics, outcome, parse-rate, and coverage fields it actually
+recomputes; it does not claim an independent implementation of temporal
+anticipation or the feedback reference oracle.
+
+Official snapshot provenance now hashes the names and bytes of all 84 logs,
+pins model identity and aggregate-report SHA-256, and requires the complete
+planned file matrix before a closing report can mark a run complete. A custom
+log directory defaults to its own sibling report rather than the canonical M2
+report. The END2END prompt joins scaffold and probe prompts under a canonical
+SHA-256 regression. The source distribution includes the full verification
+inputs and must pass its test suite after extraction.
+
+A closing report is treated as an input rather than an authority: extraction
+rebuilds every published arm range from replayed logs and independently
+recomputes the greedy feedback band from the pack before accepting its
+aggregates. Finding counts and paired outcome directions are computed from the
+bundle at render time. If custom data do not establish a registered finding,
+the viewer replaces both its claim title and body with neutral provisional
+copy. The real-browser smoke accepts either build-selected initial language and
+then exercises both PL and EN, so the Polish CI artifact and English judge path
+share the same gate.

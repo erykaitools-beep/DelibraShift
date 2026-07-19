@@ -50,14 +50,22 @@ logami, raport nie zostaje uznany za poprawny.
 Po zbudowaniu bundle:
 
 ```bash
+npm --prefix report ci
 npm --prefix report test
+npm --prefix report exec playwright -- install --with-deps chromium
+npm --prefix report run test:browser
 python report/tests/audit_truth.py
 ```
 
 Testy obejmują funkcje czyste, renderowanie DOM, arenę, tłumaczenia PL/EN,
-kontrast, składnię skryptów oraz niezależną implementację fizyki. Audyt prawdy
-nie importuje `delibrashift.world`, dzięki czemu nie może bezwiednie powtórzyć
-tego samego błędu co ekstraktor.
+kontrast, składnię skryptów, prawdziwy Chromium oraz niezależną implementację
+fizyki, outcome, parse rate i coverage. Nie jest to niezależne przeliczenie
+fidelity, temporal anticipation, wag rozbieżności ani feedback band; te mają
+osobne testy kontraktu i golden fixtures. Test przeglądarkowy blokuje sieć i
+sprawdza zakładki, PL/EN, motyw,
+namalowany canvas oraz szerokość mobilną. Audyt prawdy nie importuje
+`delibrashift.world`, dzięki czemu nie może bezwiednie powtórzyć tego samego
+błędu co ekstraktor.
 
 ## Zasady interpretacji
 
@@ -67,8 +75,9 @@ tego samego błędu co ekstraktor.
 - Temporal anticipation jest zawsze pokazywane wraz z liczbą ocenionych cykli
   `K` i średnią wagą rozbieżności.
 - `*_no_retry` to oddzielny przekrój czułości, nie „poprawiony” wynik główny.
-- Wniosek o niewykorzystaniu hot/cold wymaga identycznych sekwencji komend w
-  parach normal/decoy. Równy outcome sam w sobie nie wystarcza.
+- Wniosek o braku zaobserwowanej reakcji na hot/cold wymaga identycznych
+  sekwencji komend w parach normal/decoy. Równy outcome sam w sobie nie
+  wystarcza i nie rozstrzyga przetwarzania wewnętrznego.
 - Czas zegarowy jest wyłącznie telemetrią i nigdy nie wpływa na symulację ani
   score.
 

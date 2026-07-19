@@ -3,6 +3,9 @@
 DelibraShift is a deliberation-aware benchmark for agents operating in a world
 that does not pause while they think.
 
+Run every command from the repository root. The report quick path needs
+Python 3.10 or newer and Node.js 22; no API key or network model call is used.
+
 ## 60-second review
 
 1. Read the first 15 lines of `README.md` for the mechanism.
@@ -22,7 +25,7 @@ The report is self-contained and makes no network requests after it is built.
 
 ## Full verification
 
-Requirements:
+Reference-verification requirements:
 
 - Linux or macOS shell for the commands below;
 - Python 3.10 for exact reference-fixture verification (3.12 is also tested
@@ -37,7 +40,10 @@ python -m pip install -e '.[dev]'
 python -m coverage run -m pytest
 python -m coverage report
 python report/build_report.py --lang en
+npm --prefix report ci
 npm --prefix report test
+npm --prefix report exec playwright -- install --with-deps chromium
+npm --prefix report run test:browser
 python report/tests/audit_truth.py
 ```
 

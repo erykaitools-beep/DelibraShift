@@ -27,6 +27,23 @@ Eryk Wyrębek:
 - approved or rejected final product and publication decisions;
 - remains the project owner, human operator, and competition entrant.
 
+## Attribution method and estimated impact
+
+The impact allocation is an editorial estimate, not a legal ownership split
+and not a token-usage estimate. It measures how much each model-assisted
+contribution mattered to the delivered project across scientific validity,
+implementation and reproducibility, experiment/release work, and explanation.
+
+| Builder model / role | Estimated impact | Confidence | Why it mattered |
+|---|---:|---|---|
+| OpenAI Codex; operator-provided label GPT-5.6, project role `CODEX 5.6-SOL` | 55% | high for work, operator-supplied model label | Implemented the simulator, harness, scoring integration, baselines, pack tooling, M1/M2 orchestration, official run publication, release hardening, visualization audit, and repository integration. |
+| `FABLE 5`, Chief Architect & Scientist; exact model snapshot not recorded | 30% | high for work, low for exact model ID | Defined the executable contract, scientific method, scoring semantics, golden fixtures, kill criteria, and adversarial reviews. |
+| `Opus 4.8`, as identified by the project operator; exact provider snapshot not recorded | 15% | medium | Built the first complete offline PL/EN visualization: report linker, extractor, flight arena, charts, design system, copy, and JavaScript tests. |
+
+The percentages are deliberately labeled estimates. Git history and the
+evidence below remain authoritative if a competition rubric requires a
+different presentation.
+
 ## FABLE 5 — architecture and scientific method
 
 Primary responsibility: contract and methodology.
@@ -51,9 +68,10 @@ Git evidence:
 - `87f922b` — verification round and contract 0.2.1;
 - `bb428e9` — clamp ownership and prompt v1.0 approval.
 
-## OpenAI Codex using GPT-5.6 — implementation, experiments, and integration
+## OpenAI Codex — implementation, experiments, and integration
 
-Project role: `CODEX 5.6-SOL`.
+Operator-provided model label: GPT-5.6. Project role: `CODEX 5.6-SOL`; exact
+backend snapshot should be confirmed from the competition `/feedback` record.
 
 Verified work:
 
@@ -68,7 +86,8 @@ Verified work:
 - independently audited the Opus visualization, corrected semantic errors,
   added matched-pair, temporal-support, and no-retry displays, removed private
   paths, and integrated the report into the canonical repository;
-- recorded 27 `COD-###` decisions including visualization integration.
+- recorded 31 `COD-###` decisions including visualization integration and the
+  cross-platform judge-path audit.
 
 Git evidence: commits authored `Codex Chief Builder`, beginning with `93b18c2`;
 notable milestones include `b0ad499`, `1379c87`, `af333bf`, `2a85727`,

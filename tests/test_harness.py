@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
 from delibrashift.demo import demo_scenario
+from delibrashift.bank import load_pack
 from delibrashift.harness import (
     HarnessAgent,
     parse_choice_reply,
@@ -110,6 +113,24 @@ def test_prompt_makes_deliberation_timeline_and_schema_explicit() -> None:
     assert "HELD action" in prompt
     assert '"prediction"' in prompt
     assert '"wind_forecast_x_mps2"' in prompt
+
+
+def test_end2end_prompt_version_1_is_hash_pinned() -> None:
+    config = next(
+        config
+        for config in load_pack(Path(__file__).parents[1] / "packs" / "core_v0")
+        if config.scenario_id == "g001"
+    )
+    frozen_observation = build_observation(
+        config,
+        initial_state(config),
+        episode_id="prompt-freeze",
+        cycle=0,
+    )
+
+    digest = hashlib.sha256(render_prompt(frozen_observation).encode("utf-8")).hexdigest()
+
+    assert digest == "a214b1964bb628ae3c9b8e5b63249ea2971093f38a80701f612890846bd6a5ce"
 
 
 def test_harness_retries_without_extra_sim_ticks_then_falls_back_to_noop() -> None:

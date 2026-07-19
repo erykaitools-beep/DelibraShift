@@ -77,11 +77,27 @@ var rMiss = reasons.filter(function (r) { return !('reason.' + r in S.pl) || !('
 console.log('reason keys missing:', rMiss.join(', ') || 'ok');
 
 var failures = [];
+var staleCopy = [];
+['pl', 'en'].forEach(function (lang) {
+  Object.keys(S[lang]).forEach(function (key) {
+    var value = S[lang][key];
+    if (typeof value !== 'string') return;
+    if (/MIT licen[cs]e|Licencja MIT|\bOpen benchmark\b|\bOtwarty benchmark\b/i.test(value)) {
+      staleCopy.push(lang + '.' + key + '=' + JSON.stringify(value));
+    }
+  });
+});
+console.log('stale legal/public copy:', staleCopy.length ? staleCopy : 'none');
+
 if (onlyPl.length || onlyEn.length) failures.push('language key sets differ');
 if (Object.keys(missing).length) failures.push('literal translation keys are missing');
 if (dyn.length) failures.push('dynamic metric families are incomplete');
 if (scenMiss.length) failures.push('scenario translation keys are missing');
 if (rMiss.length) failures.push('reason translation keys are missing');
+if (staleCopy.length) failures.push('superseded licence/public copy remains');
+if (!/Eryk Wyrębek/.test(S.pl['footer.license']) || !/Eryk Wyrębek/.test(S.en['footer.license'])) {
+  failures.push('footer legal provenance omits the human copyright holder');
+}
 if (failures.length) {
   console.error('AUDIT FAILED: ' + failures.join('; '));
   process.exitCode = 1;
