@@ -22,6 +22,39 @@ disclosed in [`MODEL_CONTRIBUTIONS.md`](MODEL_CONTRIBUTIONS.md).
 - [`BUILD_WEEK.md`](BUILD_WEEK.md): event-period origin and first-commit evidence.
 - [`LIMITATIONS.md`](LIMITATIONS.md): boundaries of the published result.
 
+## How Codex and GPT-5.6 were used
+
+OpenAI Codex served as DelibraShift's primary builder and integration agent
+under human direction. The operator-facing model label for this Build Week
+session is **GPT-5.6**, with the project role **CODEX 5.6-SOL, Chief Builder**.
+The exact backend snapshot remains tied to the competition feedback record
+rather than inferred from the label.
+
+Technical Codex build-session ID:
+`019f5c9b-5d49-7560-a73f-99cd95665e04`.
+
+Codex was used to:
+
+- implement the deterministic Windrift simulator, simulated deliberation
+  clock, harness, scoring integration, agents, adapters, and pack tooling;
+- build the M1.5 probes and M2 matched architecture experiment, execute and
+  publish the canonical 84-log run, and preserve its negative result;
+- audit and integrate the bilingual visualization, add independent replay and
+  cross-runtime gates, and repair scientific and release-path findings;
+- run the local multi-model compatibility screen without mixing it into the
+  official M2 evidence;
+- produce the competition narrative and reproducible browser-capture/video
+  pipeline; and
+- audit the complete Git/GitHub surface for secrets, reconcile the approved
+  MIT release, publish the repository, and configure its security controls.
+
+Eryk Wyrębek originated the project, set its constraints and priorities,
+provided execution authority, and approved the name, experiments, claims,
+licence, and publication. FABLE 5 and Opus 4.8 performed separately attributed
+scientific and visualization work. The full role and impact ledger is in
+[`MODEL_CONTRIBUTIONS.md`](MODEL_CONTRIBUTIONS.md); implementation evidence is
+preserved in Git and the append-only [`DECISIONS.md`](DECISIONS.md).
+
 ## Quickstart
 
 DelibraShift targets Python 3.10+ and keeps the CPU-only simulation dependency

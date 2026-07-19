@@ -48,5 +48,6 @@ The model evaluated in M2 is experimental subject data, not a project builder.
   reproducible browser-capture/render pipeline;
 - `STATUS.md`: milestone and verification history.
 
-The Codex `/feedback` session identifier is supplied in the competition
-submission form rather than stored in the repository.
+The technical Codex build-session ID is published in `README.md`. If submitting
+`/feedback` produces a distinct share identifier, that returned identifier is
+supplied separately in the competition form.
