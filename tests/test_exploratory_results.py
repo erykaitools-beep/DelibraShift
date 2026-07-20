@@ -15,8 +15,10 @@ from delibrashift.world import build_observation, initial_state
 ROOT = Path(__file__).resolve().parents[1]
 PILOT = ROOT / "results" / "exploratory" / "first_decision_smoke.json"
 REPEATED = ROOT / "results" / "exploratory" / "first_decision_repeated.json"
+CODEX = ROOT / "results" / "exploratory" / "codex_first_decision.json"
 GOLDEN = ROOT / "tests" / "fixtures" / "golden_g001.json"
 DRIVER = ROOT / "tools" / "run_first_decision_smoke.py"
+CODEX_DRIVER = ROOT / "tools" / "run_codex_first_decision_smoke.py"
 
 
 class _Target:
@@ -145,3 +147,83 @@ def test_exploratory_readme_table_matches_repeated_artifact() -> None:
     assert "| qwen2.5:3b | 3/3 | yes | 0.000022280 | 18.62 m |" in readme
     assert "| gemma3:4b | 3/3 | yes | 0.000743449 | 10.76 m |" in readme
     assert "one scenario decision still cannot rank models" in readme
+
+
+def test_codex_product_screen_is_fresh_replayable_and_api_key_free() -> None:
+    payload = json.loads(CODEX.read_text(encoding="utf-8"))
+    run = payload["runs"][0]
+    metadata = run["codex_response_metadata"]
+    target = _Target(payload["target_at_engage"])
+
+    assert payload["official_snapshot"] is False
+    assert payload["evidence_status"] == "exploratory_codex_product_condition"
+    assert payload["driver"]["source_tree_dirty"] is False
+    assert len(payload["driver"]["git_revision"]) == 40
+    assert payload["driver"]["sha256"] == hashlib.sha256(
+        CODEX_DRIVER.read_bytes()
+    ).hexdigest()
+    assert payload["method"]["model"] == "gpt-5.6-sol"
+    assert payload["method"]["reasoning_effort"] == "medium"
+    assert payload["method"]["unsupported_cli_controls"] == [
+        "temperature",
+        "seed",
+        "max_tokens",
+    ]
+    assert payload["session_audit"]["all_thread_ids_present"] is True
+    assert payload["session_audit"]["thread_ids_unique"] is True
+    assert payload["session_audit"]["thread_ids"] == [metadata["thread_id"]]
+
+    config = next(
+        item
+        for item in load_pack(ROOT / "packs" / "core_v0")
+        if item.scenario_id == "g001"
+    )
+    observation = build_observation(
+        config,
+        initial_state(config),
+        episode_id="exploratory:codex:g001:first-decision",
+        cycle=0,
+    )
+    assert payload["method"]["prompt_sha256"] == hashlib.sha256(
+        render_prompt(observation).encode("utf-8")
+    ).hexdigest()
+
+    raw = run["raw_content"]
+    assert run["raw_content_sha256"] == hashlib.sha256(
+        raw.encode("utf-8")
+    ).hexdigest()
+    reply = parse_reply(raw)
+    assert not reply.parse_failed
+    assert not reply.prediction_parse_failed
+    assert reply.prediction is not None
+    assert run["action_parse_ok"] is True
+    assert run["prediction_parse_ok"] is True
+    assert run["example_echo"] is False
+    assert_golden_float(
+        run["cycle0_raw_fidelity"],
+        prediction_fidelity(reply.prediction, target),
+    )
+    assert_golden_float(
+        run["position_error_m"],
+        math.hypot(
+            reply.prediction.pos_x_m - target.pos_x_m,
+            reply.prediction.pos_y_m - target.pos_y_m,
+        ),
+    )
+
+    assert metadata["tool_item_count"] == 0
+    assert metadata["tool_item_types"] == []
+    assert metadata["ephemeral"] is True
+    assert metadata["saved_chatgpt_login_required"] is True
+    assert metadata["api_credentials_removed_from_environment"] is True
+    assert metadata["seed_honored"] is False
+    assert metadata["temperature_honored"] is False
+    assert metadata["max_tokens_honored"] is False
+    assert metadata["usage"]["output_tokens"] > 0
+
+
+def test_exploratory_readme_reports_codex_product_result() -> None:
+    readme = (CODEX.parent / "README.md").read_text(encoding="utf-8")
+
+    assert "| gpt-5.6-sol | 1/1 | yes | 0 | 0.999999976 | 0.000000032 m |" in readme
+    assert "cannot establish a model or architecture ranking" in readme
