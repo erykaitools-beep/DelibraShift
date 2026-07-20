@@ -98,7 +98,7 @@ Verified work:
 - implemented the isolated, fresh-session Codex product adapter and auditable
   no-API-billing smoke-test path, with credential stripping, ChatGPT-auth
   enforcement, session IDs, usage, and tool-event telemetry;
-- recorded 35 `COD-###` decisions including visualization integration, the
+- recorded 36 `COD-###` decisions including visualization integration, the
   cross-platform judge-path audit, competition video, and public-release
   licensing.
 

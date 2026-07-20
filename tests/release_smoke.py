@@ -18,6 +18,7 @@ EXPECTED_COMMANDS = {
     "delibrashift-ablate",
     "delibrashift-demo",
     "delibrashift-gates",
+    "delibrashift-lab",
     "delibrashift-pack",
     "delibrashift-run",
 }
@@ -75,6 +76,7 @@ def _assert_wheel_contents(wheel: Path) -> None:
     with zipfile.ZipFile(wheel) as archive:
         names = archive.namelist()
     assert any(name == "delibrashift/__init__.py" for name in names)
+    assert any(name == "delibrashift/desktop_assets/index.html" for name in names)
     assert not any(
         name.startswith(("chronogym/", "packs/", "results/", "tests/"))
         for name in names

@@ -87,6 +87,23 @@ delibrashift-run /path/to/pack --agent random --log-dir logs
 The strict loader rejects schema mismatches, unknown fields, duplicate JSON
 keys, and unsafe scenario paths.
 
+## DelibraShift Lab Desktop (coming soon)
+
+The `agent/desktop-app-coming-soon` preview turns the benchmark into a small
+native desktop lab without changing its scientific engine. It can run the
+bundled deterministic agents, play the exact trajectory tick by tick, inspect
+the action-engagement shift and hot/cold signal, and export the canonical
+JSONL episode log. It is local and offline: no API key or paid model is used.
+
+```bash
+python -m pip install -e '.[desktop]'
+delibrashift-lab
+```
+
+Packaging instructions for Windows, macOS, and Linux are in
+[`desktop/README.md`](desktop/README.md). The preview intentionally lives on a
+separate branch until its platform bundles have been exercised.
+
 ## Offline interactive report
 
 Build the bilingual, self-contained report in English for judging:

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>DelibraShift Lab</title>
+  <link rel="stylesheet" href="lab.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span></div>
+        <div><strong>DELIBRASHIFT</strong><small>LAB DESKTOP</small></div>
+      </div>
+      <div class="topbar-center">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span>LOCAL · DETERMINISTIC · OFFLINE</span>
+      </div>
+      <span class="preview-badge">COMING SOON</span>
+    </header>
+
+    <main class="workspace">
+      <aside class="control-rail panel">
+        <div class="panel-heading">
+          <span>RUN CONFIGURATION</span><span class="index">01</span>
+        </div>
+        <label for="scenario">Scenario</label>
+        <select id="scenario" disabled></select>
+        <div id="scenario-meta" class="microcopy">Loading core pack…</div>
+
+        <label for="agent">Agent</label>
+        <select id="agent" disabled></select>
+        <div id="agent-meta" class="microcopy">Waiting for local engine…</div>
+
+        <div class="inline-field">
+          <label for="repetition">Repetition</label>
+          <input id="repetition" type="number" min="0" max="999" value="0">
+        </div>
+        <button id="run" class="primary" disabled>
+          <span>RUN EPISODE</span><span aria-hidden="true">↗</span>
+        </button>
+
+        <div class="divider"></div>
+        <div class="panel-heading compact">
+          <span>PLAYBACK</span><span class="index">02</span>
+        </div>
+        <div class="transport" role="group" aria-label="Playback controls">
+          <button id="reset" title="Reset" disabled>↺</button>
+          <button id="step" title="Advance one simulated tick" disabled>│▶</button>
+          <button id="play" class="play" title="Play" disabled>▶</button>
+        </div>
+        <label for="speed">Playback speed <output id="speed-value">4×</output></label>
+        <input id="speed" type="range" min="1" max="6" value="3">
+        <label for="timeline">Simulated tick <output id="tick-output">0</output></label>
+        <input id="timeline" type="range" min="0" max="0" value="0" disabled>
+
+        <div class="divider"></div>
+        <button id="export" class="secondary" disabled>EXPORT CANONICAL JSONL</button>
+        <div id="status" class="status" role="status">Connecting to Python engine…</div>
+      </aside>
+
+      <section class="stage-column">
+        <div class="telemetry-grid" aria-label="Episode telemetry">
+          <article><span>TICK / DEADLINE</span><strong id="metric-tick">—</strong></article>
+          <article><span>DISTANCE</span><strong id="metric-distance">—</strong></article>
+          <article><span>HEAT</span><strong id="metric-heat">—</strong></article>
+          <article><span>WIND X</span><strong id="metric-wind">—</strong></article>
+          <article><span>HELD THRUST</span><strong id="metric-thrust">—</strong></article>
+          <article class="outcome-card"><span>OUTCOME</span><strong id="metric-outcome">READY</strong></article>
+        </div>
+
+        <div class="arena-panel panel">
+          <div class="panel-heading arena-heading">
+            <div><span>WINDRIFT ARENA</span><small id="episode-id">Select a run</small></div>
+            <div class="legend" aria-label="Arena legend">
+              <span><i class="craft-key"></i> craft</span>
+              <span><i class="goal-key"></i> goal</span>
+              <span><i class="ghost-key"></i> prediction</span>
+            </div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="arena" width="1200" height="700" aria-label="Windrift trajectory"></canvas>
+            <div id="empty-state" class="empty-state">
+              <div class="radar"></div>
+              <strong>WORLD READY</strong>
+              <span>Choose an agent and run a deterministic episode.</span>
+            </div>
+            <div class="axis-label axis-y">+Y</div><div class="axis-label axis-x">+X</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="inspector panel">
+        <div class="panel-heading">
+          <span>DECISION TRACE</span><span class="index">03</span>
+        </div>
+        <div class="decision-summary">
+          <span>CURRENT WINDOW</span>
+          <strong id="cycle-number">CYCLE —</strong>
+          <small id="window-range">No episode loaded</small>
+        </div>
+        <dl class="data-list">
+          <div><dt>Observed position</dt><dd id="observed-position">—</dd></div>
+          <div><dt>Returned action</dt><dd id="returned-action">—</dd></div>
+          <div><dt>Engaged action</dt><dd id="engaged-action">—</dd></div>
+          <div><dt>Prediction target</dt><dd id="prediction-target">—</dd></div>
+          <div><dt>Heat delta</dt><dd id="heat-delta">—</dd></div>
+        </dl>
+        <div class="callout" id="latency-callout">
+          <span>THE SHIFT</span>
+          <p>While the agent decides, the previous action remains latched and the world advances by <strong>B</strong> ticks.</p>
+        </div>
+        <div class="score-block">
+          <div class="panel-heading compact"><span>RUN RESULT</span></div>
+          <div class="score-ring" id="score-ring"><div><strong id="score">—</strong><span>OUTCOME<br>SCORE</span></div></div>
+          <div class="score-meta">
+            <span>Closest approach <strong id="closest">—</strong></span>
+            <span>Prediction fidelity <strong id="fidelity">—</strong></span>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+  <script src="lab.js"></script>
+</body>
+</html>

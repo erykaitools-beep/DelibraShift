@@ -82,6 +82,7 @@ jobs:
         run: |
           npm --prefix report test
           npm --prefix report run test:browser
+          node desktop/tests/visual_smoke.js
           python report/tests/audit_truth.py
       - name: Reject private paths and credentials in the artifact
         run: |
