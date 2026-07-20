@@ -1,0 +1,109 @@
+{
+  "schema_version": "exploratory-codex-first-decision-0.1",
+  "data_date_utc": "2026-07-20",
+  "official_snapshot": false,
+  "evidence_status": "exploratory_codex_product_condition",
+  "driver": {
+    "version": "0.1",
+    "sha256": "a44ba2437b0447945ffaa7c469b1591cab902f143fde83f4806c79869e5b1718",
+    "git_revision": "4d5db22abe8320c15d3d4fe458ff554074a6e8be",
+    "source_tree_dirty": false
+  },
+  "method": {
+    "pack_name": "core_v0",
+    "pack_version": "0.1.1",
+    "log_schema_version": "0.2.1",
+    "scenario_id": "g001",
+    "cycle": 0,
+    "arm": "end2end",
+    "prompt_version": "1.0",
+    "prompt_sha256": "ebe9e4f3fa81b13bf3439f7cc78f8601db1e1e53f355e2061dc55b84ca3277b8",
+    "requested_temperature": 0.0,
+    "requested_seeds": [
+      0
+    ],
+    "requested_max_tokens": 512,
+    "unsupported_cli_controls": [
+      "temperature",
+      "seed",
+      "max_tokens"
+    ],
+    "max_parse_retries": 0,
+    "max_transport_retries": 0,
+    "fresh_ephemeral_session_per_completion": true,
+    "saved_chatgpt_login_required": true,
+    "platform_api_credentials_removed": true,
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "medium",
+    "timeout_s": 300.0
+  },
+  "session_audit": {
+    "thread_ids": [
+      "019f80a8-062c-75b3-bd5f-fd148f849972"
+    ],
+    "all_thread_ids_present": true,
+    "thread_ids_unique": true
+  },
+  "host": {
+    "system": "Linux",
+    "release": "5.15.0-174-generic",
+    "machine": "x86_64",
+    "python": "3.10.12",
+    "wall_clock_caveat": "Wall time is telemetry only. Calls consume the existing ChatGPT/Codex plan allowance but use no Platform API key."
+  },
+  "target_at_engage": {
+    "tick": 20,
+    "pos_x_m": 21.634217445260198,
+    "pos_y_m": 67.375,
+    "vel_x_mps": 2.9881011374801663,
+    "vel_y_mps": -5.0
+  },
+  "persistence_floor": {
+    "cycle0_raw_fidelity": 0.04680198578360569,
+    "position_error_m": 3.0921338357827866
+  },
+  "runs": [
+    {
+      "repetition": 0,
+      "wall_clock_s_telemetry_only": 59.11555375996977,
+      "action_parse_ok": true,
+      "prediction_parse_ok": true,
+      "example_echo": false,
+      "action": {
+        "accel_x_mps2": 14.5,
+        "accel_y_mps2": -3.8405729
+      },
+      "prediction": {
+        "pos_x_m": 21.634217477,
+        "pos_y_m": 67.375,
+        "vel_x_mps": 2.9881012,
+        "vel_y_mps": -5.0
+      },
+      "cycle0_raw_fidelity": 0.9999999764350914,
+      "position_error_m": 3.173980189785652e-08,
+      "raw_content": "{\"prediction\":{\"pos_x_m\":21.634217477,\"pos_y_m\":67.375,\"vel_x_mps\":2.9881012,\"vel_y_mps\":-5.0},\"action\":{\"accel_x_mps2\":14.5,\"accel_y_mps2\":-3.8405729}}",
+      "raw_content_sha256": "d7eeed8dd5427033aafcd96fd468003188c4694ab1836f5d8930c1c205629d83",
+      "codex_response_metadata": {
+        "codex_version": "codex-cli 0.144.1",
+        "thread_id": "019f80a8-062c-75b3-bd5f-fd148f849972",
+        "usage": {
+          "input_tokens": 12645,
+          "cached_input_tokens": 9984,
+          "output_tokens": 1744,
+          "reasoning_output_tokens": 1669
+        },
+        "tool_item_types": [],
+        "tool_item_count": 0,
+        "ephemeral": true,
+        "saved_chatgpt_login_required": true,
+        "api_credentials_removed_from_environment": true,
+        "requested_max_tokens": 512,
+        "max_tokens_honored": false,
+        "requested_temperature": 0.0,
+        "temperature_honored": false,
+        "requested_seed": 0,
+        "seed_honored": false
+      }
+    }
+  ]
+}

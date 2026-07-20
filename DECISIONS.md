@@ -1093,3 +1093,24 @@ credential; two credential-shaped episode identifiers were manually confirmed
 as false positives. GitHub Actions receives explicit read-only repository
 contents permission, with branch protection and platform secret scanning to be
 enabled when the repository becomes public.
+
+## COD-035 — Isolate a no-API-cost Codex product condition
+
+Date: 2026-07-20
+
+Testing a fresh Codex instance without Platform API billing is permitted only
+as an exploratory product-level condition. Each completion launches
+`codex exec --ephemeral --json` in a new empty temporary directory, disables
+project instructions and user configuration, uses a read-only sandbox, and
+requires the CLI's saved authentication status to be ChatGPT. Platform API and
+automation credential variables are removed from the child environment before
+the process starts; the adapter refuses unknown or API-key authentication.
+
+This is a genuinely new Codex session for every call, but it is not a plain
+model transport: Codex retains its product system instructions and agent loop.
+The CLI also exposes no equivalent for the harness seed, temperature, or
+512-token output cap. The adapter therefore records those parameters as not
+honored, captures usage and tool-event telemetry, consumes only the existing
+ChatGPT/Codex plan allowance, and must remain outside the frozen M2 claims. A
+single first-decision smoke precedes any larger run so plan usage can be
+observed without risking a long quota-consuming experiment.

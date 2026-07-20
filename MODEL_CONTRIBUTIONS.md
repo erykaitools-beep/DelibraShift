@@ -95,7 +95,10 @@ Verified work:
 - audited the complete Git/GitHub publication surface for secrets, reconciled
   the approved MIT release across package and report metadata, and added
   least-privilege CI permissions;
-- recorded 34 `COD-###` decisions including visualization integration, the
+- implemented the isolated, fresh-session Codex product adapter and auditable
+  no-API-billing smoke-test path, with credential stripping, ChatGPT-auth
+  enforcement, session IDs, usage, and tool-event telemetry;
+- recorded 35 `COD-###` decisions including visualization integration, the
   cross-platform judge-path audit, competition video, and public-release
   licensing.
 
