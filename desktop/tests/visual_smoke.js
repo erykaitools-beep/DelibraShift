@@ -2,6 +2,7 @@
 
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { chromium } = require('../../report/node_modules/playwright');
@@ -9,7 +10,8 @@ const { chromium } = require('../../report/node_modules/playwright');
 
 async function main() {
   const root = path.resolve(__dirname, '..', '..');
-  const python = process.env.PYTHON || path.join(root, '.venv', 'bin', 'python');
+  const localPython = path.join(root, '.venv', 'bin', 'python');
+  const python = process.env.PYTHON || (fs.existsSync(localPython) ? localPython : 'python');
   const source = [
     'import json',
     'from delibrashift.lab import LabEngine',
