@@ -19,9 +19,12 @@ delibrashift-run = "delibrashift.cli:main"
 delibrashift-gates = "delibrashift.gate_cli:main"
 delibrashift-pack = "delibrashift.archive_cli:main"
 delibrashift-ablate = "delibrashift.experiment_cli:main"
+delibrashift-lab = "delibrashift.desktop:main"
 
 [project.optional-dependencies]
 dev = ["build>=1.2", "coverage[toml]>=7.6", "pytest>=8"]
+desktop = ["pywebview>=6.2.1,<7"]
+bundle = ["pyinstaller>=6.21,<7"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
@@ -38,3 +41,6 @@ skip_covered = true
 
 [tool.setuptools.packages.find]
 include = ["delibrashift*"]
+
+[tool.setuptools.package-data]
+delibrashift = ["desktop_assets/*.html", "desktop_assets/*.css", "desktop_assets/*.js"]

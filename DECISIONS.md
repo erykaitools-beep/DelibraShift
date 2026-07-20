@@ -1114,3 +1114,22 @@ honored, captures usage and tool-event telemetry, consumes only the existing
 ChatGPT/Codex plan allowance, and must remain outside the frozen M2 claims. A
 single first-decision smoke precedes any larger run so plan usage can be
 observed without risking a long quota-consuming experiment.
+
+## COD-036 — Keep the desktop lab a canonical-run viewer
+
+Date: 2026-07-20
+
+The installable DelibraShift Lab preview uses a native pywebview shell and an
+offline HTML/CSS/JavaScript interface, but it does not implement a second
+simulation or scoring path. Selecting a scenario and agent invokes the
+canonical `run_episode`; the application then reconstructs the inclusive
+tick trace using `world.step` and `clock.latch_action` and rejects any final
+state mismatch. Step, play, scrub, and playback speed are therefore display
+operations only. Export writes the runner's original canonical JSONL bytes.
+
+The preview remains on `agent/desktop-app-coming-soon` until platform bundles
+are exercised. PyInstaller onedir packaging includes the local UI, MIT license,
+and `core_v0`; it must be built separately on each target operating system.
+Neither the runtime nor the package performs network access or requires an API
+key. The optional desktop dependencies do not alter the dependency-free
+benchmark core.

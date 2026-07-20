@@ -2,6 +2,14 @@
 
 All notable changes to DelibraShift are documented here.
 
+## Unreleased — desktop preview
+
+- Added DelibraShift Lab, a local native-window preview with canonical
+  scenario runs, tick playback, hot/cold telemetry, decision inspection, and
+  canonical JSONL export.
+- Added an onedir PyInstaller recipe that bundles the offline interface and
+  `core_v0` without adding any API or LLM dependency.
+
 ## 0.1.0 — 2026-07-19
 
 - Initial MIT-licensed release of the deterministic Windrift world and external
