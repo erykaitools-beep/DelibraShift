@@ -1,6 +1,6 @@
 """DelibraShift's public schema and deterministic Windrift primitives."""
 
-from .adapters import NIMAdapter, OllamaAdapter
+from .adapters import CodexExecAdapter, NIMAdapter, OllamaAdapter
 from .archive import PackArchive, build_pack_archive, verify_pack_archive
 from .bank import PackError, load_pack, load_pack_metadata
 from .clock import WindowAdvance, advance_deliberation, latch_action
@@ -84,6 +84,7 @@ from .world import advance_ticks, build_observation, initial_state, step
 
 __all__ = [
     "NOOP_ACTION",
+    "CodexExecAdapter",
     "NIMAdapter",
     "OllamaAdapter",
     "SCHEMA_VERSION",

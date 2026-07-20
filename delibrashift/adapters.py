@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
+import subprocess
+import tempfile
 import urllib.request
 
 
@@ -156,3 +159,157 @@ class OllamaAdapter:
         if not isinstance(content, str):
             raise RuntimeError("Ollama assistant content must be a string")
         return content
+
+
+class CodexExecAdapter:
+    """Fresh, ephemeral Codex product session via saved ChatGPT login."""
+
+    def __init__(
+        self,
+        model: str = "gpt-5.6-sol",
+        *,
+        reasoning_effort: str = "medium",
+        timeout_s: float = 300.0,
+        executable: str = "codex",
+    ) -> None:
+        self.model = model
+        self.reasoning_effort = reasoning_effort
+        self.timeout_s = timeout_s
+        self.executable = executable
+        self.name = f"codex-exec:{model}:effort={reasoning_effort}"
+        self.last_response_metadata: dict[str, object] = {}
+
+    @staticmethod
+    def _chatgpt_environment() -> dict[str, str]:
+        environment = os.environ.copy()
+        # Never let this no-API-cost condition silently fall back to a billable
+        # Platform key or an injected automation token.
+        for key in ("OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN"):
+            environment.pop(key, None)
+        return environment
+
+    def _require_chatgpt_login(self, environment: dict[str, str]) -> str:
+        status = subprocess.run(
+            [self.executable, "login", "status"],
+            capture_output=True,
+            text=True,
+            timeout=30.0,
+            env=environment,
+            check=False,
+        )
+        status_text = f"{status.stdout}\n{status.stderr}"
+        if status.returncode != 0 or "Logged in using ChatGPT" not in status_text:
+            raise RuntimeError(
+                "CodexExecAdapter requires a saved ChatGPT login; refusing API-key "
+                "or unknown authentication"
+            )
+        version = subprocess.run(
+            [self.executable, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=30.0,
+            env=environment,
+            check=False,
+        )
+        return version.stdout.strip() if version.returncode == 0 else "unknown"
+
+    def complete(
+        self,
+        prompt: str,
+        *,
+        max_tokens: int = 512,
+        temperature: float = 0.0,
+        seed: int | None = None,
+    ) -> str:
+        environment = self._chatgpt_environment()
+        codex_version = self._require_chatgpt_login(environment)
+        with tempfile.TemporaryDirectory(prefix="delibrashift-codex-") as directory:
+            output_path = Path(directory) / "last-message.txt"
+            command = [
+                self.executable,
+                "exec",
+                "--ephemeral",
+                "--json",
+                "--ignore-user-config",
+                "--ignore-rules",
+                "--sandbox",
+                "read-only",
+                "--skip-git-repo-check",
+                "-c",
+                "project_doc_max_bytes=0",
+                "-c",
+                f'model_reasoning_effort="{self.reasoning_effort}"',
+                "--model",
+                self.model,
+                "--output-last-message",
+                str(output_path),
+                "-",
+            ]
+            try:
+                result = subprocess.run(
+                    command,
+                    input=prompt,
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout_s,
+                    cwd=directory,
+                    env=environment,
+                    check=False,
+                )
+            except subprocess.TimeoutExpired as error:
+                raise TimeoutError("Codex ephemeral session timed out") from error
+            if result.returncode != 0:
+                detail = (result.stderr.strip() or result.stdout.strip())[-2000:]
+                raise RuntimeError(f"Codex ephemeral session failed: {detail}")
+            if not output_path.is_file():
+                raise RuntimeError("Codex session did not write a final message")
+
+            events = []
+            for line in result.stdout.splitlines():
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(event, dict):
+                    events.append(event)
+            thread_ids = [
+                event.get("thread_id")
+                for event in events
+                if event.get("type") == "thread.started"
+            ]
+            completions = [
+                event for event in events if event.get("type") == "turn.completed"
+            ]
+            item_types = [
+                item.get("type")
+                for event in events
+                if event.get("type") == "item.completed"
+                and isinstance((item := event.get("item")), dict)
+            ]
+            tool_item_types = sorted(
+                {
+                    item_type
+                    for item_type in item_types
+                    if item_type not in {"agent_message", "reasoning"}
+                }
+            )
+            self.last_response_metadata = {
+                "codex_version": codex_version,
+                "thread_id": thread_ids[-1] if thread_ids else None,
+                "usage": completions[-1].get("usage") if completions else None,
+                "tool_item_types": tool_item_types,
+                "tool_item_count": sum(
+                    item_type not in {"agent_message", "reasoning"}
+                    for item_type in item_types
+                ),
+                "ephemeral": True,
+                "saved_chatgpt_login_required": True,
+                "api_credentials_removed_from_environment": True,
+                "requested_max_tokens": max_tokens,
+                "max_tokens_honored": False,
+                "requested_temperature": temperature,
+                "temperature_honored": False,
+                "requested_seed": seed,
+                "seed_honored": False,
+            }
+            return output_path.read_text(encoding="utf-8")

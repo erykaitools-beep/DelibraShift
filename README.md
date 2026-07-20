@@ -110,6 +110,17 @@ consume the strict-JSON response budget; exploratory callers may opt in with
 `OllamaAdapter(..., think=True)` and must record that as a different transport
 condition.
 
+`CodexExecAdapter` is an exploratory product-level condition, not a Platform
+API adapter and not part of the frozen M2 result. Every completion launches a
+fresh `codex exec --ephemeral` session in an empty temporary directory, using
+the saved ChatGPT login. It strips `OPENAI_API_KEY`, `CODEX_API_KEY`, and
+`CODEX_ACCESS_TOKEN` from the child environment and refuses to run unless
+`codex login status` reports ChatGPT authentication. This avoids separate API
+billing but consumes the existing Codex plan allowance. The CLI does not honor
+the harness seed, temperature, or 512-token cap, so those limitations and any
+tool events are recorded and the condition must not be presented as a direct
+transport-equivalent model ranking.
+
 External model calls require explicit acknowledgement and are not needed to
 verify the published result.
 
