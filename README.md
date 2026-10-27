@@ -2,169 +2,97 @@
 
 **The world moves while agents think.**
 
-DelibraShift is a reproducible, deliberation-aware benchmark for diagnosing
-agent cognition in deterministic simulated worlds. Its first world combines
-gravity, time-varying lateral wind, steering, a deadline, and a graded hot/cold
-signal.
+A reproducible evaluation harness for testing how agents compensate for
+decision delay. In Windrift, a small world with gravity, wind and steering,
+the previous action remains active while a fixed **simulated** deliberation
+budget elapses. Host response time is recorded separately and never affects
+the simulation or score.
 
-Unlike benchmarks that pause between decisions, DelibraShift advances the world
-by a fixed simulated deliberation budget while the agent thinks. The previous
-action remains latched until the newly returned action engages. Host latency is
-recorded as infrastructure telemetry but never advances or scores the world.
+Python · deterministic simulation · agent evaluation · offline visualization
 
-**Human project owner and competition entrant:** Eryk Wyrębek. AI-assisted
-architecture, implementation, experiments, visualization, and audit are
-disclosed in [`MODEL_CONTRIBUTIONS.md`](MODEL_CONTRIBUTIONS.md).
+[Quickstart](#try-it-without-a-model-account) ·
+[Engineering case study](docs/engineering-case-study.md) ·
+[Published results](#official-m2-result) ·
+[Deutsch / CV](docs/portfolio-summary-de.md)
 
-## Judge and Build Week paths
+![DelibraShift's offline report showing the Windrift simulation and experiment context](docs/images/report-overview.png)
 
-- [`JUDGES.md`](JUDGES.md): a 60-second review and full verification path.
-- [`BUILD_WEEK.md`](BUILD_WEEK.md): event-period origin and first-commit evidence.
-- [`LIMITATIONS.md`](LIMITATIONS.md): boundaries of the published result.
+*Actual report built from the published M2 data. The interactive version runs
+locally after the [build below](#try-it-without-a-model-account); this image
+is a static preview.*
 
-## How Codex and GPT-5.6 were used
+## A one-minute project review
 
-OpenAI Codex served as DelibraShift's primary builder and integration agent
-under human direction. The operator-facing model label for this Build Week
-session is **GPT-5.6**, with the project role **CODEX 5.6-SOL, Chief Builder**.
-The exact backend snapshot remains tied to the competition feedback record
-rather than inferred from the label.
+The engineering question is simple: does an extra prediction stage help an
+agent act on the state it will encounter after its decision delay?
+DelibraShift supplies the simulator, experiment harness, canonical logs,
+scoring, and a bilingual report needed to inspect the answer.
 
-Technical Codex build-session ID:
-`019f5c9b-5d49-7560-a73f-99cd95665e04`.
+| What the project demonstrates | Evidence to inspect |
+|---|---|
+| Deterministic state transitions and explicit timing semantics | [World](delibrashift/world.py), [clock](delibrashift/clock.py), [specification](SPEC.md) |
+| Matched experiments with shared pacing, seeds and alternating arm order | [Experiment runner](delibrashift/experiments.py), [tests](tests/test_experiments.py) |
+| Strict input validation and verifiable artifacts | [Pack loader](delibrashift/bank.py), [archive tools](delibrashift/archive.py) |
+| Replayable results and checks against independent calculations | [84 canonical logs](results/m2), [independent audit](report/tests/audit_truth.py) |
+| Packaging and browser verification | [CI workflow](.github/workflows/ci.yml), [report tests](report/README.md) |
+| Reporting failures as well as improvements | [Official result](#official-m2-result), [limitations](LIMITATIONS.md) |
 
-Codex was used to:
+**Project origin and direction:** Eryk Wyrębek defined the goal, constraints
+and priorities, coordinated AI-assisted work, and approved experiments and
+publication. Architecture, implementation and review used AI assistance;
+the [contribution record](MODEL_CONTRIBUTIONS.md) identifies those roles.
 
-- implement the deterministic Windrift simulator, simulated deliberation
-  clock, harness, scoring integration, agents, adapters, and pack tooling;
-- build the M1.5 probes and M2 matched architecture experiment, execute and
-  publish the canonical 84-log run, and preserve its negative result;
-- audit and integrate the bilingual visualization, add independent replay and
-  cross-runtime gates, and repair scientific and release-path findings;
-- run the local multi-model compatibility screen without mixing it into the
-  official M2 evidence;
-- produce the competition narrative and reproducible browser-capture/video
-  pipeline; and
-- audit the complete Git/GitHub surface for secrets, reconcile the approved
-  MIT release, publish the repository, and configure its security controls.
+## How the experiment works
 
-Eryk Wyrębek originated the project, set its constraints and priorities,
-provided execution authority, and approved the name, experiments, claims,
-licence, and publication. FABLE 5 and Opus 4.8 performed separately attributed
-scientific and visualization work. The full role and impact ledger is in
-[`MODEL_CONTRIBUTIONS.md`](MODEL_CONTRIBUTIONS.md); implementation evidence is
-preserved in Git and the append-only [`DECISIONS.md`](DECISIONS.md).
+```text
+Observation → agent prediction and action
+            → world advances for a fixed budget under the previous action
+            → new action engages → score and canonical JSONL log
+```
 
-## Quickstart
+The prediction target is the world state when the new action engages.
+The harness owns prompting, parsing, retries and pacing; model adapters
+only provide transport. This separation lets the same model run under a
+single-stage END2END prompt or a two-stage WM-SCAFFOLD condition.
 
-DelibraShift targets Python 3.10+ and keeps the CPU-only simulation dependency
-free:
+Prediction quality, valid-output coverage, temporal anticipation and outcome
+are separate measurements. Better JSON parsing does not by itself establish
+better control. See the [engineering case study](docs/engineering-case-study.md)
+for the design choices and evidence boundaries.
+
+## Try it without a model account
+
+Use Python 3.10+ from the repository root. These shell commands create an
+isolated environment and run a deterministic baseline; no API key is needed.
+Installing development dependencies requires package downloads.
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install -e '.[dev]'
-pytest
-```
-
-Run the deterministic random baseline and optionally retain its canonical log:
-
-```bash
 delibrashift-demo --agent random --log episode.jsonl
 ```
 
-Greedy and no-op baselines are available with `--agent greedy` and
-`--agent noop`. Each summary includes prediction fidelity with coverage,
-separate action/prediction parse rates, the persistence floor, and graded
-outcome.
-
-Run a baseline over an external local test pack:
-
-```bash
-delibrashift-run /path/to/pack --agent random --log-dir logs
-```
-
-The strict loader rejects schema mismatches, unknown fields, duplicate JSON
-keys, and unsafe scenario paths.
-
-## Offline interactive report
-
-Build the bilingual, self-contained report in English for judging:
+Use `--agent greedy` or `--agent noop` to compare local baselines.
+For the interactive report, also install Node.js 22, then run:
 
 ```bash
 python report/build_report.py --lang en
 ```
 
-Then open `report/delibrashift_report.html` locally. The output requires no
-server, CDN, or network connection. Node.js 22 is required only to build and
-validate the report.
+Open `report/delibrashift_report.html` locally. The generated file contains
+the published data and works without a server, CDN or network connection.
+Switch between English and Polish; use the Lab tab to inspect the held
+action, prediction ghost and actual state tick by tick.
+The [report guide](report/README.md) explains building and verification.
 
-## Model adapters
+## Official M2 result
 
-The NIM transport is configured externally with `NIM_MODEL`, `NIM_BASE_URL`,
-and optionally `NVIDIA_API_KEY`. The Ollama transport defaults to
-`llama3.1:8b` at `http://localhost:11434`. Adapters remain transport-only:
-prompt construction, parsing, retry accounting, and pacing stay in the harness.
-Ollama thinking is disabled by default so a separate reasoning stream cannot
-consume the strict-JSON response budget; exploratory callers may opt in with
-`OllamaAdapter(..., think=True)` and must record that as a different transport
-condition.
-
-`CodexExecAdapter` is an exploratory product-level condition, not a Platform
-API adapter and not part of the frozen M2 result. Every completion launches a
-fresh `codex exec --ephemeral` session in an empty temporary directory, using
-the saved ChatGPT login. It strips `OPENAI_API_KEY`, `CODEX_API_KEY`, and
-`CODEX_ACCESS_TOKEN` from the child environment and refuses to run unless
-`codex login status` reports ChatGPT authentication. This avoids separate API
-billing but consumes the existing Codex plan allowance. The CLI does not honor
-the harness seed, temperature, or 512-token cap, so those limitations and any
-tool events are recorded and the condition must not be presented as a direct
-transport-equivalent model ranking.
-
-External model calls require explicit acknowledgement and are not needed to
-verify the published result.
-
-## Deterministic baseline reference
-
-Core visible non-probe subset S, `core_v0` v0.1.1, Linux x86_64. Random outcome
-uses 20 repetitions. These are simulator/baseline references, not LLM results.
-
-| agent | mean outcome | mean temporal anticipation |
-|---|---:|---:|
-| random (R=20) | 0.0885 | — |
-| greedy | 0.3358 | 0.4707 |
-| oracle | 0.9807 | 0.6393 |
-
-Evaluate the executable pack gates:
-
-```bash
-delibrashift-gates packs/core_v0
-```
-
-Build the deterministic pack archive and SHA-256 sidecar:
-
-```bash
-delibrashift-pack packs/core_v0 --output-dir dist
-```
-
-## M2 matched architecture ablation
-
-The same adapter/model runs as frozen END2END `1.0` or as the 131-line,
-two-stage `wm-scaffold-1.0`. The runner shares pacing, alternates arm order,
-passes repetition-derived seeds, writes canonical logs, and reports a separate
-sensitivity slice excluding cycles retried in either scaffold stage.
-
-To launch a new external run intentionally:
-
-```bash
-delibrashift-ablate packs/core_v0 --execute \
-  --repetitions 3 --pace-rpm 40 \
-  --log-dir results/m2/logs --report results/m2/report.json
-```
-
-Without `--execute`, the command exits before constructing the external adapter.
-
-### Official Dracarys result
+The published experiment evaluates
+`abacusai/dracarys-llama-3.1-70b-instruct` under matched END2END and
+WM-SCAFFOLD conditions. **The scaffold improved output reliability but reduced
+mean outcome.** This is a result for one model, one world and three
+repetitions, not a general model ranking.
 
 `core_v0` v0.1.1, R=3, Linux x86_64. Ranges are episode minima/maxima; Δ is the
 mean same-scenario, same-repetition WM-SCAFFOLD minus END2END difference.
@@ -195,27 +123,71 @@ The complete canonical report and 84 logs are in [`results/m2`](results/m2).
 Report SHA-256:
 `5ed6e76793684c9c7ef996ae58168ec57301afbcc615f4967c533e853f2506fa`.
 
-## Reproducibility boundary
+## Reproducibility and verification
 
-Physics is a pure function of scenario, state, held action, and simulated time
-delta. Same-seed local baseline runs produce byte-identical logs on the same
-host. CPython 3.10 on Linux x86_64 is the exact golden-fixture reference;
-supported runtimes additionally enforce the narrow cross-runtime bound in
-[`SPEC.md`](SPEC.md). External model responses may vary even with temperature
-zero and a seed; see [`LIMITATIONS.md`](LIMITATIONS.md).
+Physics is a pure function of scenario, state, held action and simulated time
+delta. Same-seed local baselines produce byte-identical logs on the same host.
+CPython 3.10 on Linux x86_64 is the exact golden-fixture reference;
+other supported runtimes enforce the narrow bound in [SPEC.md](SPEC.md).
+External inference may vary even with temperature zero and a seed.
 
-## Project documentation
+```bash
+python -m coverage run -m pytest
+python -m coverage report
+delibrashift-gates packs/core_v0
+```
 
-- [`SPEC.md`](SPEC.md): normative benchmark and scoring specification.
-- [`DECISIONS.md`](DECISIONS.md): append-only scientific and engineering record.
-- [`STATUS.md`](STATUS.md): milestone and verification history.
-- [`CONTRIBUTING.md`](CONTRIBUTING.md): development and change-control rules.
-- [`report/README.md`](report/README.md): build and audit the interactive report.
-- [`MODEL_CONTRIBUTIONS.md`](MODEL_CONTRIBUTIONS.md): human direction and AI assistance.
-- [`CITATION.cff`](CITATION.cff): citation metadata.
-- [`SECURITY.md`](SECURITY.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+[CI](https://github.com/erykaitools-beep/DelibraShift/actions/workflows/ci.yml)
+tests Python 3.10 and 3.12, enforces an 85% combined statement/branch coverage
+threshold on the reference runtime, checks the source distribution and installed wheel,
+and builds and exercises the report in Chromium. These checks do not call
+external models. The independent report audit recalculates physics, outcome,
+parse rate and coverage; it does not independently recalculate every metric.
+
+[Baseline references, model adapters and new experiments](docs/running-experiments.md)
+are documented separately. Verifying the published result does not require
+running a new external experiment.
+
+## Limits and project status
+
+- One deterministic two-dimensional world; no claim of general intelligence,
+  robotics readiness or real-time control.
+- One model and three repetitions in M2; the reported ranges are episode
+  minima/maxima, not confidence intervals.
+- The delay is a simulation condition, not measured inference latency.
+- The desktop application is separate preview work and is not delivered by
+  the public `main` quickstart.
+- Exploratory Ollama and Codex conditions are separate from the frozen M2
+  result; their transport settings do not establish a comparable leaderboard.
+
+See [LIMITATIONS.md](LIMITATIONS.md) for the full interpretation boundary.
+
+## How Codex and GPT-5.6 were used
+
+OpenAI Codex served as the primary builder and integration agent under human direction.
+The operator-facing label was GPT-5.6, with project role
+**CODEX 5.6-SOL, Chief Builder**; the exact backend snapshot is not inferred
+from that label. The historical build-session ID is
+`019f5c9b-5d49-7560-a73f-99cd95665e04`.
+
+Codex assisted with implementation, experiments, integration, validation and
+publication. FABLE 5 and Opus 4.8 contributed scientific architecture and
+visualization. [MODEL_CONTRIBUTIONS.md](MODEL_CONTRIBUTIONS.md) preserves the
+role ledger; [DECISIONS.md](DECISIONS.md) and Git preserve the engineering record.
+
+## Documentation and related work
+
+- [Engineering case study](docs/engineering-case-study.md) and
+  [German portfolio/CV text](docs/portfolio-summary-de.md).
+- [Specification](SPEC.md), [decisions](DECISIONS.md),
+  [milestone history](STATUS.md) and [contributing](CONTRIBUTING.md).
+- [Judge verification path](JUDGES.md), [Build Week record](BUILD_WEEK.md),
+  [video renderer](video/README.md) and [citation metadata](CITATION.cff).
+- [Security](SECURITY.md) and [code of conduct](CODE_OF_CONDUCT.md).
+- Related projects: [M.A.R.I.A.](https://github.com/erykaitools-beep/Maria)
+  for long-running agent operation and
+  [Kritaqo](https://github.com/erykaitools-beep/kritaqo) for a desktop AI workspace.
 
 ## License
 
-Copyright © 2026 Eryk Wyrębek. DelibraShift is open-source software released
-under the [MIT License](LICENSE).
+Copyright © 2026 Eryk Wyrębek. Released under the [MIT License](LICENSE).
