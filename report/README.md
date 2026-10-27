@@ -1,53 +1,58 @@
-# DelibraShift M2 — interaktywny raport offline
+# Interactive experiment report
 
-Ten katalog zawiera źródła jednoplikowego raportu eksperymentu M2. Raport
-porównuje ten sam model w dwóch dopasowanych ramionach:
+[Project overview](../README.md) · [Official results](../results/m2) ·
+[Engineering case study](../docs/engineering-case-study.md)
 
-- `end2end`: jeden prompt zwraca predykcję i akcję;
-- `wm-scaffold`: pierwszy etap przewiduje stan w chwili wejścia akcji, a drugi
-  podejmuje decyzję wyłącznie na podstawie tej własnej predykcji modelu.
+This directory builds a self-contained HTML report of the M2 experiment.
+The interface supports English and Polish. Readers can inspect the mechanism,
+compare the two experiment arms and replay flights tick by tick.
 
-Wynikiem budowy jest `report/delibrashift_report.html`. Plik działa bez serwera,
-CDN i połączenia sieciowego. Zawiera opis mechaniki, wyniki oraz laboratorium do
-odtwarzania lotów tick po ticku w języku polskim i angielskim.
+- `end2end`: one prompt returns a prediction and an action.
+- `wm-scaffold`: a first stage predicts the state at action engagement;
+  a second stage chooses an action using that prediction.
 
-## Budowanie
+The generated file works locally without a server, CDN or network connection.
+The screenshot in the [main README](../README.md) previews this report.
 
-Z katalogu głównego repozytorium:
+## Build
+
+From the repository root, with Python 3.10+ and Node.js 22 installed:
 
 ```bash
 python -m pip install -e '.[dev]'
-python report/build_report.py
+python report/build_report.py --lang en
 ```
 
-Domyślne, kanoniczne źródła to:
+Open `report/delibrashift_report.html` in a browser. Package installation
+requires downloads; building and viewing the published experiment requires
+no API key or new model call.
 
-- `results/m2/logs/` — 84 logi eksperymentu;
-- `results/m2/report.json` — oficjalny raport agregatów;
-- `packs/core_v0/` — paczka scenariuszy.
+Canonical inputs are read directly from the repository:
 
-Źródła są czytane bezpośrednio z głównego repozytorium. Nie utrzymujemy drugiej
-kopii logów ani packa w `report/`. `report/data/` jest wyłącznie roboczym,
-ignorowanym przez Git miejscem na wygenerowany bundle i sidecar pochodzenia.
+- [results/m2/logs](../results/m2/logs): 84 experiment and control logs.
+- [results/m2/report.json](../results/m2/report.json): official aggregates.
+- [packs/core_v0](../packs/core_v0): scenario pack.
 
-Najważniejsze opcje:
+There is no second maintained copy of those inputs in `report/`.
+`report/data/` is an ignored working directory for the generated bundle
+and its provenance sidecar.
 
-| Flaga | Znaczenie |
+| Option | Purpose |
 |---|---|
-| `--logs-dir KATALOG` | alternatywny katalog logów |
-| `--packs-dir KATALOG` | alternatywna paczka scenariuszy |
-| `--report PLIK` | alternatywny `report.json` |
-| `--out PLIK` | plik wynikowy wewnątrz `report/` |
-| `--lang pl\|en` | domyślny język zbudowanego raportu |
-| `--skip-extract` | ponowne użycie lokalnego bundle wraz z sidecarem źródeł |
+| `--logs-dir DIRECTORY` | Alternative log directory |
+| `--packs-dir DIRECTORY` | Alternative scenario pack |
+| `--report FILE` | Alternative aggregate report |
+| `--out FILE` | Output path inside `report/` |
+| `--lang pl` or `--lang en` | Initial display language |
+| `--skip-extract` | Reuse the local bundle and source sidecar |
 
-Budowa odtwarza fizykę każdego epizodu przez bibliotekę DelibraShift. Jeżeli
-stan końcowy, najbliższe podejście lub liczba epizodów nie zgadzają się z
-logami, raport nie zostaje uznany za poprawny.
+The builder replays every episode through the DelibraShift library.
+Inconsistent final states, closest approaches or episode counts cause
+validation to fail.
 
-## Testy
+## Verification
 
-Po zbudowaniu bundle:
+After building the bundle:
 
 ```bash
 npm --prefix report ci
@@ -57,40 +62,43 @@ npm --prefix report run test:browser
 python report/tests/audit_truth.py
 ```
 
-Testy obejmują funkcje czyste, renderowanie DOM, arenę, tłumaczenia PL/EN,
-kontrast, składnię skryptów, prawdziwy Chromium oraz niezależną implementację
-fizyki, outcome, parse rate i coverage. Nie jest to niezależne przeliczenie
-fidelity, temporal anticipation, wag rozbieżności ani feedback band; te mają
-osobne testy kontraktu i golden fixtures. Test przeglądarkowy blokuje sieć i
-sprawdza zakładki, PL/EN, motyw,
-namalowany canvas oraz szerokość mobilną. Audyt prawdy nie importuje
-`delibrashift.world`, dzięki czemu nie może bezwiednie powtórzyć tego samego
-błędu co ekstraktor.
+Browser dependency installation may require system package permissions.
+Use an existing compatible Chromium installation where appropriate.
 
-## Zasady interpretacji
+The checks cover pure functions, DOM rendering, the arena, PL/EN translations,
+contrast, script syntax and real Chromium. Browser tests block network access
+and check tabs, language switching, theme switching, a painted canvas and
+mobile layout.
 
-- Fidelity jest porównywane wyłącznie na komórkach scenariusz × powtórzenie,
-  gdzie oba ramiona mają ważny pomiar. Oficjalnie: sparowane Δ = `+0.0183`,
-  `n=4`.
-- Temporal anticipation jest zawsze pokazywane wraz z liczbą ocenionych cykli
-  `K` i średnią wagą rozbieżności.
-- `*_no_retry` to oddzielny przekrój czułości, nie „poprawiony” wynik główny.
-- Wniosek o braku zaobserwowanej reakcji na hot/cold wymaga identycznych
-  sekwencji komend w parach normal/decoy. Równy outcome sam w sobie nie
-  wystarcza i nie rozstrzyga przetwarzania wewnętrznego.
-- Czas zegarowy jest wyłącznie telemetrią i nigdy nie wpływa na symulację ani
-  score.
+The independent Python audit does not import `delibrashift.world`. It
+recalculates physics, outcome, action parse rate and prediction coverage.
+It does **not** independently recalculate fidelity, temporal anticipation,
+divergence weights or the feedback band. Those have separate contract tests
+and golden fixtures.
 
-## Układ katalogu
+## Interpretation rules
 
-| Ścieżka | Rola |
+- Compare fidelity only on scenario × repetition cells where both arms have
+  a valid measurement: official paired Δ = `+0.0183`, `n=4`.
+- Show temporal anticipation with the scored cycle count `K` and mean
+  divergence weight.
+- Treat `*_no_retry` as a separate sensitivity slice, not a replacement for
+  the main result.
+- Equal outcome alone does not establish absence of a hot/cold response.
+  The control finding uses identical effective action sequences in matched
+  normal/decoy pairs; it does not establish internal model processing.
+- Wall-clock time is telemetry and never changes the simulation or score.
+
+## Source layout
+
+| Path | Role |
 |---|---|
-| `build_report.py` | budowa oraz bramki kompletnego HTML |
-| `extract.py` | replay logów i budowa bundle |
-| `template.html` | semantyczny szkielet raportu |
-| `assets/` | CSS, JS, ikony i tekst PL/EN |
-| `tests/` | testy JS i niezależny audyt fizyki |
-| `spec/` | reguły projektu wizualizacji i metryk |
+| [build_report.py](build_report.py) | Build and complete-HTML validation |
+| [extract.py](extract.py) | Log replay and bundle extraction |
+| [template.html](template.html) | Semantic report structure |
+| [assets](assets) | Styles, scripts, icons and PL/EN copy |
+| [tests](tests) | JavaScript checks and independent physics audit |
+| [spec](spec) | Visualization and metric rules |
 
-Wygenerowany HTML jest artefaktem pochodnym. Prawdziwym źródłem wyników
-pozostają kanoniczne logi oraz `results/m2/report.json`.
+Generated HTML is a derived artifact. The canonical logs and aggregate
+report remain the source of the published results.

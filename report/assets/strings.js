@@ -62,7 +62,7 @@ var STRINGS = {
     "story.ghost.body": "Gracze nazywają to duchem. Na ekranie stoisz w jednym miejscu, a serwer trzyma cię gdzie indziej. Kto celuje w obraz, ten pudłuje. Kto trafia, ten strzela w miejsce, gdzie postać dopiero będzie. Dalej tą postacią jest statek na arenie, a duchem nazywamy to, gdzie model TWIERDZI, że statek będzie; prawdziwe położenie w tej samej chwili rysujemy osobnym znacznikiem prawdy.",
 
     "story.rule_a.title": "DelibraShift robi to celowo",
-    "story.rule_a.body": "To jest reguła A. Gdy model myśli, świat przesuwa się o B tyknięć do przodu. Akcja wymyślona w tyknięciu T zaczyna działać dopiero w T plus B. Przez ten czas pracuje poprzednia zatrzaśnięta akcja. Nikt nie mierzy, jak długo model liczył naprawdę - zwłoka jest ustawiona z góry i identyczna dla wszystkich.",
+    "story.rule_a.body": "To jest reguła A. Gdy model myśli, świat przesuwa się o B tyknięć do przodu. Akcja wymyślona w tyknięciu T zaczyna działać dopiero w T plus B. Przez ten czas pracuje poprzednia zatrzaśnięta akcja. Rzeczywisty czas odpowiedzi zapisujemy osobno jako telemetrię; nie zmienia on symulacji ani wyniku. Budżet B jest ustalony dla danego warunku eksperymentu.",
     "story.rule_a.glossary": "Dwa słowa wracają w całym raporcie. Tyknięcie to najmniejszy krok świata, tutaj 0,05 sekundy. Cykl to jedna runda decyzji: model dostaje obraz świata, myśli przez B tyknięć, a potem jego akcja się włącza. Sześć cykli w tabeli znaczy sześć decyzji w całym locie.",
     "story.more.summary": "Rozwiń: świat Windrift, sygnał ciepła, dwa ramiona i cztery miary",
 
@@ -125,7 +125,7 @@ var STRINGS = {
     "arena.legend.velocity": "Prędkość",
 
     /* ---- arena: one-sentence captions --------------------------- */
-    "arena.caption.craft": "Statek w miejscu, w którym symulator ma go teraz - to jest stan, który model dostał w promptcie.",
+    "arena.caption.craft": "Rzeczywista pozycja statku w wyświetlanym tyknięciu odtwarzanej symulacji. Świat mógł już się przesunąć od obserwacji przekazanej modelowi.",
     "arena.caption.ghost": "Duch stoi tam, gdzie model twierdzi, że statek będzie, gdy jego akcja wejdzie w życie.",
     "arena.caption.truth": "Znacznik prawdy pokazuje, gdzie statek naprawdę będzie w tej samej chwili.",
     "arena.caption.error_line": "Linia błędu łączy ducha z prawdą: im dłuższa, tym bardziej model steruje w nieistniejący świat.",
@@ -643,7 +643,7 @@ var STRINGS = {
     "story.ghost.body": "Players call it the ghost. On your screen you are standing still, while the server holds you somewhere else. Aim at the picture and you miss. Land the shot and you were aiming where the character was about to be. From here on that character is the craft in the arena, and the ghost is where the model CLAIMS the craft will be; the true position at that same moment is drawn as a separate truth marker.",
 
     "story.rule_a.title": "DelibraShift does this on purpose",
-    "story.rule_a.body": "This is rule A. While the model thinks, the world advances by B ticks. An action decided at tick T only takes effect at T plus B. Until then the previously latched action keeps driving. Nobody measures how long the model actually took - the delay is fixed up front and identical for everyone.",
+    "story.rule_a.body": "This is rule A. While the model thinks, the world advances by B ticks. An action decided at tick T only takes effect at T plus B. Until then the previously latched action keeps driving. Actual response time is recorded separately as telemetry; it changes neither simulation nor score. Budget B is fixed for each experiment condition.",
     "story.rule_a.glossary": "Two words come back throughout this report. A tick is the smallest step the world takes, here 0.05 seconds. A cycle is one round of deciding: the model receives a view of the world, thinks for B ticks, and then its action engages. Six cycles in a table means six decisions across the whole flight.",
     "story.more.summary": "Expand: the Windrift world, the heat signal, the two arms and the four measures",
 
@@ -706,7 +706,7 @@ var STRINGS = {
     "arena.legend.velocity": "Velocity",
 
     /* ---- arena: one-sentence captions --------------------------- */
-    "arena.caption.craft": "The craft where the simulator holds it right now - this is the state the model was given in its prompt.",
+    "arena.caption.craft": "The craft's actual position at the displayed replay tick. The world may already have advanced since the observation given to the model.",
     "arena.caption.ghost": "The ghost stands where the model claims the craft will be when its action takes effect.",
     "arena.caption.truth": "The truth marker shows where the craft will actually be at that same moment.",
     "arena.caption.error_line": "The error line joins ghost to truth: the longer it is, the more the model is steering a world that does not exist.",
